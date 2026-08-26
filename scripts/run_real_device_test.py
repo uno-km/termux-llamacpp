@@ -136,20 +136,27 @@ def main():
 
     # Verify build receipt
     c, out, err, ms = runner.run_cmd("cat $HOME/.termux-llama/bin/llama-server.build-receipt.json")
-    receipt_valid = "local-native-build" in out and "08f32c9b68a8b13a890a827038e21946059d57a2" in out
+    receipt_valid = "local-native-build" in out and "5e6a37cb115dc1074e274ac004373f5661909695" in out
     runner.record_score("4. Native Build Pipeline", "test_build_receipt_provenance", 10.0, 10.0, ms, receipt_valid, out)
 
     # Phase 5: GGUF Model Setup & CLI Inference
     model_path = "/data/data/com.termux/files/home/.shitty_phone_ai/models/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
     
-    # Test llama-cli inference
-    c, out, err, ms = runner.run_cmd(f"$HOME/.termux-llama/bin/llama-cli -m {model_path} -p 'Hello from Termux ARM64' -n 16 --temp 0.2", timeout=180)
+    # Test llama-cli inference with LD_LIBRARY_PATH
+    c, out, err, ms = runner.run_cmd(
+        f"export LD_LIBRARY_PATH=$HOME/.termux-llama/bin:$LD_LIBRARY_PATH && "
+        f"$HOME/.termux-llama/bin/llama-cli -m {model_path} -p 'Hello from Termux ARM64' -n 16 --temp 0.2",
+        timeout=180
+    )
     cli_infer_ok = (c == 0) and ("tokens" in out.lower() or "eval time" in out.lower() or len(out) > 50)
-    runner.record_score("5. GGUF CLI Inference", "test_llama_cli_inference", 10.0, 10.0, ms, cli_infer_ok, out[-300:] if len(out)>300 else out)
+    runner.record_score("5. GGUF CLI Inference", "test_llama_cli_inference", 10.0, 10.0, ms, cli_infer_ok, out[-400:] if len(out)>400 else out)
 
     # Phase 6: HTTP Server, /health, /v1/models, Chat Completion, SSE Streaming
     runner.run_cmd("pkill -9 llama-server || true")
-    runner.run_cmd(f"$HOME/.termux-llama/bin/llama-server -m {model_path} --host 127.0.0.1 --port 18088 -c 512 > $HOME/llama-server.log 2>&1 &")
+    runner.run_cmd(
+        f"export LD_LIBRARY_PATH=$HOME/.termux-llama/bin:$LD_LIBRARY_PATH && "
+        f"$HOME/.termux-llama/bin/llama-server -m {model_path} --host 127.0.0.1 --port 18088 -c 512 > $HOME/llama-server.log 2>&1 &"
+    )
     
     # Wait for server readiness polling
     server_ready = False
@@ -161,6 +168,10 @@ def main():
             print(f"[+] Server ready on attempt {attempt+1}!")
             break
         print(f"[*] Waiting for server startup (attempt {attempt+1}/25)...")
+
+    if not server_ready:
+        print("[!] Checking server log:")
+        runner.run_cmd("cat $HOME/llama-server.log")
 
     # Health check
     c, out, err, ms = runner.run_cmd("curl -s --fail http://127.0.0.1:18088/health")

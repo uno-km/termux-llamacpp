@@ -38,8 +38,8 @@
 
 ```
 dist/
-├── termux_llamacpp-1.0.0b1-py3-none-any.whl (SHA-256: 793CCE9DF6657575BAE3F204753C2414066F0F6CE7269BB2807BE17CE45D0745)
-└── termux_llamacpp-1.0.0b1.tar.gz           (SHA-256: 653D8C81344F9114739402E4E4D4B8A5DC80F1F5D270D711AF469E0973F6F82E)
+├── termux_llamacpp-1.0.0b1-py3-none-any.whl (SHA-256: 5B4C386CC3069449446ACFD0B48C6A1B0A188676E560935DDDF03D54F859D57E)
+└── termux_llamacpp-1.0.0b1.tar.gz           (SHA-256: 212DAB78BC7F3DD21283340B398B97ABD21941C842FE28A3EDC820ED1469EF7E)
 ```
 
 ### Wheel 패키지 내부 구성 검증 (`zipfile -l`)
@@ -277,6 +277,8 @@ cmake -B build \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_FLAGS="$OPT_FLAGS" \
     -DCMAKE_CXX_FLAGS="$OPT_FLAGS" \
+    -DCMAKE_INSTALL_RPATH="\$ORIGIN" \
+    -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
     -DGGML_BUILD_TESTS=OFF \
     -DGGML_BUILD_EXAMPLES=OFF \
     -DLLAMA_BUILD_SERVER=ON
@@ -342,7 +344,9 @@ EOF
     echo "  [termux-llamacpp] Installed $name and build receipt: $final_receipt"
 }
 
-echo "  [termux-llamacpp] Installing compiled binaries to $BIN_DIR..."
+echo "  [termux-llamacpp] Installing compiled binaries and shared libraries to $BIN_DIR..."
+# Copy all built shared libraries so dynaminc linker resolves dependencies
+find build -name "*.so*" -type f -exec cp -a {} "$BIN_DIR/" \; 2>/dev/null || true
 install_binary "llama-server"
 install_binary "llama-cli"
 
@@ -1083,8 +1087,8 @@ def save_signed_model_manifest(
   "package_version": "1.0.0b1",
   "status": "Development Status :: 4 - Beta",
   "pyproject_toml_sha256": "164FB8F0720110F2B08F000F93343012FD7D8DDCE8E86F43AC8A09F6A5F904E1",
-  "wheel_sha256": "793CCE9DF6657575BAE3F204753C2414066F0F6CE7269BB2807BE17CE45D0745",
-  "sdist_sha256": "653D8C81344F9114739402E4E4D4B8A5DC80F1F5D270D711AF469E0973F6F82E",
+  "wheel_sha256": "5B4C386CC3069449446ACFD0B48C6A1B0A188676E560935DDDF03D54F859D57E",
+  "sdist_sha256": "212DAB78BC7F3DD21283340B398B97ABD21941C842FE28A3EDC820ED1469EF7E",
   "tests": {
     "total": 34,
     "passed": 34,

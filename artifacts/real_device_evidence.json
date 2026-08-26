@@ -3,21 +3,21 @@
   "host": "125.132.13.175",
   "port": 58020,
   "user": "u0_a172",
-  "total_score": 40.0,
+  "total_score": 70.0,
   "scores": {
     "test_archive_hash_match": {
       "category": "1. Archive Transfer & Integrity",
       "score": 10.0,
       "max": 10.0,
-      "latency_ms": 85.61429999826942,
+      "latency_ms": 121.80090000038035,
       "passed": true,
-      "details": "TAR: E3FDD8D253D44F3C806AAC0B5622DBC43D6EC129C1FD0D91BCBEDA2EE91191BB, WHL: 04C03F8FF3E73DB9A4075D04AAE8D9EB72EC6BD5F6FD247F7AECB368E4811AA1"
+      "details": "TAR: C6C5BCBC481DBA5791FFE7FDD0CDFD2D1FAFB525C2A07E6EE2E7F22F188CF7A8, WHL: 793CCE9DF6657575BAE3F204753C2414066F0F6CE7269BB2807BE17CE45D0745"
     },
     "test_arm64_architecture": {
       "category": "2. Environment & HW Architecture",
       "score": 10.0,
       "max": 10.0,
-      "latency_ms": 167.87590000603814,
+      "latency_ms": 161.06110000691842,
       "passed": true,
       "details": "ARM64 Android Termux Confirmed"
     },
@@ -25,7 +25,7 @@
       "category": "3. Python Wheel Installation",
       "score": 10.0,
       "max": 10.0,
-      "latency_ms": 724.4974000059301,
+      "latency_ms": 744.7208000085084,
       "passed": true,
       "details": "termux-llamacpp pip install"
     },
@@ -33,39 +33,39 @@
       "category": "3. Python Wheel Installation",
       "score": 10.0,
       "max": 10.0,
-      "latency_ms": 736.8060000007972,
+      "latency_ms": 714.1075000108685,
       "passed": true,
       "details": "CLI Entrypoint & HW detection"
     },
     "test_native_compile_install_sh": {
       "category": "4. Native Build Pipeline",
-      "score": 0.0,
+      "score": 20.0,
       "max": 20.0,
-      "latency_ms": 104104.54590000154,
-      "passed": false,
+      "latency_ms": 400458.4455000004,
+      "passed": true,
       "details": "CMake + Clang llama-server & llama-cli build"
     },
     "test_elf_aarch64_format": {
       "category": "4. Native Build Pipeline",
-      "score": 0.0,
+      "score": 10.0,
       "max": 10.0,
-      "latency_ms": 207.9826000117464,
-      "passed": false,
-      "details": "/data/data/com.termux/files/home/.termux-llama/bin/llama-server: cannot open `/data/data/com.termux/files/home/.termux-llama/bin/llama-server' (No such file or directory)\n/data/data/com.termux/files/home/.termux-llama/bin/llama-cli:    cannot open `/data/data/com.termux/files/home/.termux-llama/bin/llama-cli' (No such file or directory)\n"
+      "latency_ms": 220.7951000018511,
+      "passed": true,
+      "details": "/data/data/com.termux/files/home/.termux-llama/bin/llama-server: ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, for Android 24, built by NDK r29 (14206865), not stripped\n/data/data/com.termux/files/home/.termux-llama/bin/llama-cli:    ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, for Android 24, built by NDK r29 (14206865), not stripped\n"
     },
     "test_build_receipt_provenance": {
       "category": "4. Native Build Pipeline",
       "score": 0.0,
       "max": 10.0,
-      "latency_ms": 197.9185999953188,
+      "latency_ms": 215.12570000777487,
       "passed": false,
-      "details": ""
+      "details": "{\n  \"artifact_filename\": \"llama-server\",\n  \"artifact_type\": \"local-native-build\",\n  \"build_preset\": \"android-arm64-dotprod\",\n  \"sha256\": \"fdbe2e0f98e8c05f0050fa9b630ac9197ce118773c11aae6d17c5a5f2569e22c\",\n  \"llama_cpp_commit\": \"5e6a37cb115dc1074e274ac004373f5661909695\",\n  \"source_override_used\": false,\n  \"upstream_url\": \"https://github.com/ggerganov/llama.cpp.git\",\n  \"release_eligible\": true,\n  \"built_at\": \"2026-08-26T16:24:48Z\"\n}\n"
     },
     "test_llama_cli_inference": {
       "category": "5. GGUF CLI Inference",
       "score": 0.0,
       "max": 10.0,
-      "latency_ms": 163.96819999499712,
+      "latency_ms": 198.88619999983348,
       "passed": false,
       "details": ""
     },
@@ -73,7 +73,7 @@
       "category": "6. Server REST & Health API",
       "score": 0.0,
       "max": 5.0,
-      "latency_ms": 142.04580000659917,
+      "latency_ms": 204.62449999467935,
       "passed": false,
       "details": ""
     },
@@ -81,7 +81,7 @@
       "category": "6. Server REST & Health API",
       "score": 0.0,
       "max": 5.0,
-      "latency_ms": 150.27930001087952,
+      "latency_ms": 176.79640000278596,
       "passed": false,
       "details": ""
     },
@@ -89,7 +89,7 @@
       "category": "6. Server REST & Health API",
       "score": 0.0,
       "max": 5.0,
-      "latency_ms": 203.85320000059437,
+      "latency_ms": 158.49089999392163,
       "passed": false,
       "details": ""
     },
@@ -97,7 +97,7 @@
       "category": "6. Server REST & Health API",
       "score": 0.0,
       "max": 5.0,
-      "latency_ms": 158.88600000471342,
+      "latency_ms": 168.61219999555033,
       "passed": false,
       "details": ""
     }
@@ -106,398 +106,398 @@
     {
       "cmd": "sha256sum termux-llamacpp-1.0.0b1.tar termux_llamacpp-1.0.0b1-py3-none-any.whl",
       "exit_code": 0,
-      "elapsed_ms": 85.61429999826942,
-      "stdout": "e3fdd8d253d44f3c806aac0b5622dbc43d6ec129c1fd0d91bcbeda2ee91191bb  termux-llamacpp-1.0.0b1.tar\n04c03f8ff3e73db9a4075d04aae8d9eb72ec6bd5f6fd247f7aecb368e4811aa1  termux_llamacpp-1.0.0b1-py3-none-any.whl\n",
+      "elapsed_ms": 121.80090000038035,
+      "stdout": "c6c5bcbc481dba5791ffe7fdd0cdfd2d1fafb525c2a07e6ee2e7f22f188cf7a8  termux-llamacpp-1.0.0b1.tar\n793cce9df6657575bae3f204753c2414066f0f6ce7269bb2807be17ce45d0745  termux_llamacpp-1.0.0b1-py3-none-any.whl\n",
       "stderr": "",
-      "time_utc": "2026-08-26T16:12:54Z",
-      "time_local": "2026-08-27T01:12:54+0900"
+      "time_utc": "2026-08-26T16:18:04Z",
+      "time_local": "2026-08-27T01:18:04+0900"
     },
     {
       "cmd": "uname -m && getprop ro.product.cpu.abi",
       "exit_code": 0,
-      "elapsed_ms": 167.87590000603814,
+      "elapsed_ms": 161.06110000691842,
       "stdout": "aarch64\narm64-v8a\n",
       "stderr": "",
-      "time_utc": "2026-08-26T16:12:54Z",
-      "time_local": "2026-08-27T01:12:54+0900"
+      "time_utc": "2026-08-26T16:18:04Z",
+      "time_local": "2026-08-27T01:18:04+0900"
     },
     {
       "cmd": "pkg install -y file clang cmake ninja git python python-pip openssl jq coreutils tar || true",
       "exit_code": 0,
-      "elapsed_ms": 606.6768999880878,
+      "elapsed_ms": 1226.8601000105264,
       "stdout": "No mirror or mirror group selected. You might want to select one by running 'termux-change-repo'\nChecking availability of current mirror:\n[*] https://mirrors.cqupt.edu.cn/termux/termux-main: ok\nReading package lists...\nBuilding dependency tree...\nReading state information...\nfile is already the newest version (5.48-3).\nclang is already the newest version (21.1.8-3).\ncmake is already the newest version (4.4.2).\nninja is already the newest version (1.13.2).\ngit is already the newest version (2.55.0).\npython is already the newest version (3.14.6-1).\npython-pip is already the newest version (26.2.1).\nopenssl is already the newest version (1:3.6.3).\njq is already the newest version (1.8.2).\ncoreutils is already the newest version (9.11-1).\ntar is already the newest version (1.35-3).\n0 upgraded, 0 newly installed, 0 to remove and 91 not upgraded.\n",
       "stderr": "\nWARNING: apt does not have a stable CLI interface. Use with caution in scripts.\n\n",
-      "time_utc": "2026-08-26T16:12:54Z",
-      "time_local": "2026-08-27T01:12:54+0900"
+      "time_utc": "2026-08-26T16:18:05Z",
+      "time_local": "2026-08-27T01:18:05+0900"
     },
     {
       "cmd": "pip install requests tqdm",
       "exit_code": 0,
-      "elapsed_ms": 674.326899999869,
+      "elapsed_ms": 683.461199994781,
       "stdout": "Requirement already satisfied: requests in /data/data/com.termux/files/usr/lib/python3.14/site-packages (2.34.2)\nRequirement already satisfied: tqdm in /data/data/com.termux/files/usr/lib/python3.14/site-packages (4.70.0)\nRequirement already satisfied: charset_normalizer<4,>=2 in /data/data/com.termux/files/usr/lib/python3.14/site-packages (from requests) (3.5.1)\nRequirement already satisfied: idna<4,>=2.5 in /data/data/com.termux/files/usr/lib/python3.14/site-packages (from requests) (3.19)\nRequirement already satisfied: urllib3<3,>=1.26 in /data/data/com.termux/files/usr/lib/python3.14/site-packages (from requests) (2.7.0)\nRequirement already satisfied: certifi>=2023.5.7 in /data/data/com.termux/files/usr/lib/python3.14/site-packages (from requests) (2026.7.22)\n",
       "stderr": "",
-      "time_utc": "2026-08-26T16:12:55Z",
-      "time_local": "2026-08-27T01:12:55+0900"
+      "time_utc": "2026-08-26T16:18:06Z",
+      "time_local": "2026-08-27T01:18:06+0900"
     },
     {
       "cmd": "pip install --no-deps --force-reinstall termux_llamacpp-1.0.0b1-py3-none-any.whl",
       "exit_code": 0,
-      "elapsed_ms": 724.4974000059301,
+      "elapsed_ms": 744.7208000085084,
       "stdout": "Processing ./termux_llamacpp-1.0.0b1-py3-none-any.whl\nInstalling collected packages: termux-llamacpp\n  Attempting uninstall: termux-llamacpp\n    Found existing installation: termux-llamacpp 1.0.0b1\n    Uninstalling termux-llamacpp-1.0.0b1:\n      Successfully uninstalled termux-llamacpp-1.0.0b1\nSuccessfully installed termux-llamacpp-1.0.0b1\n",
       "stderr": "",
-      "time_utc": "2026-08-26T16:12:56Z",
-      "time_local": "2026-08-27T01:12:56+0900"
+      "time_utc": "2026-08-26T16:18:07Z",
+      "time_local": "2026-08-27T01:18:07+0900"
     },
     {
       "cmd": "termux-llama --version && termux-llama hardware",
       "exit_code": 0,
-      "elapsed_ms": 736.8060000007972,
-      "stdout": "termux-llamacpp 1.0.0b1\n================================================================================\n  termux-llamacpp Hardware & System Profile\n================================================================================\n  Architecture        : aarch64 (ARM64: True)\n  Android / Termux    : Android=True, Termux=True\n  CPU Topology        : 8 Cores (Recommended Threads: 4)\n  SIMD Acceleration   : NEON=True, FP16=True, DotProd=True\n  Memory Footprint    : Available 3861.7 MB / Total 10601.6 MB\n  Recommended Preset  : android-arm64-dotprod\n================================================================================\n",
+      "elapsed_ms": 714.1075000108685,
+      "stdout": "termux-llamacpp 1.0.0b1\n================================================================================\n  termux-llamacpp Hardware & System Profile\n================================================================================\n  Architecture        : aarch64 (ARM64: True)\n  Android / Termux    : Android=True, Termux=True\n  CPU Topology        : 8 Cores (Recommended Threads: 4)\n  SIMD Acceleration   : NEON=True, FP16=True, DotProd=True\n  Memory Footprint    : Available 3951.6 MB / Total 10601.6 MB\n  Recommended Preset  : android-arm64-dotprod\n================================================================================\n",
       "stderr": "",
-      "time_utc": "2026-08-26T16:12:57Z",
-      "time_local": "2026-08-27T01:12:57+0900"
+      "time_utc": "2026-08-26T16:18:07Z",
+      "time_local": "2026-08-27T01:18:07+0900"
     },
     {
       "cmd": "rm -rf termux-llamacpp && tar -xf termux-llamacpp-1.0.0b1.tar -C $HOME",
       "exit_code": 0,
-      "elapsed_ms": 177.4474999983795,
+      "elapsed_ms": 175.32270000083372,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:12:57Z",
-      "time_local": "2026-08-27T01:12:57+0900"
+      "time_utc": "2026-08-26T16:18:08Z",
+      "time_local": "2026-08-27T01:18:08+0900"
     },
     {
       "cmd": "sed -i 's/\r$//' $HOME/termux-llamacpp/scripts/install.sh && chmod 0755 $HOME/termux-llamacpp/scripts/install.sh",
       "exit_code": 0,
-      "elapsed_ms": 166.49600000528153,
+      "elapsed_ms": 180.9200999996392,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:12:57Z",
-      "time_local": "2026-08-27T01:12:57+0900"
+      "time_utc": "2026-08-26T16:18:08Z",
+      "time_local": "2026-08-27T01:18:08+0900"
     },
     {
       "cmd": "cd $HOME/termux-llamacpp && TERMUX_LLAMA_PRESET=android-arm64-dotprod bash scripts/install.sh",
-      "exit_code": 128,
-      "elapsed_ms": 104104.54590000154,
-      "stdout": "================================================================================\n  [termux-llamacpp] Pinned-Commit Native Compilation\n================================================================================\n  Target Preset : android-arm64-dotprod\n  Expected SHA  : 08f32c9b68a8b13a890a827038e21946059d57a2\n  Binary Dir    : /data/data/com.termux/files/home/.termux-llama/bin\n  Workspace     : /data/data/com.termux/files/usr/tmp/termux-llamacpp.GcwYHsEG\n================================================================================\n  Compiler Flags: -O3 -march=armv8.2-a+fp16+dotprod\n  [Termux] Checking build toolchain dependencies...\n  [termux-llamacpp] Cloning llama.cpp repository from https://github.com/ggerganov/llama.cpp.git...\n  [termux-llamacpp] Checking out detached commit: 08f32c9b68a8b13a890a827038e21946059d57a2...\n",
-      "stderr": "Cloning into 'llama.cpp'...\nfatal: unable to read tree (08f32c9b68a8b13a890a827038e21946059d57a2)\n",
-      "time_utc": "2026-08-26T16:14:41Z",
-      "time_local": "2026-08-27T01:14:41+0900"
+      "exit_code": 0,
+      "elapsed_ms": 400458.4455000004,
+      "stdout": "================================================================================\n  [termux-llamacpp] Pinned-Commit Native Compilation\n================================================================================\n  Target Preset : android-arm64-dotprod\n  Expected SHA  : 5e6a37cb115dc1074e274ac004373f5661909695\n  Binary Dir    : /data/data/com.termux/files/home/.termux-llama/bin\n  Workspace     : /data/data/com.termux/files/usr/tmp/termux-llamacpp.60EWPKiO\n================================================================================\n  Compiler Flags: -O3 -march=armv8.2-a+fp16+dotprod\n  [Termux] Checking build toolchain dependencies...\n  [termux-llamacpp] Fetching pinned commit 5e6a37cb115dc1074e274ac004373f5661909695 from https://github.com/ggerganov/llama.cpp.git...\n  [termux-llamacpp] Verifying source tree cleanliness and structural integrity...\n  [termux-llamacpp] Source tree verified clean and structurally consistent.\n  [termux-llamacpp] Configuring CMake...\n-- The C compiler identification is Clang 21.1.8\n-- The CXX compiler identification is Clang 21.1.8\n-- Detecting C compiler ABI info\n-- Detecting C compiler ABI info - done\n-- Check for working C compiler: /data/data/com.termux/files/usr/bin/cc - skipped\n-- Detecting C compile features\n-- Detecting C compile features - done\n-- Detecting CXX compiler ABI info\n-- Detecting CXX compiler ABI info - done\n-- Check for working CXX compiler: /data/data/com.termux/files/usr/bin/c++ - skipped\n-- Detecting CXX compile features\n-- Detecting CXX compile features - done\n-- llama.cpp version: 0.3.0-dev\n-- Found Git: /data/data/com.termux/files/usr/bin/git (found version \"2.55.0\")\n-- The ASM compiler identification is Clang with GNU-like command-line\n-- Found assembler: /data/data/com.termux/files/usr/bin/cc\n-- Performing Test CMAKE_HAVE_LIBC_PTHREAD\n-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed\n-- Check if compiler accepts -pthread\n-- Check if compiler accepts -pthread - yes\n-- Found Threads: TRUE\n-- Warning: ccache not found - consider installing it for faster compilation or disable this warning with GGML_CCACHE=OFF\n-- CMAKE_SYSTEM_PROCESSOR: aarch64\n-- GGML_SYSTEM_ARCH: ARM\n-- Found OpenMP_C: -fopenmp=libomp (found version \"5.1\")\n-- Found OpenMP_CXX: -fopenmp=libomp (found version \"5.1\")\n-- Found OpenMP: TRUE (found version \"5.1\")\n-- Including CPU backend\n-- ARM detected\n-- Performing Test GGML_COMPILER_SUPPORTS_FP16_FORMAT_I3E\n-- Performing Test GGML_COMPILER_SUPPORTS_FP16_FORMAT_I3E - Failed\n-- Performing Test GGML_MACHINE_SUPPORTS_dotprod\n-- Performing Test GGML_MACHINE_SUPPORTS_dotprod - Success\n-- Performing Test GGML_MACHINE_SUPPORTS_i8mm\n-- Performing Test GGML_MACHINE_SUPPORTS_i8mm - Failed\n-- Performing Test GGML_MACHINE_SUPPORTS_noi8mm\n-- Performing Test GGML_MACHINE_SUPPORTS_noi8mm - Success\n-- Performing Test GGML_MACHINE_SUPPORTS_sve\n-- Performing Test GGML_MACHINE_SUPPORTS_sve - Failed\n-- Performing Test GGML_MACHINE_SUPPORTS_nosve\n-- Performing Test GGML_MACHINE_SUPPORTS_nosve - Success\n-- Performing Test GGML_MACHINE_SUPPORTS_sme\n-- Performing Test GGML_MACHINE_SUPPORTS_sme - Failed\n-- Performing Test GGML_MACHINE_SUPPORTS_nosme\n-- Performing Test GGML_MACHINE_SUPPORTS_nosme - Success\n-- Checking for ARM features using flags:\n--   -U__ARM_FEATURE_MATMUL_INT8\n--   -U__ARM_FEATURE_SVE\n--   -U__ARM_FEATURE_SME\n--   -mcpu=native+dotprod+noi8mm+nosve+nosme\n-- Performing Test HAVE_DOTPROD\n-- Performing Test HAVE_DOTPROD - Success\n-- Performing Test HAVE_SVE\n-- Performing Test HAVE_SVE - Failed\n-- Performing Test HAVE_MATMUL_INT8\n-- Performing Test HAVE_MATMUL_INT8 - Failed\n-- Performing Test HAVE_FMA\n-- Performing Test HAVE_FMA - Success\n-- Performing Test HAVE_FP16_VECTOR_ARITHMETIC\n-- Performing Test HAVE_FP16_VECTOR_ARITHMETIC - Success\n-- Performing Test HAVE_SME\n-- Performing Test HAVE_SME - Failed\n-- Adding CPU backend variant ggml-cpu: -U__ARM_FEATURE_MATMUL_INT8;-U__ARM_FEATURE_SVE;-U__ARM_FEATURE_SME;-mcpu=native+dotprod+noi8mm+nosve+nosme \n-- ggml version: 0.22.0\n-- ggml commit:  5e6a37c\n-- Looking for pthread_create in pthreads\n-- Looking for pthread_create in pthreads - not found\n-- Looking for pthread_create in pthread\n-- Looking for pthread_create in pthread - found\n-- Found OpenSSL: /data/data/com.termux/files/usr/lib/libcrypto.so (found version \"3.6.3\")\n-- Performing Test OPENSSL_VERSION_SUPPORTED\n-- Performing Test OPENSSL_VERSION_SUPPORTED - Success\n-- OpenSSL found: 3.6.3\n-- Disabling MTMD_VIDEO because LLAMA_SUBPROCESS is OFF\n-- Generating embedded license file for target: llama-app\n-- Configuring done (9.1s)\n-- Generating done (0.4s)\n-- Build files have been written to: /data/data/com.termux/files/usr/tmp/termux-llamacpp.60EWPKiO/llama.cpp/build\n  [termux-llamacpp] Building llama-server and llama-cli...\n[  0%] Building CXX object vendor/hash/CMakeFiles/vendor-hash.dir/hash.cpp.o\n[  0%] Building CXX object vendor/cpp-httplib/CMakeFiles/cpp-httplib.dir/httplib.cpp.o\n[  0%] Building CXX object tools/ui/CMakeFiles/llama-ui-embed.dir/embed.cpp.o\n[  0%] Building C object vendor/hash/CMakeFiles/vendor-hash.dir/xxhash/xxhash.c.o\n[  0%] Building CXX object vendor/hash/CMakeFiles/vendor-hash.dir/sha1/sha1.c.o\n[  0%] Building CXX object common/CMakeFiles/llama-common-base.dir/build-info.cpp.o\n[  1%] Building C object ggml/src/CMakeFiles/ggml-base.dir/ggml.c.o\n[  1%] Building C object vendor/hash/CMakeFiles/vendor-hash.dir/sha256/sha256.c.o\n[  1%] Building CXX object ggml/src/CMakeFiles/ggml-base.dir/ggml.cpp.o\n[  1%] Building C object ggml/src/CMakeFiles/ggml-base.dir/ggml-alloc.c.o\n[  1%] Linking CXX static library libllama-common-base.a\n[  3%] Linking CXX static library libvendor-hash.a\n[  3%] Built target llama-common-base\n[  3%] Building CXX object ggml/src/CMakeFiles/ggml-base.dir/ggml-backend.cpp.o\n[  3%] Built target vendor-hash\n[  3%] Building CXX object ggml/src/CMakeFiles/ggml-base.dir/ggml-backend-meta.cpp.o\n[  5%] Building CXX object ggml/src/CMakeFiles/ggml-base.dir/ggml-opt.cpp.o\n[  5%] Building CXX object ggml/src/CMakeFiles/ggml-base.dir/ggml-threading.cpp.o\n[  5%] Building C object ggml/src/CMakeFiles/ggml-base.dir/ggml-quants.c.o\n[  6%] Linking CXX executable llama-ui-embed\n[  6%] Building CXX object ggml/src/CMakeFiles/ggml-base.dir/gguf.cpp.o\n[  6%] Built target llama-ui-embed\n[  6%] Provisioning UI assets\n-- UI: downloading from b1: https://huggingface.co/buckets/ggml-org/llama-ui/resolve/b1/dist.tar.gz\n-- UI: download dist.tar.gz from b1 failed: \"HTTP response code said error\"\n-- UI: downloading from latest: https://huggingface.co/buckets/ggml-org/llama-ui/resolve/latest/dist.tar.gz\n-- UI: archive verified and extracted\n-- UI: HF download succeeded, stamp updated (latest)\n-- UI: gzip compression applied (/data/data/com.termux/files/usr/tmp/termux-llamacpp.60EWPKiO/llama.cpp/build/tools/ui/dist/_gzip)\nembed: write output file /data/data/com.termux/files/usr/tmp/termux-llamacpp.60EWPKiO/llama.cpp/build/tools/ui/ui.h\nembed: write output file /data/data/com.termux/files/usr/tmp/termux-llamacpp.60EWPKiO/llama.cpp/build/tools/ui/ui.cpp\n[  6%] Built target llama-ui-assets\n[  6%] Building CXX object tools/ui/CMakeFiles/llama-ui.dir/ui.cpp.o\n[  6%] Linking CXX shared library ../../bin/libggml-base.so\n[  6%] Built target ggml-base\n[  8%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/ggml-cpu.cpp.o\n[  8%] Building C object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/ggml-cpu.c.o\n[  8%] Building C object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/quants.c.o\n[  8%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/repack.cpp.o\n[  8%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/hbm.cpp.o\n[  8%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/traits.cpp.o\n[ 10%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/amx/amx.cpp.o\n[ 10%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/amx/mmq.cpp.o\n[ 10%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/binary-ops.cpp.o\n[ 10%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/unary-ops.cpp.o\n[ 10%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/vec.cpp.o\n[ 11%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/ops.cpp.o\n[ 11%] Linking CXX static library libllama-ui.a\n[ 11%] Built target llama-ui\n[ 11%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/llamafile/sgemm.cpp.o\n[ 11%] Building C object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/arch/arm/quants.c.o\n[ 11%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/arch/arm/repack.cpp.o\n[ 11%] Linking CXX shared library ../../bin/libggml-cpu.so\n[ 11%] Built target ggml-cpu\n[ 11%] Building CXX object ggml/src/CMakeFiles/ggml.dir/ggml-backend-reg.cpp.o\n[ 11%] Building CXX object ggml/src/CMakeFiles/ggml.dir/ggml-backend-dl.cpp.o\n[ 11%] Linking CXX shared library ../../bin/libggml.so\n[ 11%] Built target ggml\n[ 11%] Building CXX object src/CMakeFiles/llama.dir/llama.cpp.o\n[ 11%] Building CXX object src/CMakeFiles/llama.dir/llama-adapter.cpp.o\n[ 11%] Building CXX object src/CMakeFiles/llama.dir/llama-arch.cpp.o\n[ 13%] Building CXX object src/CMakeFiles/llama.dir/llama-chat.cpp.o\n[ 13%] Building CXX object src/CMakeFiles/llama.dir/llama-batch.cpp.o\n[ 13%] Building CXX object src/CMakeFiles/llama.dir/llama-context.cpp.o\n[ 13%] Linking CXX static library libcpp-httplib.a\n[ 13%] Built target cpp-httplib\n[ 13%] Building CXX object src/CMakeFiles/llama.dir/llama-cparams.cpp.o\n[ 13%] Building CXX object src/CMakeFiles/llama.dir/llama-grammar.cpp.o\n[ 13%] Building CXX object src/CMakeFiles/llama.dir/llama-graph.cpp.o\n[ 13%] Building CXX object src/CMakeFiles/llama.dir/llama-hparams.cpp.o\n[ 15%] Building CXX object src/CMakeFiles/llama.dir/llama-impl.cpp.o\n[ 15%] Building CXX object src/CMakeFiles/llama.dir/llama-io.cpp.o\n[ 15%] Building CXX object src/CMakeFiles/llama.dir/llama-kv-cache.cpp.o\n[ 15%] Building CXX object src/CMakeFiles/llama.dir/llama-kv-cache-iswa.cpp.o\n[ 15%] Building CXX object src/CMakeFiles/llama.dir/llama-kv-cache-dsa.cpp.o\n[ 16%] Building CXX object src/CMakeFiles/llama.dir/llama-kv-cache-dsa-iswa.cpp.o\n[ 16%] Building CXX object src/CMakeFiles/llama.dir/llama-kv-cache-msa.cpp.o\n[ 16%] Building CXX object src/CMakeFiles/llama.dir/llama-kv-cache-dsv4.cpp.o\n[ 16%] Building CXX object src/CMakeFiles/llama.dir/llama-memory.cpp.o\n[ 16%] Building CXX object src/CMakeFiles/llama.dir/llama-memory-hybrid.cpp.o\n[ 18%] Building CXX object src/CMakeFiles/llama.dir/llama-memory-hybrid-iswa.cpp.o\n[ 18%] Building CXX object src/CMakeFiles/llama.dir/llama-memory-recurrent.cpp.o\n[ 18%] Building CXX object src/CMakeFiles/llama.dir/llama-mmap.cpp.o\n[ 18%] Building CXX object src/CMakeFiles/llama.dir/llama-model-loader.cpp.o\n[ 18%] Building CXX object src/CMakeFiles/llama.dir/llama-model-saver.cpp.o\n[ 18%] Building CXX object src/CMakeFiles/llama.dir/llama-model.cpp.o\n[ 20%] Building CXX object src/CMakeFiles/llama.dir/llama-quant.cpp.o\n[ 20%] Building CXX object src/CMakeFiles/llama.dir/llama-sampler.cpp.o\n[ 20%] Building CXX object src/CMakeFiles/llama.dir/llama-vocab.cpp.o\n[ 20%] Building CXX object src/CMakeFiles/llama.dir/unicode-data.cpp.o\n[ 20%] Building CXX object src/CMakeFiles/llama.dir/unicode.cpp.o\n[ 22%] Building CXX object src/CMakeFiles/llama.dir/models/afmoe.cpp.o\n[ 22%] Building CXX object src/CMakeFiles/llama.dir/models/apertus.cpp.o\n[ 22%] Building CXX object src/CMakeFiles/llama.dir/models/arcee.cpp.o\n[ 22%] Building CXX object src/CMakeFiles/llama.dir/models/arctic.cpp.o\n[ 22%] Building CXX object src/CMakeFiles/llama.dir/models/arwkv7.cpp.o\n[ 22%] Building CXX object src/CMakeFiles/llama.dir/models/baichuan.cpp.o\n[ 23%] Building CXX object src/CMakeFiles/llama.dir/models/bailingmoe.cpp.o\n[ 23%] Building CXX object src/CMakeFiles/llama.dir/models/bailingmoe2.cpp.o\n[ 23%] Building CXX object src/CMakeFiles/llama.dir/models/bailingmoe3.cpp.o\n[ 23%] Building CXX object src/CMakeFiles/llama.dir/models/bert.cpp.o\n[ 23%] Building CXX object src/CMakeFiles/llama.dir/models/bitnet.cpp.o\n[ 25%] Building CXX object src/CMakeFiles/llama.dir/models/bloom.cpp.o\n[ 25%] Building CXX object src/CMakeFiles/llama.dir/models/chameleon.cpp.o\n[ 25%] Building CXX object src/CMakeFiles/llama.dir/models/chatglm.cpp.o\n[ 25%] Building CXX object src/CMakeFiles/llama.dir/models/clip.cpp.o\n[ 25%] Building CXX object src/CMakeFiles/llama.dir/models/codeshell.cpp.o\n[ 27%] Building CXX object src/CMakeFiles/llama.dir/models/cogvlm.cpp.o\n[ 27%] Building CXX object src/CMakeFiles/llama.dir/models/cohere2.cpp.o\n[ 27%] Building CXX object src/CMakeFiles/llama.dir/models/cohere2moe.cpp.o\n[ 27%] Building CXX object src/CMakeFiles/llama.dir/models/command-r.cpp.o\n[ 27%] Building CXX object src/CMakeFiles/llama.dir/models/dbrx.cpp.o\n[ 27%] Building CXX object src/CMakeFiles/llama.dir/models/deci.cpp.o\n[ 28%] Building CXX object src/CMakeFiles/llama.dir/models/deepseek.cpp.o\n[ 28%] Building CXX object src/CMakeFiles/llama.dir/models/deepseek2.cpp.o\n[ 28%] Building CXX object src/CMakeFiles/llama.dir/models/deepseek2ocr.cpp.o\n[ 28%] Building CXX object src/CMakeFiles/llama.dir/models/deepseek32.cpp.o\n[ 28%] Building CXX object src/CMakeFiles/llama.dir/models/deepseek4.cpp.o\n[ 30%] Building CXX object src/CMakeFiles/llama.dir/models/delta-net-base.cpp.o\n[ 30%] Building CXX object src/CMakeFiles/llama.dir/models/dflash.cpp.o\n[ 30%] Building CXX object src/CMakeFiles/llama.dir/models/dots1.cpp.o\n[ 30%] Building CXX object src/CMakeFiles/llama.dir/models/dots3note.cpp.o\n[ 30%] Building CXX object src/CMakeFiles/llama.dir/models/dream.cpp.o\n[ 30%] Building CXX object src/CMakeFiles/llama.dir/models/eagle3.cpp.o\n[ 32%] Building CXX object src/CMakeFiles/llama.dir/models/ernie4-5-moe.cpp.o\n[ 32%] Building CXX object src/CMakeFiles/llama.dir/models/ernie4-5.cpp.o\n[ 32%] Building CXX object src/CMakeFiles/llama.dir/models/eurobert.cpp.o\n[ 32%] Building CXX object src/CMakeFiles/llama.dir/models/exaone-moe.cpp.o\n[ 32%] Building CXX object src/CMakeFiles/llama.dir/models/exaone.cpp.o\n[ 33%] Building CXX object src/CMakeFiles/llama.dir/models/exaone4.cpp.o\n[ 33%] Building CXX object src/CMakeFiles/llama.dir/models/falcon-h1.cpp.o\n[ 33%] Building CXX object src/CMakeFiles/llama.dir/models/falcon.cpp.o\n[ 33%] Building CXX object src/CMakeFiles/llama.dir/models/gemma-embedding.cpp.o\n[ 33%] Building CXX object src/CMakeFiles/llama.dir/models/gemma.cpp.o\n[ 35%] Building CXX object src/CMakeFiles/llama.dir/models/gemma2.cpp.o\n[ 35%] Building CXX object src/CMakeFiles/llama.dir/models/gemma3.cpp.o\n[ 35%] Building CXX object src/CMakeFiles/llama.dir/models/gemma3n.cpp.o\n[ 35%] Building CXX object src/CMakeFiles/llama.dir/models/gemma4-assistant.cpp.o\n[ 35%] Building CXX object src/CMakeFiles/llama.dir/models/gemma4.cpp.o\n[ 35%] Building CXX object src/CMakeFiles/llama.dir/models/glm-dsa.cpp.o\n[ 37%] Building CXX object src/CMakeFiles/llama.dir/models/glm4-moe.cpp.o\n[ 37%] Building CXX object src/CMakeFiles/llama.dir/models/glm4.cpp.o\n[ 37%] Building CXX object src/CMakeFiles/llama.dir/models/gpt2.cpp.o\n[ 37%] Building CXX object src/CMakeFiles/llama.dir/models/gptneox.cpp.o\n[ 37%] Building CXX object src/CMakeFiles/llama.dir/models/granite-hybrid.cpp.o\n[ 38%] Building CXX object src/CMakeFiles/llama.dir/models/granite-moe.cpp.o\n[ 38%] Building CXX object src/CMakeFiles/llama.dir/models/granite-swa.cpp.o\n[ 38%] Building CXX object src/CMakeFiles/llama.dir/models/granite-switch.cpp.o\n[ 38%] Building CXX object src/CMakeFiles/llama.dir/models/granite.cpp.o\n[ 38%] Building CXX object src/CMakeFiles/llama.dir/models/grok.cpp.o\n[ 38%] Building CXX object src/CMakeFiles/llama.dir/models/grovemoe.cpp.o\n[ 40%] Building CXX object src/CMakeFiles/llama.dir/models/hunyuan-dense.cpp.o\n[ 40%] Building CXX object src/CMakeFiles/llama.dir/models/hunyuan-moe.cpp.o\n[ 40%] Building CXX object src/CMakeFiles/llama.dir/models/hunyuan-vl.cpp.o\n[ 40%] Building CXX object src/CMakeFiles/llama.dir/models/hy-v3.cpp.o\n[ 40%] Building CXX object src/CMakeFiles/llama.dir/models/internlm2.cpp.o\n[ 42%] Building CXX object src/CMakeFiles/llama.dir/models/jais.cpp.o\n[ 42%] Building CXX object src/CMakeFiles/llama.dir/models/jais2.cpp.o\n[ 42%] Building CXX object src/CMakeFiles/llama.dir/models/jamba.cpp.o\n[ 42%] Building CXX object src/CMakeFiles/llama.dir/models/jina-bert-v2.cpp.o\n[ 42%] Building CXX object src/CMakeFiles/llama.dir/models/jina-bert-v3.cpp.o\n[ 44%] Building CXX object src/CMakeFiles/llama.dir/models/kimi-k3.cpp.o\n[ 44%] Building CXX object src/CMakeFiles/llama.dir/models/kimi-linear.cpp.o\n[ 44%] Building CXX object src/CMakeFiles/llama.dir/models/laguna.cpp.o\n[ 44%] Building CXX object src/CMakeFiles/llama.dir/models/lfm2.cpp.o\n[ 44%] Building CXX object src/CMakeFiles/llama.dir/models/lfm2moe.cpp.o\n[ 44%] Building CXX object src/CMakeFiles/llama.dir/models/llada-moe.cpp.o\n[ 45%] Building CXX object src/CMakeFiles/llama.dir/models/llada.cpp.o\n[ 45%] Building CXX object src/CMakeFiles/llama.dir/models/llama-embed.cpp.o\n[ 45%] Building CXX object src/CMakeFiles/llama.dir/models/llama.cpp.o\n[ 45%] Building CXX object src/CMakeFiles/llama.dir/models/llama4.cpp.o\n[ 45%] Building CXX object src/CMakeFiles/llama.dir/models/maincoder.cpp.o\n[ 47%] Building CXX object src/CMakeFiles/llama.dir/models/mamba-base.cpp.o\n[ 47%] Building CXX object src/CMakeFiles/llama.dir/models/mamba.cpp.o\n[ 47%] Building CXX object src/CMakeFiles/llama.dir/models/mamba2.cpp.o\n[ 47%] Building CXX object src/CMakeFiles/llama.dir/models/mellum.cpp.o\n[ 47%] Building CXX object src/CMakeFiles/llama.dir/models/mimo2.cpp.o\n[ 47%] Building CXX object src/CMakeFiles/llama.dir/models/minicpm.cpp.o\n[ 49%] Building CXX object src/CMakeFiles/llama.dir/models/minicpm3.cpp.o\n[ 49%] Building CXX object src/CMakeFiles/llama.dir/models/minimax-01.cpp.o\n[ 49%] Building CXX object src/CMakeFiles/llama.dir/models/minimax-m2.cpp.o\n[ 49%] Building CXX object src/CMakeFiles/llama.dir/models/minimax-m3.cpp.o\n[ 49%] Building CXX object src/CMakeFiles/llama.dir/models/mistral3.cpp.o\n[ 50%] Building CXX object src/CMakeFiles/llama.dir/models/mistral4.cpp.o\n[ 50%] Building CXX object src/CMakeFiles/llama.dir/models/modern-bert.cpp.o\n[ 50%] Building CXX object src/CMakeFiles/llama.dir/models/mpt.cpp.o\n[ 50%] Building CXX object src/CMakeFiles/llama.dir/models/muse-glimmer.cpp.o\n[ 50%] Building CXX object src/CMakeFiles/llama.dir/models/nanbeige.cpp.o\n[ 52%] Building CXX object src/CMakeFiles/llama.dir/models/nemotron-h-moe.cpp.o\n[ 52%] Building CXX object src/CMakeFiles/llama.dir/models/nemotron-h.cpp.o\n[ 52%] Building CXX object src/CMakeFiles/llama.dir/models/nemotron.cpp.o\n[ 52%] Building CXX object src/CMakeFiles/llama.dir/models/neo-bert.cpp.o\n[ 52%] Building CXX object src/CMakeFiles/llama.dir/models/nomic-bert-moe.cpp.o\n[ 52%] Building CXX object src/CMakeFiles/llama.dir/models/nomic-bert.cpp.o\n[ 54%] Building CXX object src/CMakeFiles/llama.dir/models/olmo.cpp.o\n[ 54%] Building CXX object src/CMakeFiles/llama.dir/models/olmo2.cpp.o\n[ 54%] Building CXX object src/CMakeFiles/llama.dir/models/olmoe.cpp.o\n[ 54%] Building CXX object src/CMakeFiles/llama.dir/models/openai-moe.cpp.o\n[ 54%] Building CXX object src/CMakeFiles/llama.dir/models/openelm.cpp.o\n[ 55%] Building CXX object src/CMakeFiles/llama.dir/models/orion.cpp.o\n[ 55%] Building CXX object src/CMakeFiles/llama.dir/models/paddleocr.cpp.o\n[ 55%] Building CXX object src/CMakeFiles/llama.dir/models/pangu-embed.cpp.o\n[ 55%] Building CXX object src/CMakeFiles/llama.dir/models/phi2.cpp.o\n[ 55%] Building CXX object src/CMakeFiles/llama.dir/models/phi3.cpp.o\n[ 55%] Building CXX object src/CMakeFiles/llama.dir/models/phimoe.cpp.o\n[ 57%] Building CXX object src/CMakeFiles/llama.dir/models/plamo.cpp.o\n[ 57%] Building CXX object src/CMakeFiles/llama.dir/models/plamo2.cpp.o\n[ 57%] Building CXX object src/CMakeFiles/llama.dir/models/plamo3.cpp.o\n[ 57%] Building CXX object src/CMakeFiles/llama.dir/models/plm.cpp.o\n[ 57%] Building CXX object src/CMakeFiles/llama.dir/models/pockettts.cpp.o\n[ 59%] Building CXX object src/CMakeFiles/llama.dir/models/qwen.cpp.o\n[ 59%] Building CXX object src/CMakeFiles/llama.dir/models/qwen2.cpp.o\n[ 59%] Building CXX object src/CMakeFiles/llama.dir/models/qwen2moe.cpp.o\n[ 59%] Building CXX object src/CMakeFiles/llama.dir/models/qwen2vl.cpp.o\n[ 59%] Building CXX object src/CMakeFiles/llama.dir/models/qwen3.cpp.o\n[ 61%] Building CXX object src/CMakeFiles/llama.dir/models/qwen35.cpp.o\n[ 61%] Building CXX object src/CMakeFiles/llama.dir/models/qwen35moe.cpp.o\n[ 61%] Building CXX object src/CMakeFiles/llama.dir/models/qwen3moe.cpp.o\n[ 61%] Building CXX object src/CMakeFiles/llama.dir/models/qwen3next.cpp.o\n[ 61%] Building CXX object src/CMakeFiles/llama.dir/models/qwen3tts.cpp.o\n[ 61%] Building CXX object src/CMakeFiles/llama.dir/models/qwen3vl.cpp.o\n[ 62%] Building CXX object src/CMakeFiles/llama.dir/models/qwen3vlmoe.cpp.o\n[ 62%] Building CXX object src/CMakeFiles/llama.dir/models/refact.cpp.o\n[ 62%] Building CXX object src/CMakeFiles/llama.dir/models/rnd1.cpp.o\n[ 62%] Building CXX object src/CMakeFiles/llama.dir/models/rwkv6-base.cpp.o\n[ 62%] Building CXX object src/CMakeFiles/llama.dir/models/rwkv6.cpp.o\n[ 64%] Building CXX object src/CMakeFiles/llama.dir/models/rwkv6qwen2.cpp.o\n[ 64%] Building CXX object src/CMakeFiles/llama.dir/models/rwkv7-base.cpp.o\n[ 64%] Building CXX object src/CMakeFiles/llama.dir/models/rwkv7.cpp.o\n[ 64%] Building CXX object src/CMakeFiles/llama.dir/models/seed-oss.cpp.o\n[ 64%] Building CXX object src/CMakeFiles/llama.dir/models/smallthinker.cpp.o\n[ 64%] Building CXX object src/CMakeFiles/llama.dir/models/smollm3.cpp.o\n[ 66%] Building CXX object src/CMakeFiles/llama.dir/models/stablelm.cpp.o\n[ 66%] Building CXX object src/CMakeFiles/llama.dir/models/starcoder.cpp.o\n[ 66%] Building CXX object src/CMakeFiles/llama.dir/models/starcoder2.cpp.o\n[ 66%] Building CXX object src/CMakeFiles/llama.dir/models/step35.cpp.o\n[ 66%] Building CXX object src/CMakeFiles/llama.dir/models/t5.cpp.o\n[ 67%] Building CXX object src/CMakeFiles/llama.dir/models/t5encoder.cpp.o\n[ 67%] Building CXX object src/CMakeFiles/llama.dir/models/talkie.cpp.o\n[ 67%] Building CXX object src/CMakeFiles/llama.dir/models/wavtokenizer-dec.cpp.o\n[ 67%] Building CXX object src/CMakeFiles/llama.dir/models/xverse.cpp.o\n[ 67%] Linking CXX shared library ../bin/libllama.so\n[ 67%] Built target llama\n[ 67%] Building CXX object common/CMakeFiles/llama-common.dir/arg.cpp.o\n[ 69%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/mtmd-image.cpp.o\n[ 69%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/mtmd-audio.cpp.o\n[ 69%] Building CXX object common/CMakeFiles/llama-common.dir/chat-diff-analyzer.cpp.o\n[ 69%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/mtmd.cpp.o\n[ 69%] Building CXX object common/CMakeFiles/llama-common.dir/chat-auto-parser-generator.cpp.o\n[ 71%] Building CXX object common/CMakeFiles/llama-common.dir/chat-auto-parser-helpers.cpp.o\n[ 71%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/mtmd-helper.cpp.o\n[ 71%] Building CXX object common/CMakeFiles/llama-common.dir/chat-peg-parser.cpp.o\n[ 71%] Building CXX object common/CMakeFiles/llama-common.dir/chat.cpp.o\n[ 71%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/mtmd-helper-gen.cpp.o\n[ 71%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/clip.cpp.o\n[ 71%] Building CXX object common/CMakeFiles/llama-common.dir/common.cpp.o\n[ 71%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/cogvlm.cpp.o\n[ 71%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/conformer.cpp.o\n[ 72%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/dots3note.cpp.o\n[ 74%] Building CXX object common/CMakeFiles/llama-common.dir/console.cpp.o\n[ 74%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/dotsocr.cpp.o\n[ 74%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/exaone4_5.cpp.o\n[ 74%] Building CXX object common/CMakeFiles/llama-common.dir/debug.cpp.o\n[ 74%] Building CXX object common/CMakeFiles/llama-common.dir/download.cpp.o\n[ 74%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/gemma4a.cpp.o\n[ 74%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/gemma4v.cpp.o\n[ 74%] Building CXX object common/CMakeFiles/llama-common.dir/fit.cpp.o\n[ 76%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/gemma4ua.cpp.o\n[ 76%] Building CXX object common/CMakeFiles/llama-common.dir/hf-cache.cpp.o\n[ 76%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/gemma4uv.cpp.o\n[ 76%] Building CXX object common/CMakeFiles/llama-common.dir/imatrix-loader.cpp.o\n[ 76%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/glm4v.cpp.o\n[ 77%] Building CXX object common/CMakeFiles/llama-common.dir/json-schema-to-grammar.cpp.o\n[ 77%] Building CXX object common/CMakeFiles/llama-common.dir/json.cpp.o\n[ 77%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/granite-speech.cpp.o\n[ 77%] Building CXX object common/CMakeFiles/llama-common.dir/llguidance.cpp.o\n[ 77%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/granite4-vision.cpp.o\n[ 77%] Building CXX object common/CMakeFiles/llama-common.dir/log.cpp.o\n[ 77%] Building CXX object common/CMakeFiles/llama-common.dir/ngram-cache.cpp.o\n[ 77%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/hunyuanvl.cpp.o\n[ 79%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/internvl.cpp.o\n[ 81%] Building CXX object common/CMakeFiles/llama-common.dir/ngram-map.cpp.o\n[ 81%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/kimivl.cpp.o\n[ 81%] Building CXX object common/CMakeFiles/llama-common.dir/ngram-mod.cpp.o\n[ 81%] Building CXX object common/CMakeFiles/llama-common.dir/peg-parser.cpp.o\n[ 81%] Building CXX object common/CMakeFiles/llama-common.dir/preset.cpp.o\n[ 81%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/kimik25.cpp.o\n[ 81%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/nemotron-v2-vl.cpp.o\n[ 81%] Building CXX object common/CMakeFiles/llama-common.dir/reasoning-budget.cpp.o\n[ 81%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/muse-glimmer.cpp.o\n[ 83%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/llama4.cpp.o\n[ 83%] Building CXX object common/CMakeFiles/llama-common.dir/sampling.cpp.o\n[ 84%] Building CXX object common/CMakeFiles/llama-common.dir/speculative.cpp.o\n[ 84%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/llava.cpp.o\n[ 84%] Building CXX object common/CMakeFiles/llama-common.dir/subproc.cpp.o\n[ 84%] Building CXX object common/CMakeFiles/llama-common.dir/trie.cpp.o\n[ 84%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/minicpmv.cpp.o\n[ 84%] Building CXX object common/CMakeFiles/llama-common.dir/unicode.cpp.o\n[ 84%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/paddleocr.cpp.o\n[ 84%] Building CXX object common/CMakeFiles/llama-common.dir/jinja/lexer.cpp.o\n[ 86%] Building CXX object common/CMakeFiles/llama-common.dir/jinja/parser.cpp.o\n[ 86%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/pixtral.cpp.o\n[ 86%] Building CXX object common/CMakeFiles/llama-common.dir/jinja/runtime.cpp.o\n[ 86%] Building CXX object common/CMakeFiles/llama-common.dir/jinja/value.cpp.o\n[ 88%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/qwen2vl.cpp.o\n[ 88%] Building CXX object common/CMakeFiles/llama-common.dir/jinja/string.cpp.o\n[ 88%] Building CXX object common/CMakeFiles/llama-common.dir/jinja/caps.cpp.o\n[ 88%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/minimax-m3.cpp.o\n[ 88%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/qwen3vl.cpp.o\n[ 88%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/mimovl.cpp.o\n[ 88%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/qwen3a.cpp.o\n[ 88%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/mimo-audio.cpp.o\n[ 88%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/qwen3tts-gen.cpp.o\n[ 89%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/qwen3tts-spkenc.cpp.o\n[ 89%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/pockettts-seanet.cpp.o\n[ 89%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/pockettts-spkenc.cpp.o\n[ 89%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/pockettts-gen.cpp.o\n[ 91%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/step3vl.cpp.o\n[ 91%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/siglip.cpp.o\n[ 91%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/whisper-enc.cpp.o\n[ 91%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/deepseekocr.cpp.o\n[ 91%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/deepseekocr2.cpp.o\n[ 91%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/mobilenetv5.cpp.o\n[ 93%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/youtuvl.cpp.o\n[ 93%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/yasa2.cpp.o\n[ 93%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/parakeet.cpp.o\n[ 93%] Linking CXX shared library ../../bin/libmtmd.so\n[ 93%] Built target mtmd\n[ 94%] Linking CXX shared library ../bin/libllama-common.so\n[ 94%] Built target llama-common\n[ 96%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-task.cpp.o\n[ 96%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-queue.cpp.o\n[ 96%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-chat.cpp.o\n[ 96%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-stream.cpp.o\n[ 96%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-common.cpp.o\n[ 98%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-tools.cpp.o\n[ 98%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-context.cpp.o\n[ 98%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-mcp.cpp.o\n[ 98%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-schema.cpp.o\n[ 98%] Linking CXX static library libserver-context.a\n[ 98%] Built target server-context\n[ 98%] Building CXX object tools/server/CMakeFiles/llama-server-impl.dir/server-models.cpp.o\n[ 98%] Building CXX object tools/server/CMakeFiles/llama-server-impl.dir/server-http.cpp.o\n[ 98%] Building CXX object tools/server/CMakeFiles/llama-server-impl.dir/server.cpp.o\n[ 98%] Linking CXX shared library ../../bin/libllama-server-impl.so\n[ 98%] Built target llama-server-impl\n[100%] Building CXX object tools/server/CMakeFiles/llama-server.dir/main.cpp.o\n[100%] Linking CXX executable ../../bin/llama-server\n[100%] Built target llama-server\n[  1%] Built target vendor-hash\n[  1%] Built target cpp-httplib\n[  1%] Built target llama-common-base\n[  6%] Built target llama-ui-embed\n[  6%] Built target ggml-base\n[  6%] Provisioning UI assets\n-- UI: downloading from b1: https://huggingface.co/buckets/ggml-org/llama-ui/resolve/b1/dist.tar.gz\n[ 11%] Built target ggml-cpu\n[ 11%] Built target ggml\n-- UI: download dist.tar.gz from b1 failed: \"HTTP response code said error\"\n-- UI: downloading from latest: https://huggingface.co/buckets/ggml-org/llama-ui/resolve/latest/dist.tar.gz\n[ 67%] Built target llama\n[ 79%] Built target llama-common\n[ 94%] Built target mtmd\n[ 98%] Built target server-context\n-- UI: archive verified and extracted\n-- UI: HF download succeeded, stamp updated (latest)\n-- UI: gzip compression applied (/data/data/com.termux/files/usr/tmp/termux-llamacpp.60EWPKiO/llama.cpp/build/tools/ui/dist/_gzip)\nembed: write output file /data/data/com.termux/files/usr/tmp/termux-llamacpp.60EWPKiO/llama.cpp/build/tools/ui/ui.cpp\n[ 98%] Built target llama-ui-assets\n[ 98%] Building CXX object tools/ui/CMakeFiles/llama-ui.dir/ui.cpp.o\n[ 98%] Linking CXX static library libllama-ui.a\n[ 98%] Built target llama-ui\n[ 98%] Linking CXX shared library ../../bin/libllama-server-impl.so\n[ 98%] Built target llama-server-impl\n[100%] Building CXX object tools/cli/CMakeFiles/llama-cli-impl.dir/cli.cpp.o\n[100%] Building CXX object tools/cli/CMakeFiles/llama-cli-impl.dir/cli-context.cpp.o\n[100%] Building CXX object tools/cli/CMakeFiles/llama-cli-impl.dir/cli-client.cpp.o\n[100%] Linking CXX shared library ../../bin/libllama-cli-impl.so\n[100%] Built target llama-cli-impl\n[100%] Building CXX object tools/cli/CMakeFiles/llama-cli.dir/main.cpp.o\n[100%] Linking CXX executable ../../bin/llama-cli\n[100%] Built target llama-cli\n  [termux-llamacpp] Installing compiled binaries to /data/data/com.termux/files/home/.termux-llama/bin...\n  [termux-llamacpp] Installed llama-server and build receipt: /data/data/com.termux/files/home/.termux-llama/bin/llama-server.build-receipt.json\n  [termux-llamacpp] Installed llama-cli and build receipt: /data/data/com.termux/files/home/.termux-llama/bin/llama-cli.build-receipt.json\n================================================================================\n  [termux-llamacpp] Pinned Native Build & Provenance Installation Completed!\n================================================================================\n",
+      "stderr": "From https://github.com/ggerganov/llama.cpp\n * branch            5e6a37cb115dc1074e274ac004373f5661909695 -> FETCH_HEAD\nCMAKE_BUILD_TYPE=Release\nCMake Warning at ggml/src/ggml-cpu/CMakeLists.txt:138 (message):\n  ARM -march/-mcpu not found, -mcpu=native will be used\nCall Stack (most recent call first):\n  ggml/src/CMakeLists.txt:584 (ggml_add_cpu_backend_variant_impl)\n\n\n",
+      "time_utc": "2026-08-26T16:24:48Z",
+      "time_local": "2026-08-27T01:24:48+0900"
     },
     {
       "cmd": "file $HOME/.termux-llama/bin/llama-server $HOME/.termux-llama/bin/llama-cli",
       "exit_code": 0,
-      "elapsed_ms": 207.9826000117464,
-      "stdout": "/data/data/com.termux/files/home/.termux-llama/bin/llama-server: cannot open `/data/data/com.termux/files/home/.termux-llama/bin/llama-server' (No such file or directory)\n/data/data/com.termux/files/home/.termux-llama/bin/llama-cli:    cannot open `/data/data/com.termux/files/home/.termux-llama/bin/llama-cli' (No such file or directory)\n",
+      "elapsed_ms": 220.7951000018511,
+      "stdout": "/data/data/com.termux/files/home/.termux-llama/bin/llama-server: ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, for Android 24, built by NDK r29 (14206865), not stripped\n/data/data/com.termux/files/home/.termux-llama/bin/llama-cli:    ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, for Android 24, built by NDK r29 (14206865), not stripped\n",
       "stderr": "",
-      "time_utc": "2026-08-26T16:14:41Z",
-      "time_local": "2026-08-27T01:14:41+0900"
+      "time_utc": "2026-08-26T16:24:48Z",
+      "time_local": "2026-08-27T01:24:48+0900"
     },
     {
       "cmd": "cat $HOME/.termux-llama/bin/llama-server.build-receipt.json",
-      "exit_code": 1,
-      "elapsed_ms": 197.9185999953188,
-      "stdout": "",
-      "stderr": "cat: /data/data/com.termux/files/home/.termux-llama/bin/llama-server.build-receipt.json: No such file or directory\n",
-      "time_utc": "2026-08-26T16:14:41Z",
-      "time_local": "2026-08-27T01:14:41+0900"
+      "exit_code": 0,
+      "elapsed_ms": 215.12570000777487,
+      "stdout": "{\n  \"artifact_filename\": \"llama-server\",\n  \"artifact_type\": \"local-native-build\",\n  \"build_preset\": \"android-arm64-dotprod\",\n  \"sha256\": \"fdbe2e0f98e8c05f0050fa9b630ac9197ce118773c11aae6d17c5a5f2569e22c\",\n  \"llama_cpp_commit\": \"5e6a37cb115dc1074e274ac004373f5661909695\",\n  \"source_override_used\": false,\n  \"upstream_url\": \"https://github.com/ggerganov/llama.cpp.git\",\n  \"release_eligible\": true,\n  \"built_at\": \"2026-08-26T16:24:48Z\"\n}\n",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:24:49Z",
+      "time_local": "2026-08-27T01:24:49+0900"
     },
     {
       "cmd": "$HOME/.termux-llama/bin/llama-cli -m /data/data/com.termux/files/home/.shitty_phone_ai/models/Llama-3.2-3B-Instruct-Q4_K_M.gguf -p 'Hello from Termux ARM64' -n 16 --temp 0.2",
-      "exit_code": 127,
-      "elapsed_ms": 163.96819999499712,
+      "exit_code": 1,
+      "elapsed_ms": 198.88619999983348,
       "stdout": "",
-      "stderr": "/data/data/com.termux/files/usr/bin/bash: line 1: /data/data/com.termux/files/home/.termux-llama/bin/llama-cli: No such file or directory\n",
-      "time_utc": "2026-08-26T16:14:42Z",
-      "time_local": "2026-08-27T01:14:42+0900"
+      "stderr": "CANNOT LINK EXECUTABLE \"/data/data/com.termux/files/home/.termux-llama/bin/llama-cli\": library \"libllama-cli-impl.so\" not found: needed by main executable\n",
+      "time_utc": "2026-08-26T16:24:49Z",
+      "time_local": "2026-08-27T01:24:49+0900"
     },
     {
       "cmd": "pkill -9 llama-server || true",
       "exit_code": 0,
-      "elapsed_ms": 149.09679999982473,
+      "elapsed_ms": 199.63460000872146,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:14:42Z",
-      "time_local": "2026-08-27T01:14:42+0900"
+      "time_utc": "2026-08-26T16:24:49Z",
+      "time_local": "2026-08-27T01:24:49+0900"
     },
     {
       "cmd": "$HOME/.termux-llama/bin/llama-server -m /data/data/com.termux/files/home/.shitty_phone_ai/models/Llama-3.2-3B-Instruct-Q4_K_M.gguf --host 127.0.0.1 --port 18088 -c 512 > $HOME/llama-server.log 2>&1 &",
       "exit_code": 0,
-      "elapsed_ms": 131.01349999487866,
+      "elapsed_ms": 147.5114999921061,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:14:42Z",
-      "time_local": "2026-08-27T01:14:42+0900"
+      "time_utc": "2026-08-26T16:24:49Z",
+      "time_local": "2026-08-27T01:24:49+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 170.3871999925468,
+      "elapsed_ms": 218.0487000005087,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:14:44Z",
-      "time_local": "2026-08-27T01:14:44+0900"
+      "time_utc": "2026-08-26T16:24:51Z",
+      "time_local": "2026-08-27T01:24:51+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 216.28300000156742,
+      "elapsed_ms": 137.8270999994129,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:14:46Z",
-      "time_local": "2026-08-27T01:14:46+0900"
+      "time_utc": "2026-08-26T16:24:54Z",
+      "time_local": "2026-08-27T01:24:54+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 206.233599994448,
+      "elapsed_ms": 182.97740000707563,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:14:48Z",
-      "time_local": "2026-08-27T01:14:48+0900"
+      "time_utc": "2026-08-26T16:24:56Z",
+      "time_local": "2026-08-27T01:24:56+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 216.49439999600872,
+      "elapsed_ms": 220.62399999413174,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:14:51Z",
-      "time_local": "2026-08-27T01:14:51+0900"
+      "time_utc": "2026-08-26T16:24:58Z",
+      "time_local": "2026-08-27T01:24:58+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 114.93720000726171,
+      "elapsed_ms": 156.01979999337345,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:14:53Z",
-      "time_local": "2026-08-27T01:14:53+0900"
+      "time_utc": "2026-08-26T16:25:00Z",
+      "time_local": "2026-08-27T01:25:00+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 160.0575999909779,
+      "elapsed_ms": 116.88760000106413,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:14:55Z",
-      "time_local": "2026-08-27T01:14:55+0900"
+      "time_utc": "2026-08-26T16:25:02Z",
+      "time_local": "2026-08-27T01:25:02+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 126.10310000309255,
+      "elapsed_ms": 183.3617999946,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:14:57Z",
-      "time_local": "2026-08-27T01:14:57+0900"
+      "time_utc": "2026-08-26T16:25:04Z",
+      "time_local": "2026-08-27T01:25:04+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 156.08610000344925,
+      "elapsed_ms": 161.9418000045698,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:14:59Z",
-      "time_local": "2026-08-27T01:14:59+0900"
+      "time_utc": "2026-08-26T16:25:07Z",
+      "time_local": "2026-08-27T01:25:07+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 234.88709999946877,
+      "elapsed_ms": 131.72089999716263,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:01Z",
-      "time_local": "2026-08-27T01:15:01+0900"
+      "time_utc": "2026-08-26T16:25:09Z",
+      "time_local": "2026-08-27T01:25:09+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 274.4386999984272,
+      "elapsed_ms": 282.7095999964513,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:04Z",
-      "time_local": "2026-08-27T01:15:04+0900"
+      "time_utc": "2026-08-26T16:25:11Z",
+      "time_local": "2026-08-27T01:25:11+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 124.66479999420699,
+      "elapsed_ms": 242.80030000954866,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:06Z",
-      "time_local": "2026-08-27T01:15:06+0900"
+      "time_utc": "2026-08-26T16:25:13Z",
+      "time_local": "2026-08-27T01:25:13+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 167.27090001222678,
+      "elapsed_ms": 256.9632999948226,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:08Z",
-      "time_local": "2026-08-27T01:15:08+0900"
+      "time_utc": "2026-08-26T16:25:16Z",
+      "time_local": "2026-08-27T01:25:16+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 201.78900001337752,
+      "elapsed_ms": 206.32719999412075,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:10Z",
-      "time_local": "2026-08-27T01:15:10+0900"
+      "time_utc": "2026-08-26T16:25:18Z",
+      "time_local": "2026-08-27T01:25:18+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 183.03410000225995,
+      "elapsed_ms": 152.02799999678973,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:12Z",
-      "time_local": "2026-08-27T01:15:12+0900"
+      "time_utc": "2026-08-26T16:25:20Z",
+      "time_local": "2026-08-27T01:25:20+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 149.61439999751747,
+      "elapsed_ms": 241.65739999443758,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:15Z",
-      "time_local": "2026-08-27T01:15:15+0900"
+      "time_utc": "2026-08-26T16:25:22Z",
+      "time_local": "2026-08-27T01:25:22+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 181.4643999969121,
+      "elapsed_ms": 140.0425999891013,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:17Z",
-      "time_local": "2026-08-27T01:15:17+0900"
+      "time_utc": "2026-08-26T16:25:24Z",
+      "time_local": "2026-08-27T01:25:24+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 111.16329999640584,
+      "elapsed_ms": 172.47289999795612,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:19Z",
-      "time_local": "2026-08-27T01:15:19+0900"
+      "time_utc": "2026-08-26T16:25:26Z",
+      "time_local": "2026-08-27T01:25:26+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 201.70689999940805,
+      "elapsed_ms": 131.7989000090165,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:21Z",
-      "time_local": "2026-08-27T01:15:21+0900"
+      "time_utc": "2026-08-26T16:25:29Z",
+      "time_local": "2026-08-27T01:25:29+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 317.06560000020545,
+      "elapsed_ms": 153.83049999945797,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:23Z",
-      "time_local": "2026-08-27T01:15:23+0900"
+      "time_utc": "2026-08-26T16:25:31Z",
+      "time_local": "2026-08-27T01:25:31+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 298.46610000822693,
+      "elapsed_ms": 158.0000999965705,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:26Z",
-      "time_local": "2026-08-27T01:15:26+0900"
+      "time_utc": "2026-08-26T16:25:33Z",
+      "time_local": "2026-08-27T01:25:33+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 199.59990000643302,
+      "elapsed_ms": 241.25600000843406,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:28Z",
-      "time_local": "2026-08-27T01:15:28+0900"
+      "time_utc": "2026-08-26T16:25:35Z",
+      "time_local": "2026-08-27T01:25:35+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 160.96000000834465,
+      "elapsed_ms": 242.92060000880156,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:30Z",
-      "time_local": "2026-08-27T01:15:30+0900"
+      "time_utc": "2026-08-26T16:25:37Z",
+      "time_local": "2026-08-27T01:25:37+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 138.79859998996835,
+      "elapsed_ms": 185.2867999987211,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:32Z",
-      "time_local": "2026-08-27T01:15:32+0900"
+      "time_utc": "2026-08-26T16:25:40Z",
+      "time_local": "2026-08-27T01:25:40+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 263.62070000323,
+      "elapsed_ms": 285.17220000503585,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:34Z",
-      "time_local": "2026-08-27T01:15:34+0900"
+      "time_utc": "2026-08-26T16:25:42Z",
+      "time_local": "2026-08-27T01:25:42+0900"
     },
     {
       "cmd": "curl -s http://127.0.0.1:18088/health || true",
       "exit_code": 0,
-      "elapsed_ms": 134.76169999921694,
+      "elapsed_ms": 187.3397000017576,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:37Z",
-      "time_local": "2026-08-27T01:15:37+0900"
+      "time_utc": "2026-08-26T16:25:44Z",
+      "time_local": "2026-08-27T01:25:44+0900"
     },
     {
       "cmd": "curl -s --fail http://127.0.0.1:18088/health",
       "exit_code": 7,
-      "elapsed_ms": 142.04580000659917,
+      "elapsed_ms": 204.62449999467935,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:37Z",
-      "time_local": "2026-08-27T01:15:37+0900"
+      "time_utc": "2026-08-26T16:25:44Z",
+      "time_local": "2026-08-27T01:25:44+0900"
     },
     {
       "cmd": "curl -s --fail http://127.0.0.1:18088/v1/models",
       "exit_code": 7,
-      "elapsed_ms": 150.27930001087952,
+      "elapsed_ms": 176.79640000278596,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:37Z",
-      "time_local": "2026-08-27T01:15:37+0900"
+      "time_utc": "2026-08-26T16:25:44Z",
+      "time_local": "2026-08-27T01:25:44+0900"
     },
     {
       "cmd": "curl -s --fail -X POST http://127.0.0.1:18088/v1/chat/completions -H 'Content-Type: application/json' -d '{\"messages\":[{\"role\":\"user\",\"content\":\"Reply with exactly: TERMUX_CHAT_OK\"}],\"max_tokens\":16,\"temperature\":0.0}'",
       "exit_code": 7,
-      "elapsed_ms": 203.85320000059437,
+      "elapsed_ms": 158.49089999392163,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:37Z",
-      "time_local": "2026-08-27T01:15:37+0900"
+      "time_utc": "2026-08-26T16:25:45Z",
+      "time_local": "2026-08-27T01:25:45+0900"
     },
     {
       "cmd": "curl -s --no-buffer -X POST http://127.0.0.1:18088/v1/chat/completions -H 'Content-Type: application/json' -d '{\"messages\":[{\"role\":\"user\",\"content\":\"Reply with exactly: TERMUX_STREAM_OK\"}],\"max_tokens\":16,\"stream\":true}'",
       "exit_code": 7,
-      "elapsed_ms": 158.88600000471342,
+      "elapsed_ms": 168.61219999555033,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:37Z",
-      "time_local": "2026-08-27T01:15:37+0900"
+      "time_utc": "2026-08-26T16:25:45Z",
+      "time_local": "2026-08-27T01:25:45+0900"
     },
     {
       "cmd": "pkill -9 llama-server || true",
       "exit_code": 0,
-      "elapsed_ms": 146.3008999999147,
+      "elapsed_ms": 229.95829999854323,
       "stdout": "",
       "stderr": "",
-      "time_utc": "2026-08-26T16:15:37Z",
-      "time_local": "2026-08-27T01:15:37+0900"
+      "time_utc": "2026-08-26T16:25:45Z",
+      "time_local": "2026-08-27T01:25:45+0900"
     }
   ]
 }

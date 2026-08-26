@@ -109,6 +109,8 @@ cmake -B build \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_FLAGS="$OPT_FLAGS" \
     -DCMAKE_CXX_FLAGS="$OPT_FLAGS" \
+    -DCMAKE_INSTALL_RPATH="\$ORIGIN" \
+    -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
     -DGGML_BUILD_TESTS=OFF \
     -DGGML_BUILD_EXAMPLES=OFF \
     -DLLAMA_BUILD_SERVER=ON
@@ -174,7 +176,9 @@ EOF
     echo "  [termux-llamacpp] Installed $name and build receipt: $final_receipt"
 }
 
-echo "  [termux-llamacpp] Installing compiled binaries to $BIN_DIR..."
+echo "  [termux-llamacpp] Installing compiled binaries and shared libraries to $BIN_DIR..."
+# Copy all built shared libraries so dynaminc linker resolves dependencies
+find build -name "*.so*" -type f -exec cp -a {} "$BIN_DIR/" \; 2>/dev/null || true
 install_binary "llama-server"
 install_binary "llama-cli"
 

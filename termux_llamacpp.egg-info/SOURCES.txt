@@ -47,6 +47,7 @@ js/src/models.ts
 js/src/runtime.ts
 js/src/server.ts
 scripts/download_prebuilt.py
+scripts/find_built_so.py
 scripts/generate_and_verify_report.py
 scripts/install.sh
 scripts/probe_real_device.py
