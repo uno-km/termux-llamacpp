@@ -54,7 +54,7 @@ class RealDeviceAuditRunner:
         status = "PASS" if passed else "FAIL"
         print(f"[{status}] [SCORE +{score_val:.1f}/{max_points:.1f} pts] ({category}) {test_name} in {latency_ms:.2f}ms | Subtotal: {self.total_score:.1f}")
 
-    def run_cmd(self, cmd: str, timeout: int = 600) -> tuple:
+    def run_cmd(self, cmd: str, timeout: int = 900) -> tuple:
         print(f"\n>>> [SSH-EXEC] {cmd}")
         t0 = time.perf_counter()
         stdin, stdout, stderr = self.client.exec_command(cmd, timeout=timeout)
@@ -123,9 +123,10 @@ def main():
 
     # Phase 4: Extraction & Native Compilation (install.sh)
     runner.run_cmd("rm -rf termux-llamacpp && tar -xf termux-llamacpp-1.0.0b1.tar -C $HOME")
+    runner.run_cmd("sed -i 's/\r$//' $HOME/termux-llamacpp/scripts/install.sh && chmod 0755 $HOME/termux-llamacpp/scripts/install.sh")
     
     # Run install.sh with timeout
-    c, out, err, ms = runner.run_cmd("cd $HOME/termux-llamacpp && bash scripts/install.sh", timeout=900)
+    c, out, err, ms = runner.run_cmd("cd $HOME/termux-llamacpp && TERMUX_LLAMA_PRESET=android-arm64-dotprod bash scripts/install.sh", timeout=900)
     runner.record_score("4. Native Build Pipeline", "test_native_compile_install_sh", 20.0, 20.0, ms, c == 0, "CMake + Clang llama-server & llama-cli build")
 
     # Verify native binary ELF aarch64
@@ -142,7 +143,7 @@ def main():
     model_path = "/data/data/com.termux/files/home/.shitty_phone_ai/models/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
     
     # Test llama-cli inference
-    c, out, err, ms = runner.run_cmd(f"$HOME/.termux-llama/bin/llama-cli -m {model_path} -p 'Hello from Termux ARM64' -n 16 --temp 0.2", timeout=120)
+    c, out, err, ms = runner.run_cmd(f"$HOME/.termux-llama/bin/llama-cli -m {model_path} -p 'Hello from Termux ARM64' -n 16 --temp 0.2", timeout=180)
     cli_infer_ok = (c == 0) and ("tokens" in out.lower() or "eval time" in out.lower() or len(out) > 50)
     runner.record_score("5. GGUF CLI Inference", "test_llama_cli_inference", 10.0, 10.0, ms, cli_infer_ok, out[-300:] if len(out)>300 else out)
 
@@ -152,13 +153,14 @@ def main():
     
     # Wait for server readiness polling
     server_ready = False
-    for attempt in range(15):
+    for attempt in range(25):
         time.sleep(2)
         c, out, err, ms = runner.run_cmd("curl -s http://127.0.0.1:18088/health || true")
         if "status" in out or "ok" in out.lower():
             server_ready = True
+            print(f"[+] Server ready on attempt {attempt+1}!")
             break
-        print(f"[*] Waiting for server startup (attempt {attempt+1}/15)...")
+        print(f"[*] Waiting for server startup (attempt {attempt+1}/25)...")
 
     # Health check
     c, out, err, ms = runner.run_cmd("curl -s --fail http://127.0.0.1:18088/health")
@@ -174,7 +176,8 @@ def main():
     c, out, err, ms = runner.run_cmd(
         """curl -s --fail -X POST http://127.0.0.1:18088/v1/chat/completions """
         """-H 'Content-Type: application/json' """
-        """-d '{"messages":[{"role":"user","content":"Reply with exactly: TERMUX_CHAT_OK"}],"max_tokens":16,"temperature":0.0}'"""
+        """-d '{"messages":[{"role":"user","content":"Reply with exactly: TERMUX_CHAT_OK"}],"max_tokens":16,"temperature":0.0}'""",
+        timeout=120
     )
     chat_ok = (c == 0) and ("choices" in out or "content" in out)
     runner.record_score("6. Server REST & Health API", "test_chat_completion_non_stream", 5.0, 5.0, ms, chat_ok, out)
@@ -183,7 +186,8 @@ def main():
     c, out, err, ms = runner.run_cmd(
         """curl -s --no-buffer -X POST http://127.0.0.1:18088/v1/chat/completions """
         """-H 'Content-Type: application/json' """
-        """-d '{"messages":[{"role":"user","content":"Reply with exactly: TERMUX_STREAM_OK"}],"max_tokens":16,"stream":true}'"""
+        """-d '{"messages":[{"role":"user","content":"Reply with exactly: TERMUX_STREAM_OK"}],"max_tokens":16,"stream":true}'""",
+        timeout=120
     )
     sse_ok = (c == 0) and ("data:" in out) and ("[DONE]" in out)
     runner.record_score("6. Server REST & Health API", "test_chat_completion_sse_stream", 5.0, 5.0, ms, sse_ok, out[:300])

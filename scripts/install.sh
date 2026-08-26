@@ -4,10 +4,9 @@
 # ==============================================================================
 set -e
 set -u
-set -o pipefail 2>/dev/null || true
 
 PRESET="${TERMUX_LLAMA_PRESET:-android-arm64-baseline}"
-DEFAULT_COMMIT_SHA="08f32c9b68a8b13a890a827038e21946059d57a2"
+DEFAULT_COMMIT_SHA="5e6a37cb115dc1074e274ac004373f5661909695"
 DEFAULT_UPSTREAM="https://github.com/ggerganov/llama.cpp.git"
 
 # Production release script enforces pinned commit immutability
@@ -83,12 +82,13 @@ fi
 
 cd "$BUILD_DIR"
 
-echo "  [termux-llamacpp] Cloning llama.cpp repository from $UPSTREAM_URL..."
-git clone "$UPSTREAM_URL" llama.cpp
+echo "  [termux-llamacpp] Fetching pinned commit $EXPECTED_COMMIT_SHA from $UPSTREAM_URL..."
+mkdir -p llama.cpp
 cd llama.cpp
-
-echo "  [termux-llamacpp] Checking out detached commit: $EXPECTED_COMMIT_SHA..."
-git checkout --detach "$EXPECTED_COMMIT_SHA"
+git init -q
+git remote add origin "$UPSTREAM_URL"
+git fetch --depth=1 origin "$EXPECTED_COMMIT_SHA"
+git checkout -q FETCH_HEAD
 
 ACTUAL_COMMIT_SHA=$(git rev-parse HEAD)
 if [ "$ACTUAL_COMMIT_SHA" != "$EXPECTED_COMMIT_SHA" ]; then

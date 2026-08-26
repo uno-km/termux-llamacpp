@@ -38,8 +38,8 @@
 
 ```
 dist/
-├── termux_llamacpp-1.0.0b1-py3-none-any.whl (SHA-256: 04C03F8FF3E73DB9A4075D04AAE8D9EB72EC6BD5F6FD247F7AECB368E4811AA1)
-└── termux_llamacpp-1.0.0b1.tar.gz           (SHA-256: 8FD4D4A3978C679D6F40DBB8E2089EF3362FCE23BB799F0D4492BD4C754D9418)
+├── termux_llamacpp-1.0.0b1-py3-none-any.whl (SHA-256: 7AA81BF340735992CD345459B9365F11F51D61615E4FDD0DFF8EF43FAA2C1BAC)
+└── termux_llamacpp-1.0.0b1.tar.gz           (SHA-256: 5B80F28B8DF8CA206C0FE7941600089495D137293E0CB5C75886FB0D085BB477)
 ```
 
 ### Wheel 패키지 내부 구성 검증 (`zipfile -l`)
@@ -172,10 +172,9 @@ setup()
 # ==============================================================================
 set -e
 set -u
-set -o pipefail 2>/dev/null || true
 
 PRESET="${TERMUX_LLAMA_PRESET:-android-arm64-baseline}"
-DEFAULT_COMMIT_SHA="08f32c9b68a8b13a890a827038e21946059d57a2"
+DEFAULT_COMMIT_SHA="5e6a37cb115dc1074e274ac004373f5661909695"
 DEFAULT_UPSTREAM="https://github.com/ggerganov/llama.cpp.git"
 
 # Production release script enforces pinned commit immutability
@@ -251,12 +250,13 @@ fi
 
 cd "$BUILD_DIR"
 
-echo "  [termux-llamacpp] Cloning llama.cpp repository from $UPSTREAM_URL..."
-git clone "$UPSTREAM_URL" llama.cpp
+echo "  [termux-llamacpp] Fetching pinned commit $EXPECTED_COMMIT_SHA from $UPSTREAM_URL..."
+mkdir -p llama.cpp
 cd llama.cpp
-
-echo "  [termux-llamacpp] Checking out detached commit: $EXPECTED_COMMIT_SHA..."
-git checkout --detach "$EXPECTED_COMMIT_SHA"
+git init -q
+git remote add origin "$UPSTREAM_URL"
+git fetch --depth=1 origin "$EXPECTED_COMMIT_SHA"
+git checkout -q FETCH_HEAD
 
 ACTUAL_COMMIT_SHA=$(git rev-parse HEAD)
 if [ "$ACTUAL_COMMIT_SHA" != "$EXPECTED_COMMIT_SHA" ]; then
@@ -1083,8 +1083,8 @@ def save_signed_model_manifest(
   "package_version": "1.0.0b1",
   "status": "Development Status :: 4 - Beta",
   "pyproject_toml_sha256": "164FB8F0720110F2B08F000F93343012FD7D8DDCE8E86F43AC8A09F6A5F904E1",
-  "wheel_sha256": "04C03F8FF3E73DB9A4075D04AAE8D9EB72EC6BD5F6FD247F7AECB368E4811AA1",
-  "sdist_sha256": "8FD4D4A3978C679D6F40DBB8E2089EF3362FCE23BB799F0D4492BD4C754D9418",
+  "wheel_sha256": "7AA81BF340735992CD345459B9365F11F51D61615E4FDD0DFF8EF43FAA2C1BAC",
+  "sdist_sha256": "5B80F28B8DF8CA206C0FE7941600089495D137293E0CB5C75886FB0D085BB477",
   "tests": {
     "total": 34,
     "passed": 34,
