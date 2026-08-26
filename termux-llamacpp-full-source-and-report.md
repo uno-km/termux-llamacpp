@@ -38,8 +38,8 @@
 
 ```
 dist/
-├── termux_llamacpp-1.0.0b1-py3-none-any.whl (SHA-256: 54F9117BA77786DF84290171371EAAD47DF44DDF775AB224C581E8B1C124D7E6)
-└── termux_llamacpp-1.0.0b1.tar.gz           (SHA-256: 86BFF9C0D7BC599F6ACAA9DE3567090C90B87F70931B756242513572F4AE5E13)
+├── termux_llamacpp-1.0.0b1-py3-none-any.whl (SHA-256: 04C03F8FF3E73DB9A4075D04AAE8D9EB72EC6BD5F6FD247F7AECB368E4811AA1)
+└── termux_llamacpp-1.0.0b1.tar.gz           (SHA-256: 8FD4D4A3978C679D6F40DBB8E2089EF3362FCE23BB799F0D4492BD4C754D9418)
 ```
 
 ### Wheel 패키지 내부 구성 검증 (`zipfile -l`)
@@ -170,7 +170,9 @@ setup()
 # ==============================================================================
 # termux-llamacpp: Pinned 40-Char Git Commit Native Build & Installation Pipeline
 # ==============================================================================
-set -euo pipefail
+set -e
+set -u
+set -o pipefail 2>/dev/null || true
 
 PRESET="${TERMUX_LLAMA_PRESET:-android-arm64-baseline}"
 DEFAULT_COMMIT_SHA="08f32c9b68a8b13a890a827038e21946059d57a2"
@@ -1081,8 +1083,8 @@ def save_signed_model_manifest(
   "package_version": "1.0.0b1",
   "status": "Development Status :: 4 - Beta",
   "pyproject_toml_sha256": "164FB8F0720110F2B08F000F93343012FD7D8DDCE8E86F43AC8A09F6A5F904E1",
-  "wheel_sha256": "54F9117BA77786DF84290171371EAAD47DF44DDF775AB224C581E8B1C124D7E6",
-  "sdist_sha256": "86BFF9C0D7BC599F6ACAA9DE3567090C90B87F70931B756242513572F4AE5E13",
+  "wheel_sha256": "04C03F8FF3E73DB9A4075D04AAE8D9EB72EC6BD5F6FD247F7AECB368E4811AA1",
+  "sdist_sha256": "8FD4D4A3978C679D6F40DBB8E2089EF3362FCE23BB799F0D4492BD4C754D9418",
   "tests": {
     "total": 34,
     "passed": 34,

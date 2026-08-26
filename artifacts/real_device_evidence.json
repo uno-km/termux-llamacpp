@@ -1,0 +1,404 @@
+{
+  "device": "Samsung Galaxy S20+ (SM-G986N)",
+  "host": "125.132.13.175",
+  "port": 58020,
+  "user": "u0_a172",
+  "total_score": 30.0,
+  "scores": {
+    "test_archive_hash_match": {
+      "category": "1. Archive Transfer & Integrity",
+      "score": 10.0,
+      "max": 10.0,
+      "latency_ms": 90.29270001337864,
+      "passed": true,
+      "details": "TAR: B2FB084FBDEBE36E70D62EBB02BC548A2FF496EBEEA5C8417D0A8FCDED5C14C9, WHL: 54F9117BA77786DF84290171371EAAD47DF44DDF775AB224C581E8B1C124D7E6"
+    },
+    "test_arm64_architecture": {
+      "category": "2. Environment & HW Architecture",
+      "score": 10.0,
+      "max": 10.0,
+      "latency_ms": 187.38040000607725,
+      "passed": true,
+      "details": "ARM64 Android Termux Confirmed"
+    },
+    "test_wheel_installation": {
+      "category": "3. Python Wheel Installation",
+      "score": 10.0,
+      "max": 10.0,
+      "latency_ms": 729.6522999968147,
+      "passed": true,
+      "details": "termux-llamacpp pip install"
+    },
+    "test_cli_entrypoint": {
+      "category": "3. Python Wheel Installation",
+      "score": 0.0,
+      "max": 10.0,
+      "latency_ms": 407.23320000688545,
+      "passed": false,
+      "details": "CLI Entrypoint & HW detection"
+    },
+    "test_native_compile_install_sh": {
+      "category": "4. Native Build Pipeline",
+      "score": 0.0,
+      "max": 20.0,
+      "latency_ms": 134.65910000377335,
+      "passed": false,
+      "details": "CMake + Clang llama-server & llama-cli build"
+    },
+    "test_elf_aarch64_format": {
+      "category": "4. Native Build Pipeline",
+      "score": 0.0,
+      "max": 10.0,
+      "latency_ms": 127.89550000161398,
+      "passed": false,
+      "details": "/data/data/com.termux/files/home/.termux-llama/bin/llama-server: cannot open `/data/data/com.termux/files/home/.termux-llama/bin/llama-server' (No such file or directory)\n/data/data/com.termux/files/home/.termux-llama/bin/llama-cli:    cannot open `/data/data/com.termux/files/home/.termux-llama/bin/llama-cli' (No such file or directory)\n"
+    },
+    "test_build_receipt_provenance": {
+      "category": "4. Native Build Pipeline",
+      "score": 0.0,
+      "max": 10.0,
+      "latency_ms": 201.34040000266396,
+      "passed": false,
+      "details": ""
+    },
+    "test_llama_cli_inference": {
+      "category": "5. GGUF CLI Inference",
+      "score": 0.0,
+      "max": 10.0,
+      "latency_ms": 152.35699999902863,
+      "passed": false,
+      "details": ""
+    },
+    "test_http_health_endpoint": {
+      "category": "6. Server REST & Health API",
+      "score": 0.0,
+      "max": 5.0,
+      "latency_ms": 145.7698000012897,
+      "passed": false,
+      "details": ""
+    },
+    "test_v1_models_discovery": {
+      "category": "6. Server REST & Health API",
+      "score": 0.0,
+      "max": 5.0,
+      "latency_ms": 139.4575000012992,
+      "passed": false,
+      "details": ""
+    },
+    "test_chat_completion_non_stream": {
+      "category": "6. Server REST & Health API",
+      "score": 0.0,
+      "max": 5.0,
+      "latency_ms": 220.17220000270754,
+      "passed": false,
+      "details": ""
+    },
+    "test_chat_completion_sse_stream": {
+      "category": "6. Server REST & Health API",
+      "score": 0.0,
+      "max": 5.0,
+      "latency_ms": 165.80050000629853,
+      "passed": false,
+      "details": ""
+    }
+  },
+  "logs": [
+    {
+      "cmd": "sha256sum termux-llamacpp-1.0.0b1.tar termux_llamacpp-1.0.0b1-py3-none-any.whl",
+      "exit_code": 0,
+      "elapsed_ms": 90.29270001337864,
+      "stdout": "b2fb084fbdebe36e70d62ebb02bc548a2ff496ebeea5c8417d0a8fcded5c14c9  termux-llamacpp-1.0.0b1.tar\n54f9117ba77786df84290171371eaad47df44ddf775ab224c581e8b1c124d7e6  termux_llamacpp-1.0.0b1-py3-none-any.whl\n",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:12Z",
+      "time_local": "2026-08-27T01:10:12+0900"
+    },
+    {
+      "cmd": "uname -m && getprop ro.product.cpu.abi",
+      "exit_code": 0,
+      "elapsed_ms": 187.38040000607725,
+      "stdout": "aarch64\narm64-v8a\n",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:13Z",
+      "time_local": "2026-08-27T01:10:13+0900"
+    },
+    {
+      "cmd": "pkg install -y file clang cmake ninja git python python-pip openssl jq coreutils tar || true",
+      "exit_code": 0,
+      "elapsed_ms": 2474.203399993712,
+      "stdout": "No mirror or mirror group selected. You might want to select one by running 'termux-change-repo'\nChecking availability of current mirror:\n[*] https://mirrors.cqupt.edu.cn/termux/termux-main: ok\nReading package lists...\nBuilding dependency tree...\nReading state information...\nclang is already the newest version (21.1.8-3).\ncmake is already the newest version (4.4.2).\nninja is already the newest version (1.13.2).\ngit is already the newest version (2.55.0).\npython is already the newest version (3.14.6-1).\npython-pip is already the newest version (26.2.1).\nopenssl is already the newest version (1:3.6.3).\njq is already the newest version (1.8.2).\ncoreutils is already the newest version (9.11-1).\ntar is already the newest version (1.35-3).\nThe following additional packages will be installed:\n  libmagic\nThe following NEW packages will be installed:\n  file libmagic\n0 upgraded, 2 newly installed, 0 to remove and 91 not upgraded.\nNeed to get 414 kB of archives.\nAfter this operation, 11.1 MB of additional disk space will be used.\nGet:1 https://mirrors.cqupt.edu.cn/termux/termux-main stable/main aarch64 libmagic aarch64 5.48-3 [397 kB]\nGet:2 https://mirrors.cqupt.edu.cn/termux/termux-main stable/main aarch64 file aarch64 5.48-3 [17.5 kB]\nFetched 414 kB in 1s (301 kB/s)\nSelecting previously unselected package libmagic.\r\n(Reading database ... \r(Reading database ... 5%\r(Reading database ... 10%\r(Reading database ... 15%\r(Reading database ... 20%\r(Reading database ... 25%\r(Reading database ... 30%\r(Reading database ... 35%\r(Reading database ... 40%\r(Reading database ... 45%\r(Reading database ... 50%\r(Reading database ... 55%\r(Reading database ... 60%\r(Reading database ... 65%\r(Reading database ... 70%\r(Reading database ... 75%\r(Reading database ... 80%\r(Reading database ... 85%\r(Reading database ... 90%\r(Reading database ... 95%\r(Reading database ... 100%\r(Reading database ... 57766 files and directories currently installed.)\r\nPreparing to unpack .../libmagic_5.48-3_aarch64.deb ...\r\nUnpacking libmagic (5.48-3) ...\r\nSelecting previously unselected package file.\r\nPreparing to unpack .../file_5.48-3_aarch64.deb ...\r\nUnpacking file (5.48-3) ...\r\nSetting up libmagic (5.48-3) ...\r\nSetting up file (5.48-3) ...\r\n",
+      "stderr": "\nWARNING: apt does not have a stable CLI interface. Use with caution in scripts.\n\n",
+      "time_utc": "2026-08-26T16:10:15Z",
+      "time_local": "2026-08-27T01:10:15+0900"
+    },
+    {
+      "cmd": "pip install requests tqdm",
+      "exit_code": 0,
+      "elapsed_ms": 1917.5434000062523,
+      "stdout": "Collecting requests\n  Using cached requests-2.34.2-py3-none-any.whl.metadata (4.8 kB)\nCollecting tqdm\n  Using cached tqdm-4.70.0-py3-none-any.whl.metadata (57 kB)\nCollecting charset_normalizer<4,>=2 (from requests)\n  Downloading charset_normalizer-3.5.1-cp314-cp314-android_24_arm64_v8a.whl.metadata (45 kB)\nCollecting idna<4,>=2.5 (from requests)\n  Using cached idna-3.19-py3-none-any.whl.metadata (9.2 kB)\nCollecting urllib3<3,>=1.26 (from requests)\n  Downloading urllib3-2.7.0-py3-none-any.whl.metadata (6.9 kB)\nCollecting certifi>=2023.5.7 (from requests)\n  Using cached certifi-2026.7.22-py3-none-any.whl.metadata (2.5 kB)\nDownloading requests-2.34.2-py3-none-any.whl (73 kB)\nDownloading charset_normalizer-3.5.1-cp314-cp314-android_24_arm64_v8a.whl (212 kB)\nUsing cached idna-3.19-py3-none-any.whl (68 kB)\nDownloading urllib3-2.7.0-py3-none-any.whl (131 kB)\nUsing cached tqdm-4.70.0-py3-none-any.whl (80 kB)\nUsing cached certifi-2026.7.22-py3-none-any.whl (136 kB)\nInstalling collected packages: urllib3, tqdm, idna, charset_normalizer, certifi, requests\n\nSuccessfully installed certifi-2026.7.22 charset_normalizer-3.5.1 idna-3.19 requests-2.34.2 tqdm-4.70.0 urllib3-2.7.0\n",
+      "stderr": "ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\ntermux-llamacpp 1.0.0b1 requires cryptography>=42.0.0, which is not installed.\n",
+      "time_utc": "2026-08-26T16:10:17Z",
+      "time_local": "2026-08-27T01:10:17+0900"
+    },
+    {
+      "cmd": "pip install --no-deps --force-reinstall termux_llamacpp-1.0.0b1-py3-none-any.whl",
+      "exit_code": 0,
+      "elapsed_ms": 729.6522999968147,
+      "stdout": "Processing ./termux_llamacpp-1.0.0b1-py3-none-any.whl\nInstalling collected packages: termux-llamacpp\n  Attempting uninstall: termux-llamacpp\n    Found existing installation: termux-llamacpp 1.0.0b1\n    Uninstalling termux-llamacpp-1.0.0b1:\n      Successfully uninstalled termux-llamacpp-1.0.0b1\nSuccessfully installed termux-llamacpp-1.0.0b1\n",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:18Z",
+      "time_local": "2026-08-27T01:10:18+0900"
+    },
+    {
+      "cmd": "termux-llama --version && termux-llama hardware",
+      "exit_code": 2,
+      "elapsed_ms": 407.23320000688545,
+      "stdout": "",
+      "stderr": "usage: termux-llama [-h]\n                    {install,download,serve,find,list,models,presets,doctor} ...\ntermux-llama: error: unrecognized arguments: --version\n",
+      "time_utc": "2026-08-26T16:10:18Z",
+      "time_local": "2026-08-27T01:10:18+0900"
+    },
+    {
+      "cmd": "rm -rf termux-llamacpp && tar -xf termux-llamacpp-1.0.0b1.tar -C $HOME",
+      "exit_code": 0,
+      "elapsed_ms": 155.01869999570772,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:18Z",
+      "time_local": "2026-08-27T01:10:18+0900"
+    },
+    {
+      "cmd": "cd $HOME/termux-llamacpp && bash scripts/install.sh",
+      "exit_code": 2,
+      "elapsed_ms": 134.65910000377335,
+      "stdout": "",
+      "stderr": "scripts/install.sh: line 5: set: pipefail\r: invalid option name\n",
+      "time_utc": "2026-08-26T16:10:18Z",
+      "time_local": "2026-08-27T01:10:18+0900"
+    },
+    {
+      "cmd": "file $HOME/.termux-llama/bin/llama-server $HOME/.termux-llama/bin/llama-cli",
+      "exit_code": 0,
+      "elapsed_ms": 127.89550000161398,
+      "stdout": "/data/data/com.termux/files/home/.termux-llama/bin/llama-server: cannot open `/data/data/com.termux/files/home/.termux-llama/bin/llama-server' (No such file or directory)\n/data/data/com.termux/files/home/.termux-llama/bin/llama-cli:    cannot open `/data/data/com.termux/files/home/.termux-llama/bin/llama-cli' (No such file or directory)\n",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:18Z",
+      "time_local": "2026-08-27T01:10:18+0900"
+    },
+    {
+      "cmd": "cat $HOME/.termux-llama/bin/llama-server.build-receipt.json",
+      "exit_code": 1,
+      "elapsed_ms": 201.34040000266396,
+      "stdout": "",
+      "stderr": "cat: /data/data/com.termux/files/home/.termux-llama/bin/llama-server.build-receipt.json: No such file or directory\n",
+      "time_utc": "2026-08-26T16:10:19Z",
+      "time_local": "2026-08-27T01:10:19+0900"
+    },
+    {
+      "cmd": "$HOME/.termux-llama/bin/llama-cli -m /data/data/com.termux/files/home/.shitty_phone_ai/models/Llama-3.2-3B-Instruct-Q4_K_M.gguf -p 'Hello from Termux ARM64' -n 16 --temp 0.2",
+      "exit_code": 127,
+      "elapsed_ms": 152.35699999902863,
+      "stdout": "",
+      "stderr": "/data/data/com.termux/files/usr/bin/bash: line 1: /data/data/com.termux/files/home/.termux-llama/bin/llama-cli: No such file or directory\n",
+      "time_utc": "2026-08-26T16:10:19Z",
+      "time_local": "2026-08-27T01:10:19+0900"
+    },
+    {
+      "cmd": "pkill -9 llama-server || true",
+      "exit_code": 0,
+      "elapsed_ms": 169.75949998595752,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:19Z",
+      "time_local": "2026-08-27T01:10:19+0900"
+    },
+    {
+      "cmd": "$HOME/.termux-llama/bin/llama-server -m /data/data/com.termux/files/home/.shitty_phone_ai/models/Llama-3.2-3B-Instruct-Q4_K_M.gguf --host 127.0.0.1 --port 18088 -c 512 > $HOME/llama-server.log 2>&1 &",
+      "exit_code": 0,
+      "elapsed_ms": 130.39249999565072,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:19Z",
+      "time_local": "2026-08-27T01:10:19+0900"
+    },
+    {
+      "cmd": "curl -s http://127.0.0.1:18088/health || true",
+      "exit_code": 0,
+      "elapsed_ms": 170.16319998947438,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:21Z",
+      "time_local": "2026-08-27T01:10:21+0900"
+    },
+    {
+      "cmd": "curl -s http://127.0.0.1:18088/health || true",
+      "exit_code": 0,
+      "elapsed_ms": 402.5835999927949,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:24Z",
+      "time_local": "2026-08-27T01:10:24+0900"
+    },
+    {
+      "cmd": "curl -s http://127.0.0.1:18088/health || true",
+      "exit_code": 0,
+      "elapsed_ms": 296.54300000402145,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:26Z",
+      "time_local": "2026-08-27T01:10:26+0900"
+    },
+    {
+      "cmd": "curl -s http://127.0.0.1:18088/health || true",
+      "exit_code": 0,
+      "elapsed_ms": 185.3045000025304,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:28Z",
+      "time_local": "2026-08-27T01:10:28+0900"
+    },
+    {
+      "cmd": "curl -s http://127.0.0.1:18088/health || true",
+      "exit_code": 0,
+      "elapsed_ms": 120.75349999940954,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:30Z",
+      "time_local": "2026-08-27T01:10:30+0900"
+    },
+    {
+      "cmd": "curl -s http://127.0.0.1:18088/health || true",
+      "exit_code": 0,
+      "elapsed_ms": 115.05819999729283,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:32Z",
+      "time_local": "2026-08-27T01:10:32+0900"
+    },
+    {
+      "cmd": "curl -s http://127.0.0.1:18088/health || true",
+      "exit_code": 0,
+      "elapsed_ms": 157.78449999925215,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:35Z",
+      "time_local": "2026-08-27T01:10:35+0900"
+    },
+    {
+      "cmd": "curl -s http://127.0.0.1:18088/health || true",
+      "exit_code": 0,
+      "elapsed_ms": 154.77029999601655,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:37Z",
+      "time_local": "2026-08-27T01:10:37+0900"
+    },
+    {
+      "cmd": "curl -s http://127.0.0.1:18088/health || true",
+      "exit_code": 0,
+      "elapsed_ms": 170.19210000580642,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:39Z",
+      "time_local": "2026-08-27T01:10:39+0900"
+    },
+    {
+      "cmd": "curl -s http://127.0.0.1:18088/health || true",
+      "exit_code": 0,
+      "elapsed_ms": 116.7074999975739,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:41Z",
+      "time_local": "2026-08-27T01:10:41+0900"
+    },
+    {
+      "cmd": "curl -s http://127.0.0.1:18088/health || true",
+      "exit_code": 0,
+      "elapsed_ms": 153.8892999960808,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:43Z",
+      "time_local": "2026-08-27T01:10:43+0900"
+    },
+    {
+      "cmd": "curl -s http://127.0.0.1:18088/health || true",
+      "exit_code": 0,
+      "elapsed_ms": 157.27150000748225,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:45Z",
+      "time_local": "2026-08-27T01:10:45+0900"
+    },
+    {
+      "cmd": "curl -s http://127.0.0.1:18088/health || true",
+      "exit_code": 0,
+      "elapsed_ms": 221.3082999951439,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:48Z",
+      "time_local": "2026-08-27T01:10:48+0900"
+    },
+    {
+      "cmd": "curl -s http://127.0.0.1:18088/health || true",
+      "exit_code": 0,
+      "elapsed_ms": 190.89089999033604,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:50Z",
+      "time_local": "2026-08-27T01:10:50+0900"
+    },
+    {
+      "cmd": "curl -s http://127.0.0.1:18088/health || true",
+      "exit_code": 0,
+      "elapsed_ms": 135.29759999073576,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:52Z",
+      "time_local": "2026-08-27T01:10:52+0900"
+    },
+    {
+      "cmd": "curl -s --fail http://127.0.0.1:18088/health",
+      "exit_code": 7,
+      "elapsed_ms": 145.7698000012897,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:52Z",
+      "time_local": "2026-08-27T01:10:52+0900"
+    },
+    {
+      "cmd": "curl -s --fail http://127.0.0.1:18088/v1/models",
+      "exit_code": 7,
+      "elapsed_ms": 139.4575000012992,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:52Z",
+      "time_local": "2026-08-27T01:10:52+0900"
+    },
+    {
+      "cmd": "curl -s --fail -X POST http://127.0.0.1:18088/v1/chat/completions -H 'Content-Type: application/json' -d '{\"messages\":[{\"role\":\"user\",\"content\":\"Reply with exactly: TERMUX_CHAT_OK\"}],\"max_tokens\":16,\"temperature\":0.0}'",
+      "exit_code": 7,
+      "elapsed_ms": 220.17220000270754,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:52Z",
+      "time_local": "2026-08-27T01:10:52+0900"
+    },
+    {
+      "cmd": "curl -s --no-buffer -X POST http://127.0.0.1:18088/v1/chat/completions -H 'Content-Type: application/json' -d '{\"messages\":[{\"role\":\"user\",\"content\":\"Reply with exactly: TERMUX_STREAM_OK\"}],\"max_tokens\":16,\"stream\":true}'",
+      "exit_code": 7,
+      "elapsed_ms": 165.80050000629853,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:53Z",
+      "time_local": "2026-08-27T01:10:53+0900"
+    },
+    {
+      "cmd": "pkill -9 llama-server || true",
+      "exit_code": 0,
+      "elapsed_ms": 144.36400000704452,
+      "stdout": "",
+      "stderr": "",
+      "time_utc": "2026-08-26T16:10:53Z",
+      "time_local": "2026-08-27T01:10:53+0900"
+    }
+  ]
+}

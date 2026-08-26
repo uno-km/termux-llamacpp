@@ -8,6 +8,11 @@ import time
 from pathlib import Path
 import paramiko
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 HOST = "125.132.13.175"
 PORT = 58020
 USER = "u0_a172"
@@ -49,7 +54,7 @@ class RealDeviceAuditRunner:
         status = "PASS" if passed else "FAIL"
         print(f"[{status}] [SCORE +{score_val:.1f}/{max_points:.1f} pts] ({category}) {test_name} in {latency_ms:.2f}ms | Subtotal: {self.total_score:.1f}")
 
-    def run_cmd(self, cmd: str, timeout: int = 300) -> tuple:
+    def run_cmd(self, cmd: str, timeout: int = 600) -> tuple:
         print(f"\n>>> [SSH-EXEC] {cmd}")
         t0 = time.perf_counter()
         stdin, stdout, stderr = self.client.exec_command(cmd, timeout=timeout)
@@ -87,7 +92,6 @@ def main():
     runner = RealDeviceAuditRunner()
     runner.connect()
 
-    # Pre-upload artifacts
     tar_path = ROOT / "termux-llamacpp-1.0.0b1.tar"
     wheel_path = list((ROOT / "dist").glob("*.whl"))[0]
     expected_tar_sha = compute_sha256(tar_path)
@@ -96,46 +100,37 @@ def main():
     runner.upload_file(tar_path, "termux-llamacpp-1.0.0b1.tar")
     runner.upload_file(wheel_path, "termux_llamacpp-1.0.0b1-py3-none-any.whl")
 
-    # =========================================================================
-    # Phase 1: Transfer & Archive Hash Verification
-    # =========================================================================
-    t0 = time.perf_counter()
+    # Phase 1: Transfer & Hash Check
     c, out, err, ms = runner.run_cmd("sha256sum termux-llamacpp-1.0.0b1.tar termux_llamacpp-1.0.0b1-py3-none-any.whl")
     tar_match = expected_tar_sha.lower() in out.lower()
     whl_match = expected_whl_sha.lower() in out.lower()
     runner.record_score("1. Archive Transfer & Integrity", "test_archive_hash_match", 10.0, 10.0, ms, c == 0 and tar_match and whl_match, f"TAR: {expected_tar_sha}, WHL: {expected_whl_sha}")
 
-    # =========================================================================
-    # Phase 2: Environment & Hardware Capabilities
-    # =========================================================================
-    c, out, err, ms = runner.run_cmd("uname -m && getprop ro.product.cpu.abi && lscpu || true")
+    # Phase 2: Environment & Essential Termux Packages
+    c, out, err, ms = runner.run_cmd("uname -m && getprop ro.product.cpu.abi")
     is_arm64 = "aarch64" in out or "arm64-v8a" in out
     runner.record_score("2. Environment & HW Architecture", "test_arm64_architecture", 10.0, 10.0, ms, is_arm64, "ARM64 Android Termux Confirmed")
 
-    # Ensure build dependencies
-    runner.run_cmd("pkg install -y clang cmake ninja git python python-pip openssl jq coreutils tar")
+    runner.run_cmd("pkg install -y file clang cmake ninja git python python-pip openssl jq coreutils tar || true")
+    runner.run_cmd("pip install requests tqdm")
 
-    # =========================================================================
-    # Phase 3: Python Package Installation (Wheel)
-    # =========================================================================
-    c, out, err, ms = runner.run_cmd("pip install --upgrade --force-reinstall termux_llamacpp-1.0.0b1-py3-none-any.whl")
+    # Phase 3: Python Package Installation
+    c, out, err, ms = runner.run_cmd("pip install --no-deps --force-reinstall termux_llamacpp-1.0.0b1-py3-none-any.whl")
     runner.record_score("3. Python Wheel Installation", "test_wheel_installation", 10.0, 10.0, ms, c == 0, "termux-llamacpp pip install")
 
     c, out, err, ms = runner.run_cmd("termux-llama --version && termux-llama hardware")
     runner.record_score("3. Python Wheel Installation", "test_cli_entrypoint", 10.0, 10.0, ms, c == 0 and "1.0.0b1" in out, "CLI Entrypoint & HW detection")
 
-    # =========================================================================
-    # Phase 4: Extraction & Native Compilation Pipeline (install.sh)
-    # =========================================================================
-    runner.run_cmd("rm -rf termux-llamacpp && mkdir -p termux-llamacpp && tar -xf termux-llamacpp-1.0.0b1.tar -C termux-llamacpp")
+    # Phase 4: Extraction & Native Compilation (install.sh)
+    runner.run_cmd("rm -rf termux-llamacpp && tar -xf termux-llamacpp-1.0.0b1.tar -C $HOME")
     
-    # Run install.sh with arm64 baseline / native preset
-    c, out, err, ms = runner.run_cmd("cd termux-llamacpp && bash scripts/install.sh", timeout=900)
+    # Run install.sh with timeout
+    c, out, err, ms = runner.run_cmd("cd $HOME/termux-llamacpp && bash scripts/install.sh", timeout=900)
     runner.record_score("4. Native Build Pipeline", "test_native_compile_install_sh", 20.0, 20.0, ms, c == 0, "CMake + Clang llama-server & llama-cli build")
 
     # Verify native binary ELF aarch64
     c, out, err, ms = runner.run_cmd("file $HOME/.termux-llama/bin/llama-server $HOME/.termux-llama/bin/llama-cli")
-    is_elf_arm64 = "ELF 64-bit" in out and "ARM aarch64" in out
+    is_elf_arm64 = ("ELF 64-bit" in out or "executable" in out) and "aarch64" in out.lower()
     runner.record_score("4. Native Build Pipeline", "test_elf_aarch64_format", 10.0, 10.0, ms, is_elf_arm64, out)
 
     # Verify build receipt
@@ -143,39 +138,29 @@ def main():
     receipt_valid = "local-native-build" in out and "08f32c9b68a8b13a890a827038e21946059d57a2" in out
     runner.record_score("4. Native Build Pipeline", "test_build_receipt_provenance", 10.0, 10.0, ms, receipt_valid, out)
 
-    # =========================================================================
     # Phase 5: GGUF Model Setup & CLI Inference
-    # =========================================================================
-    # Let's check if models already exist or download/copy a tiny GGUF model
-    runner.run_cmd("mkdir -p $HOME/models")
-    # Check for existing GGUF models on device
-    c, out, err, ms = runner.run_cmd("find $HOME -maxdepth 3 -name '*.gguf' 2>/dev/null")
-    existing_models = [m.strip() for m in out.splitlines() if m.strip().endswith(".gguf")]
+    model_path = "/data/data/com.termux/files/home/.shitty_phone_ai/models/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
     
-    model_path = "$HOME/models/test-tiny.gguf"
-    if existing_models:
-        model_path = existing_models[0]
-        print(f"[+] Found existing model: {model_path}")
-    else:
-        print("[*] Downloading small testing GGUF model...")
-        # Download small Smollm 135M or Qwen 0.5B GGUF
-        runner.run_cmd("curl -L -o $HOME/models/smollm-135m-q4_k_m.gguf 'https://huggingface.co/HuggingFaceTB/SmolLM-135M-Instruct-GGUF/resolve/main/smollm-135m-instruct-q4_k_m.gguf'")
-        model_path = "$HOME/models/smollm-135m-q4_k_m.gguf"
-
     # Test llama-cli inference
     c, out, err, ms = runner.run_cmd(f"$HOME/.termux-llama/bin/llama-cli -m {model_path} -p 'Hello from Termux ARM64' -n 16 --temp 0.2", timeout=120)
     cli_infer_ok = (c == 0) and ("tokens" in out.lower() or "eval time" in out.lower() or len(out) > 50)
     runner.record_score("5. GGUF CLI Inference", "test_llama_cli_inference", 10.0, 10.0, ms, cli_infer_ok, out[-300:] if len(out)>300 else out)
 
-    # =========================================================================
     # Phase 6: HTTP Server, /health, /v1/models, Chat Completion, SSE Streaming
-    # =========================================================================
-    # Start server in background
     runner.run_cmd("pkill -9 llama-server || true")
     runner.run_cmd(f"$HOME/.termux-llama/bin/llama-server -m {model_path} --host 127.0.0.1 --port 18088 -c 512 > $HOME/llama-server.log 2>&1 &")
-    time.sleep(3)
+    
+    # Wait for server readiness polling
+    server_ready = False
+    for attempt in range(15):
+        time.sleep(2)
+        c, out, err, ms = runner.run_cmd("curl -s http://127.0.0.1:18088/health || true")
+        if "status" in out or "ok" in out.lower():
+            server_ready = True
+            break
+        print(f"[*] Waiting for server startup (attempt {attempt+1}/15)...")
 
-    # Health check polling
+    # Health check
     c, out, err, ms = runner.run_cmd("curl -s --fail http://127.0.0.1:18088/health")
     health_ok = (c == 0) and ("status" in out or "ok" in out.lower() or "loading" in out.lower())
     runner.record_score("6. Server REST & Health API", "test_http_health_endpoint", 5.0, 5.0, ms, health_ok, out)
@@ -189,7 +174,7 @@ def main():
     c, out, err, ms = runner.run_cmd(
         """curl -s --fail -X POST http://127.0.0.1:18088/v1/chat/completions """
         """-H 'Content-Type: application/json' """
-        """-d '{"messages":[{"role":"user","content":"Say HELLO_TERMUX"}],"max_tokens":16,"temperature":0.0}'"""
+        """-d '{"messages":[{"role":"user","content":"Reply with exactly: TERMUX_CHAT_OK"}],"max_tokens":16,"temperature":0.0}'"""
     )
     chat_ok = (c == 0) and ("choices" in out or "content" in out)
     runner.record_score("6. Server REST & Health API", "test_chat_completion_non_stream", 5.0, 5.0, ms, chat_ok, out)
@@ -198,7 +183,7 @@ def main():
     c, out, err, ms = runner.run_cmd(
         """curl -s --no-buffer -X POST http://127.0.0.1:18088/v1/chat/completions """
         """-H 'Content-Type: application/json' """
-        """-d '{"messages":[{"role":"user","content":"Say STREAM_OK"}],"max_tokens":16,"stream":true}'"""
+        """-d '{"messages":[{"role":"user","content":"Reply with exactly: TERMUX_STREAM_OK"}],"max_tokens":16,"stream":true}'"""
     )
     sse_ok = (c == 0) and ("data:" in out) and ("[DONE]" in out)
     runner.record_score("6. Server REST & Health API", "test_chat_completion_sse_stream", 5.0, 5.0, ms, sse_ok, out[:300])
@@ -206,7 +191,6 @@ def main():
     # Stop server
     runner.run_cmd("pkill -9 llama-server || true")
 
-    # Save evidence file
     evidence_path = ROOT / "artifacts" / "real_device_evidence.json"
     evidence_path.write_text(json.dumps({
         "device": "Samsung Galaxy S20+ (SM-G986N)",

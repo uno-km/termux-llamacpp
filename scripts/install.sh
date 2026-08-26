@@ -2,7 +2,9 @@
 # ==============================================================================
 # termux-llamacpp: Pinned 40-Char Git Commit Native Build & Installation Pipeline
 # ==============================================================================
-set -euo pipefail
+set -e
+set -u
+set -o pipefail 2>/dev/null || true
 
 PRESET="${TERMUX_LLAMA_PRESET:-android-arm64-baseline}"
 DEFAULT_COMMIT_SHA="08f32c9b68a8b13a890a827038e21946059d57a2"
