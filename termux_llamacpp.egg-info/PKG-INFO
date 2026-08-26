@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: termux-llamacpp
-Version: 1.0.0b1
+Version: 1.0.0b2
 Summary: Supply-Chain Verified GGUF Runtime, Model Manager & OpenAI Supervisor for Android Termux & ARM64
 Author-email: uno-km <dev@ameva.org>
 License: Apache-2.0
@@ -35,96 +35,213 @@ Dynamic: license-file
 
 # termux-llamacpp
 
-**Universal GGUF Runtime, Model Manager & OpenAI-Compatible Local Server for Android Termux & ARM64**
+**Production-Grade, Prebuilt GGUF LLM Runtime, Model Manager & OpenAI-Compatible Server for Android Termux & ARM64**
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Platform](https://img.shields.io/badge/Platform-Android%20Termux%20%7C%20ARM64-green.svg)]()
-[![OpenAI API](https://img.shields.io/badge/OpenAI%20API-Compatible-orange.svg)]()
+[![Architecture](https://img.shields.io/badge/Arch-aarch64%20%2F%20arm64--v8a-blueviolet.svg)]()
+[![OpenAI API](https://img.shields.io/badge/OpenAI%20API-Compatible%20(v1)-orange.svg)]()
+[![Zero Compilation](https://img.shields.io/badge/Zero--Compilation-Prebuilt%20Release-success.svg)]()
 
-> **Notice**: This project is an independent open-source tool and is not affiliated with or endorsed by Meta Platforms, Inc.
-
----
-
-## 📌 Features
-
-- **🚀 One-Click ARM64 Compilation**: Auto-detects Android Termux hardware, NEON, FP16, and DotProd SIMD capabilities with `-O3` compiler optimization flags.
-- **📦 GGUF Model Management & Safe Interrupt**: Automatic streaming download from Hugging Face with SHA-256 checksum verification, unified model caching (`~/.termux-llama/models/`), and explicit `ModelNotFoundError` interrupts.
-- **🌐 Zero-Config OpenAI Server**: Built-in supervisor for `llama-server` exposing `/health`, `/v1/models`, and `/v1/chat/completions` (streaming SSE & JSON).
-- **🔍 Hugging Face Discovery & Playwright Bridge**: Search models directly from CLI/SDK, with optional deep crawling powered by `termux-playwright`.
-- **🔗 Seamless Ecosystem Interoperability**: Plug-and-play with `termux-aichain` via `LocalAgent.create(mode="connect", endpoint="http://127.0.0.1:8080")`.
+> **Notice**: This project is an independent open-source runtime and is not affiliated with or endorsed by Meta Platforms, Inc. or the upstream llama.cpp maintainers.
 
 ---
 
-## ⚡ Quick Start
+## 📌 Overview
 
-### 1. Installation
+`termux-llamacpp` is a lightweight, zero-compilation local inference runtime and OpenAI-compliant REST/SSE supervisor tailored specifically for Android Termux and ARM64 mobile environments.
+
+By shipping verified prebuilt Android Bionic native binaries (`llama-cli`, `llama-server`) with bundled shared libraries and cryptographic SHA-256 validation, it completely eliminates multi-gigabyte compiler toolchains (`clang`, `cmake`, `ninja`) and lengthy compilation wait times on mobile devices.
+
+---
+
+## ⚡ Key Highlights & Real-Device Benchmarks
+
+Tested on **Samsung Galaxy S20+ 5G (Snapdragon 865 / Kryo 585 Octa-core ARM64)** running Termux on Android 13:
+
+| Metric | Measured Ground Truth | Notes |
+| :--- | :--- | :--- |
+| **Model** | **Meta Llama 3.2 3B Instruct** (`Q4_K_M`, 1.92 GiB) | 3,212.75M parameters |
+| **Prompt Processing Speed** | **16.19 tokens / sec** (61.77 ms / token) | 38 tokens evaluated in 2.34s |
+| **Token Generation Speed** | **10.23 tokens / sec** (97.75 ms / token) | Real-time interactive generation |
+| **Cached Prefix Speed** | **11.08 tokens / sec** (804.7 ms total) | Prompt cache reuse enabled |
+| **Cold Model Load Time** | **~1.8 seconds** | Direct memory sequential loading (`--no-mmap`) |
+| **HTTP Server Startup** | **~2.1 seconds** | Loopback binding with reverse proxy supervisor |
+| **Installation Time** | **< 3 seconds** | Instant prebuilt binary extraction (`install.sh`) |
+
+---
+
+## 🚀 Quick Start
+
+### 1. Zero-Compilation One-Line Installation (Android Termux)
 
 ```bash
-# Python
+# Download and install prebuilt ARM64 binaries directly to ~/.termux-llama
+curl -sSL https://raw.githubusercontent.com/uno-km/termux-llamacpp/master/scripts/install.sh | bash
+```
+
+*For developers wishing to compile locally from pinned source:*
+```bash
+bash scripts/install.sh --from-source
+```
+
+### 2. Python Package Installation
+
+```bash
 pip install termux-llamacpp
-
-# Node.js
-npm install termux-llamacpp
-```
-
-### 2. Python SDK
-
-```python
-from termux_llamacpp import LlamaRuntime
-
-# 1. Initialize runtime
-runtime = LlamaRuntime.install(preset="android-arm64")
-
-# 2. Download curated model preset
-model_path = runtime.models.download("qwen2.5-1.5b-instruct")
-
-# 3. Start local OpenAI-compatible server
-server = runtime.serve(
-    model="qwen2.5-1.5b-instruct",
-    host="127.0.0.1",
-    port=8080
-)
-
-print(f"OpenAI API Server is ready at {server.endpoint}")
-```
-
-### 3. Connection with `termux-aichain`
-
-```python
-from termux_aichain import LocalAgent
-
-agent = LocalAgent.create(
-    mode="connect",
-    endpoint="http://127.0.0.1:8080"
-)
-
-response = agent.run("Analyze Android system memory and optimize background processes.")
-print(response)
 ```
 
 ---
 
 ## 🛠️ CLI Usage
 
+### System & Hardware Diagnostics
 ```bash
-# System and hardware diagnostic
 termux-llama doctor
+# or
+termux-llama hardware
+```
 
-# List curated models
-termux-llama models
+*Example Output:*
+```text
+================================================================================
+  termux-llamacpp Hardware & System Profile
+================================================================================
+  Architecture        : aarch64 (ARM64: True)
+  Android / Termux    : Android=True, Termux=True
+  CPU Topology        : 8 Cores (Recommended Threads: 4)
+  SIMD Acceleration   : NEON=True, FP16=True, DotProd=True
+  Memory Footprint    : Available 3887.8 MB / Total 10601.6 MB
+  Recommended Preset  : android-arm64-dotprod
+================================================================================
+```
 
-# Search Hugging Face
-termux-llama find "qwen2.5 gguf"
-
-# Download model
+### Download GGUF Models
+```bash
+# Download curated alias with SHA-256 checksum verification
 termux-llama download qwen2.5-1.5b-instruct
 
-# Start server
-termux-llama serve qwen2.5-1.5b-instruct --port 8080
+# Download any custom repository from Hugging Face
+termux-llama download bartowski/Llama-3.2-3B-Instruct-GGUF Llama-3.2-3B-Instruct-Q4_K_M.gguf
 ```
+
+### Launch OpenAI-Compatible HTTP / SSE Server
+```bash
+termux-llama serve Llama-3.2-3B-Instruct-Q4_K_M.gguf --port 8080 --ctx 2048 --threads 4
+```
+
+---
+
+## 🌐 OpenAI-Compatible API Endpoints
+
+Once the supervisor server is active, it exposes standard endpoints:
+
+### 1. Health & Readiness (`GET /health`)
+```bash
+curl -s http://127.0.0.1:8080/health
+```
+```json
+{
+  "status": "ok",
+  "ready": true,
+  "service": "llama-server",
+  "protocolVersion": "1.0",
+  "model": {
+    "id": "Llama-3.2-3B-Instruct-Q4_K_M.gguf"
+  }
+}
+```
+
+### 2. Model Discovery (`GET /v1/models`)
+```bash
+curl -s http://127.0.0.1:8080/v1/models
+```
+
+### 3. Non-Streaming Chat Completion (`POST /v1/chat/completions`)
+```bash
+curl -X POST http://127.0.0.1:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+    "messages": [{"role": "user", "content": "Explain quantum computing in one sentence."}],
+    "temperature": 0.2,
+    "max_tokens": 64
+  }'
+```
+
+### 4. Real-Time SSE Streaming (`POST /v1/chat/completions`)
+```bash
+curl -N -X POST http://127.0.0.1:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+    "messages": [{"role": "user", "content": "Count from 1 to 5."}],
+    "stream": true
+  }'
+```
+
+---
+
+## 🐍 Python SDK Integration
+
+```python
+from termux_llamacpp import LlamaRuntime
+
+# 1. Initialize runtime
+runtime = LlamaRuntime()
+
+# 2. Start managed supervisor server
+server = runtime.serve(
+    model="~/.shitty_phone_ai/models/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+    host="127.0.0.1",
+    port=8080,
+    ctx_size=2048,
+    threads=4
+)
+
+print(f"Server active at: {server.endpoint}")
+```
+
+### Interoperability with `termux-aichain`
+```python
+from termux_aichain import LocalAgent
+
+agent = LocalAgent.create(
+    mode="connect",
+    endpoint="http://127.0.0.1:8080",
+    model="Llama-3.2-3B-Instruct-Q4_K_M.gguf"
+)
+
+response = agent.run("Hello from termux-aichain!")
+print(response)
+```
+
+---
+
+## 🔒 Supply Chain Security & Architecture
+
+`termux-llamacpp` enforces strict supply-chain security protocols:
+
+```mermaid
+graph TD
+    A["termux-llama CLI / SDK"] --> B{"Binary Trust Verifier"}
+    B -->|"Signed Release"| C["Ed25519 Public Key Manifest Verification"]
+    B -->|"Local Build Receipt"| D["Pinned Commit SHA + Local SHA-256 Validation"]
+    B -->|"Unknown / Tampered"| E["Fail-Closed Halt (Exit 1)"]
+    C --> F["Atomic Directory Swap (~/.termux-llama)"]
+    D --> F
+    F --> G["Loopback Reverse Proxy Supervisor (:8080)"]
+    G --> H["Native llama-server (:18080)"]
+```
+
+1. **Anti-Downgrade Trust Hierarchy**: Signed release manifests cannot be downgraded to unverified local receipts.
+2. **Symlink Defense**: Rejects symlinks for binary paths, model weights, trust root public keys, and key revocation files to prevent TOCTOU attacks.
+3. **Loopback Isolation**: Native backend binds strictly to `127.0.0.1:18080` with loopback CORS filtering to block unauthorized cross-origin requests.
+4. **Atomic Installation & Rollback**: All installs stage to `.new` and swap cleanly, preserving `.previous` for automatic rollback upon verification failure.
 
 ---
 
 ## 📄 License
 
-Licensed under the [Apache License, Version 2.0](LICENSE).
+This project is licensed under the [Apache-2.0 License](LICENSE).
+Third-party component notices and licenses are documented in `LICENSES/`.

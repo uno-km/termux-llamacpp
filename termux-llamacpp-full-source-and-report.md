@@ -38,8 +38,8 @@
 
 ```
 dist/
-├── termux_llamacpp-1.0.0b1-py3-none-any.whl (SHA-256: 5DBFD785247886E9B6FC9F24105B243001CF2CE890D7B7687FBC3F0B8DFAA1E6)
-└── termux_llamacpp-1.0.0b1.tar.gz           (SHA-256: F8D59B2D61CD14D7D1660D2F49D72E1F69A206116213D3CC084F9D1C6ABD405C)
+├── termux_llamacpp-1.0.0b2-py3-none-any.whl (SHA-256: 0C0754C6F7CA0D77633746BA387D662F31A12B5378E12E73D3ACE3B386F7C8A5)
+└── termux_llamacpp-1.0.0b2.tar.gz           (SHA-256: 7BE0CA45593E58A9D9CF1670862881A75D7B888CFE2785A2B2221655C610A39F)
 ```
 
 ### Wheel 패키지 내부 구성 검증 (`zipfile -l`)
@@ -94,7 +94,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "termux-llamacpp"
-version = "1.0.0b1"
+version = "1.0.0b2"
 description = "Supply-Chain Verified GGUF Runtime, Model Manager & OpenAI Supervisor for Android Termux & ARM64"
 readme = "README.md"
 authors = [{ name = "uno-km", email = "dev@ameva.org" }]
@@ -1084,9 +1084,9 @@ def save_signed_model_manifest(
   "llama_cpp_upstream_commit_pinned": "5e6a37cb115dc1074e274ac004373f5661909695",
   "package_version": "1.0.0b1",
   "status": "Development Status :: 4 - Beta",
-  "pyproject_toml_sha256": "164FB8F0720110F2B08F000F93343012FD7D8DDCE8E86F43AC8A09F6A5F904E1",
-  "wheel_sha256": "5DBFD785247886E9B6FC9F24105B243001CF2CE890D7B7687FBC3F0B8DFAA1E6",
-  "sdist_sha256": "F8D59B2D61CD14D7D1660D2F49D72E1F69A206116213D3CC084F9D1C6ABD405C",
+  "pyproject_toml_sha256": "6B0D35CC752C65C5133F468BD308A7FD0785644603C07362C4F2251A0DFDF7A7",
+  "wheel_sha256": "0C0754C6F7CA0D77633746BA387D662F31A12B5378E12E73D3ACE3B386F7C8A5",
+  "sdist_sha256": "7BE0CA45593E58A9D9CF1670862881A75D7B888CFE2785A2B2221655C610A39F",
   "tests": {
     "total": 34,
     "passed": 34,
