@@ -9,11 +9,13 @@
 
 ### 현재 공식 판정 상태 (Ground Truth)
 - **배포 버전**: `1.0.0b1` (`Development Status :: 4 - Beta`)
-- **보안 검증 상태**: **주요 P0/P1 보안 결함 조치 완료 및 공급망 신뢰 계층 분류 적용, 유닛 테스트 31건 전수 통과**
+- **보안 검증 상태**: **주요 P0/P1 보안 결함 조치 완료 및 공급망 신뢰 계층 분류 적용, 유닛 테스트 34건 전수 통과**
 - **공개 배포 상태**: **내부 패키징 및 보안 통합 검증용 1.0.0b1 Beta 유효 / Android Termux ARM64 실기기(Galaxy S20 등) 원격 빌드, 모델 로드, readiness, completion 및 실시간 추론 스트리밍 부하 테스트 후 정식 Production 승인**
 
-> **[신뢰 계층 및 공급망 경계 계약]**:  
-> `termux-llamacpp 1.0.0b1`은 공식 release binary에 대해 Ed25519 signed manifest 검증(`signed-release`)을 적용하고, Termux 로컬 build에는 pinned llama.cpp commit 및 SHA-256 build receipt 검증(`local-build-receipt`)을 적용합니다. 로컬 receipt는 설치 일관성과 binary 단독 변경을 탐지하지만, 동일 사용자 권한으로 binary와 receipt를 함께 변경하는 위협에 대한 외부 attestation은 제공하지 않습니다. Binary 및 receipt 파일은 각각 atomic rename으로 설치되며, 설치 중단으로 두 파일이 불일치할 경우 실행 전 SHA-256 및 커밋 검증에 의해 fail-closed 처리됩니다. 현재 공개 Production 승인은 Android Termux ARM64 실기기 native build, signed GGUF load, readiness, completion, SSE streaming, concurrent startup 및 설치 중단 복구 검증 후 결정합니다.
+> **[공식 릴리스 계약 및 보안 경계 명시]**:  
+> `termux-llamacpp 1.0.0b1`은 official release binary에 대해 trusted Ed25519 key로 서명된 manifest, pinned llama.cpp commit 및 실측 SHA-256을 검증하며, signed manifest가 존재할 경우 검증 실패를 local build receipt로 우회하지 않습니다. Production local build는 pinned commit과 binary SHA-256을 기록한 receipt를 사용합니다. Development source override build는 별도의 `development-local-build` 등급으로 분류하며, 명시적 execution policy(`allow_development_build=True`)가 없으면 실행을 거부합니다.  
+> Binary와 receipt는 각각 atomic rename으로 설치됩니다. 두 파일 전체에 대한 다중 파일 원자성은 제공하지 않으며, 설치 중단으로 파일 조합이 불일치하면 실행 전 hash 및 commit 검증에서 fail-closed 처리됩니다. Binary, model 및 sidecar manifest/receipt의 symbolic link는 거부하지만, 동일 사용자 권한이 경로를 검증과 실행 사이에 교체하는 모든 TOCTOU 공격에 대한 완전한 외부 보호는 제공하지 않습니다.  
+> 현재 버전은 host-side unit 및 packaging regression 34건을 통과한 내부 Beta입니다. 공개 Production 승인은 Android Termux ARM64 실기기 native build, verified GGUF load, readiness, completion, SSE streaming, concurrent startup, installation interruption recovery 및 release artifact signing 검증 후 결정합니다.
 
 ---
 
@@ -21,21 +23,14 @@
 
 | 결함 ID | 식별된 결함 및 문제점 | 수정 및 적용된 Fail-Closed 구현 내용 |
 | :--- | :--- | :--- |
-| **P0-1** | 로컬 빌드 바이너리가 공식 서명 부재로 실행 불가했던 문제 | **이원화 검증 및 신뢰 계층 분류**: 공식 배포 바이너리는 `*.manifest.json` 전자서명을 검증(`signed-release`), `install.sh`를 통한 로컬 빌드는 SHA-256 + Pinned Commit이 기록된 `*.build-receipt.json`을 자동 생성하여 무결성을 검증(`local-build-receipt`). `BinaryVerificationResult`로 신뢰 등급을 반환하고 `/health`에 투명하게 노출. |
-| **Anti-Downgrade** | 서명 manifest 실패 시 receipt로 다운그레이드 방지 | `*.manifest.json`이 존재하는 경우 반드시 Ed25519 서명 검증을 통과해야 하며, 서명 검증 실패 시 receipt가 있더라도 절대 fallback하지 않고 차단 (Fail-Closed). |
-| **Symlink 방어** | 심링크를 통한 TOCTOU 파일 경로 하이재킹 방어 | `verify_binary_pre_execution()` 및 `verify_model_pre_execution()`에서 `is_symlink()` 검사를 수행하여 심링크 바이너리 및 모델 로드를 원천 거부. |
-| **Commit Pin 강제** | `verify_manifest_and_binary()`의 커밋 핀 누락 | 바이너리 매니페스트 검증 시 `LLAMA_CPP_PINNED_COMMIT`과의 `hmac.compare_digest` 대조를 필수 강제. |
-| **Dev Override 격리** | 설치 스크립트 소스 오버라이드 격리 | `scripts/install.sh`에서 `TERMUX_LLAMA_ALLOW_DEVELOPMENT_MODE=1`이 명시되지 않은 임의 오버라이드를 거부하고, 오버라이드 빌드는 `development-local-build`로 분리. |
-| **Git 무결성 검증** | 소스 트리 수정 및 오염 방어 | `install.sh`에서 `mktemp` 격리 작업공간 생성, checkout 후 `git diff --exit-code`, `git status --porcelain`, `git fsck --full` 무결성 전수 검증. |
-| **P0-2** | 모델 manifest 생성 함수의 기본 서명 부재 결함 | `build_model_manifest_payload()`와 `save_signed_model_manifest()`로 분리. 저장 전 `TrustStore`를 통해 Ed25519 서명을 검증하며 무효 서명 저장 원천 차단. |
-| **P0-3** | 모델 검증 임의 우회 파라미터 잔존 | `verify_model_manifest=False` 우회 옵션을 전면 제거하고, 모든 모델 로드 시 `.manifest.json` 존재, 바이트 크기, SHA-256 실측 해시 재계산 및 `hmac.compare_digest` 대조를 필수 수행. |
-| **P0-4** | Readiness probe의 model.id 누락 허용 결함 | `expected_model_id` 지정 시 실제 model.id가 누락되거나 불일치하면 즉각 `False` 반환 (Fail-Closed). |
-| **P0-5** | llama-server 실제 health schema 호환성 | `/health` 200 확인 후 `/v1/models` 엔드포인트를 추가 조회하여 로드된 모델 목록에 `expected_model_id`가 존재하는지 교차 대조. |
-| **P1-1** | Build Receipt Schema 엄격 검증 | `artifact_type == "local-native-build"` 강제 및 허용된 build preset(`android-arm64-baseline`, `android-arm64-dotprod`, `android-arm64-native`, `host-native`) 및 필수 필드 타입 엄격 검증. |
-| **P1-2** | Centralized Schema Validator 적용 | `require_non_empty_string()` 헬퍼를 통해 매니페스트, 영수증, 신뢰 저장소 문자열 파싱 시 `TypeError` 대신 일관된 `SecurityVerificationError` 정규화. |
-| **P1-3** | pyproject.toml 메타데이터 단일화 (SSOT) | `pyproject.toml`을 유일한 메타데이터 및 패키지 데이터 정의 소스로 통합하고 `setup.py`를 최소 래퍼로 축소. |
-| **P1-4** | Windows OS Lock Mock 격리 | `ProcessIdentityLock`에서 `allow_mock_lock=False`일 때 비-POSIX 환경에서 `ServerStartupError`를 발생시켜 운영 환경의 lock 보장 엄격화. |
-| **P1-5** | 소스코드 및 문서 원본 무결성 | 소스코드 내 HTML Entity 오염 검사기(`verify_wheel.py`) 및 보고서 코드 블록 검사기(`verify_report.py`)를 통해 패키징 및 문서 무결성 입증. |
+| **P0-1** | Development receipt 생성과 검증 계약의 충돌 문제 | **신뢰 계층 정책 분리**: `RECEIPT_TYPE_TO_TRUST_LEVEL` 매핑을 도입하고 `verify_binary_pre_execution()`에 `allow_development_build` 파라미터를 추가. 기본 실행에서는 `development-local-build`를 엄격히 거부하고, 명시적 개발 모드 승인 시에만 `DEVELOPMENT_BUILD` 등급으로 실행 허용. |
+| **P0-2** | 심링크 및 사이드카 경로 TOCTOU 취약 표면 | `require_regular_non_symlink_file()` 헬퍼를 도입하여 바이너리, 모델 본문뿐만 아니라 `*.manifest.json`, `*.build-receipt.json`, `*.pub`, `revoked-keys.json` 등 모든 신뢰 루트 및 사이드카의 심링크를 전면 차단. |
+| **P0-3** | 설치 스크립트 소스 오버라이드 격리 및 메타데이터 기록 | `install.sh`에서 `TERMUX_LLAMA_ALLOW_DEVELOPMENT_MODE=1`이 명시되지 않은 오버라이드를 거부하고, 오버라이드 빌드 영수증에 `source_override_used: true`, `upstream_url`, `release_eligible: false`를 명시 기록. |
+| **P1-1** | Commit Pin 검증 일관성 | `verify_manifest_and_binary()` 및 `verify_binary_pre_execution()` 모두에서 `LLAMA_CPP_PINNED_COMMIT`과의 `hmac.compare_digest` 대조를 필수 강제. |
+| **P1-2** | 고유 임시 파일명 생성 | `install.sh`에서 PID 기반 대신 `mktemp "$BIN_DIR/.${name}.bin.XXXXXXXX"` 및 `mktemp "$BIN_DIR/.${name}.receipt.XXXXXXXX"`을 사용하여 충돌 및 예측 가능성 차단. |
+| **P1-3** | Git 소스 트리 구조적 일관성 검증 | `mktemp` 격리 디렉터리에서 빌드 후 `git diff --exit-code`, `git status --porcelain`, `git fsck --full --strict` 검증을 필수 수행. |
+| **P1-4** | SSOT 메타데이터 단일화 | `pyproject.toml`을 유일한 메타데이터 및 패키지 데이터 정의 소스로 통합하고 `setup.py`를 최소 래퍼로 축소. |
+| **P1-5** | 다이제스트 체인 분리 | 업스트림 llama.cpp 커밋(`llama_cpp_upstream_commit_pinned`)과 termux-llamacpp 레포지토리 커밋(`termux_llamacpp_source_commit`), 트리 SHA(`termux_llamacpp_source_tree`)를 명확히 분리하여 `artifacts/digest-chain.json`으로 저장. |
 
 ---
 
@@ -43,8 +38,8 @@
 
 ```
 dist/
-├── termux_llamacpp-1.0.0b1-py3-none-any.whl (SHA-256: EB7AF85A6BDB231C9DA9A3EB10E8EC96D160C46400E387B64120620E7F2B9582)
-└── termux_llamacpp-1.0.0b1.tar.gz           (SHA-256: D95F217A917DED3CDD7238488980AFF0F3851DCA0ACF9C646CA6D55028127F72)
+├── termux_llamacpp-1.0.0b1-py3-none-any.whl (SHA-256: 1AF62D527F786D29AEE1BEDDE563022100E730E4339888E4E10422F7EC8B7975)
+└── termux_llamacpp-1.0.0b1.tar.gz           (SHA-256: C7AE8D285A4834F0BAC003208000E5510075DEF60EAE29299A160854C7F69CB9)
 ```
 
 ### Wheel 패키지 내부 구성 검증 (`zipfile -l`)
@@ -67,21 +62,22 @@ termux_llamacpp-1.0.0b1.dist-info/licenses/LICENSE
 termux_llamacpp-1.0.0b1.dist-info/METADATA
 termux_llamacpp-1.0.0b1.dist-info/WHEEL
 termux_llamacpp-1.0.0b1.dist-info/entry_points.txt
+termux_llamacpp-1.0.0b1.dist-info/top_level.txt
 termux_llamacpp-1.0.0b1.dist-info/RECORD
 ```
 
 ---
 
-## 4. 유닛 테스트 실행 증적 (Automated Test Evidence - 31 Tests)
+## 4. 유닛 테스트 실행 증적 (Automated Test Evidence - 34 Tests)
 
 ```text
 PS C:\Users\GAME\Desktop\uno-km\dev\termux-llamacpp> py -3 -m unittest discover -s tests -p 'test_*.py'
-..............................127.0.0.1 - - [27/Aug/2026 00:45:06] "GET /health HTTP/1.1" 200 -
-127.0.0.1 - - [27/Aug/2026 00:45:06] "POST /v1/chat/completions HTTP/1.1" 400 -
-127.0.0.1 - - [27/Aug/2026 00:45:06] "GET /invalid_route HTTP/1.1" 404 -
+.................................127.0.0.1 - - [27/Aug/2026 00:53:06] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [27/Aug/2026 00:53:06] "POST /v1/chat/completions HTTP/1.1" 400 -
+127.0.0.1 - - [27/Aug/2026 00:53:06] "GET /invalid_route HTTP/1.1" 404 -
 .
 ----------------------------------------------------------------------
-Ran 31 tests in 2.069s
+Ran 34 tests in 2.094s
 
 OK
 ```
@@ -190,10 +186,14 @@ if [ "${TERMUX_LLAMA_UNSAFE_SOURCE_OVERRIDE:-0}" = "1" ]; then
     EXPECTED_COMMIT_SHA="${LLAMA_CPP_COMMIT_SHA:-$DEFAULT_COMMIT_SHA}"
     UPSTREAM_URL="${LLAMA_CPP_UPSTREAM_URL:-$DEFAULT_UPSTREAM}"
     RECEIPT_TRUST_LEVEL="development-local-build"
+    SOURCE_OVERRIDE_USED=true
+    RELEASE_ELIGIBLE=false
 else
     readonly EXPECTED_COMMIT_SHA="$DEFAULT_COMMIT_SHA"
     readonly UPSTREAM_URL="$DEFAULT_UPSTREAM"
     RECEIPT_TRUST_LEVEL="local-native-build"
+    SOURCE_OVERRIDE_USED=false
+    RELEASE_ELIGIBLE=true
 fi
 
 BIN_DIR="${TERMUX_LLAMA_BIN_DIR:-$HOME/.termux-llama/bin}"
@@ -268,11 +268,11 @@ if [ "$ACTUAL_COMMIT_SHA" != "$EXPECTED_COMMIT_SHA" ]; then
     exit 1
 fi
 
-echo "  [termux-llamacpp] Verifying source tree cleanliness and integrity..."
+echo "  [termux-llamacpp] Verifying source tree cleanliness and structural integrity..."
 git diff --exit-code
 test -z "$(git status --porcelain --untracked-files=all)"
 git fsck --full --strict
-echo "  [termux-llamacpp] Source tree verified clean and unmodified."
+echo "  [termux-llamacpp] Source tree verified clean and structurally consistent."
 
 echo "  [termux-llamacpp] Configuring CMake..."
 cmake -B build \
@@ -298,8 +298,11 @@ install_binary() {
         exit 1
     fi
 
-    local tmp_bin="$BIN_DIR/$name.tmp.$$"
-    local tmp_receipt="$BIN_DIR/$name.build-receipt.json.tmp.$$"
+    local tmp_bin
+    local tmp_receipt
+    tmp_bin="$(mktemp "$BIN_DIR/.${name}.bin.XXXXXXXX")"
+    tmp_receipt="$(mktemp "$BIN_DIR/.${name}.receipt.XXXXXXXX")"
+
     local final_bin="$BIN_DIR/$name"
     local final_receipt="$BIN_DIR/$name.build-receipt.json"
 
@@ -322,6 +325,9 @@ install_binary() {
   "build_preset": "$PRESET",
   "sha256": "$bin_sha256",
   "llama_cpp_commit": "$EXPECTED_COMMIT_SHA",
+  "source_override_used": $SOURCE_OVERRIDE_USED,
+  "upstream_url": "$UPSTREAM_URL",
+  "release_eligible": $RELEASE_ELIGIBLE,
   "built_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 EOF
@@ -359,6 +365,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import sys
 import urllib.parse
 from dataclasses import dataclass
@@ -387,6 +394,12 @@ class BinaryTrustLevel(str, Enum):
     DEVELOPMENT_BUILD = "development-local-build"
 
 
+RECEIPT_TYPE_TO_TRUST_LEVEL = {
+    "local-native-build": BinaryTrustLevel.LOCAL_BUILD_RECEIPT,
+    "development-local-build": BinaryTrustLevel.DEVELOPMENT_BUILD,
+}
+
+
 @dataclass(frozen=True)
 class BinaryVerificationResult:
     """Immutable record of binary pre-execution verification output."""
@@ -396,6 +409,19 @@ class BinaryVerificationResult:
     artifact_filename: str
     signing_key_id: Optional[str] = None
     build_preset: Optional[str] = None
+    source_override_used: bool = False
+    upstream_url: Optional[str] = None
+
+
+def require_regular_non_symlink_file(path: Path, context: str) -> None:
+    """Strictly reject symbolic links and verify that target is an accessible regular file."""
+    try:
+        if path.is_symlink():
+            raise SecurityVerificationError(f"{context} must not be a symbolic link: '{path}'")
+        if not path.is_file():
+            raise SecurityVerificationError(f"{context} does not exist or is not a regular file: '{path}'")
+    except OSError as exc:
+        raise SecurityVerificationError(f"Unable to safely inspect {context} at '{path}': {exc}") from exc
 
 
 def require_non_empty_string(data: Dict[str, Any], field: str, context: str) -> str:
@@ -419,7 +445,8 @@ def canonicalize_json(data: Dict[str, Any]) -> bytes:
 
 
 def compute_sha256(file_path: Path, chunk_size: int = 1024 * 1024) -> str:
-    """Compute SHA-256 hash of a local file."""
+    """Compute SHA-256 hash of a regular local file."""
+    require_regular_non_symlink_file(file_path, "File for SHA-256 calculation")
     hasher = hashlib.sha256()
     with open(file_path, "rb") as f:
         for chunk in iter(lambda: f.read(chunk_size), b""):
@@ -455,7 +482,8 @@ class TrustStore:
             raise SecurityVerificationError(f"Trust directory not found: {self.trust_dir}")
 
         revoked_file = self.trust_dir / "revoked-keys.json"
-        if revoked_file.is_file():
+        if revoked_file.exists():
+            require_regular_non_symlink_file(revoked_file, "Revocation file")
             try:
                 data = json.loads(revoked_file.read_text(encoding="utf-8"))
                 if not isinstance(data, dict) or "revoked_key_ids" not in data:
@@ -476,6 +504,7 @@ class TrustStore:
             raise SecurityVerificationError(f"No trusted Ed25519 public keys found in '{self.trust_dir}'.")
 
         for pub_path in pub_files:
+            require_regular_non_symlink_file(pub_path, "Trust root public key file")
             try:
                 current_key_id = None
                 key_found = False
@@ -672,8 +701,7 @@ def verify_manifest_and_binary(
     if not verify_ed25519_signature(pub_key, canonical_bytes, signature):
         raise SecurityVerificationError(f"Ed25519 manifest signature verification failed for key '{key_id}'.")
 
-    if not temp_binary_path.is_file():
-        raise SecurityVerificationError(f"Temporary binary file '{temp_binary_path}' not found.")
+    require_regular_non_symlink_file(temp_binary_path, "Temporary staged binary")
 
     return atomic_replace_verified(
         staged_file=temp_binary_path,
@@ -688,26 +716,24 @@ def verify_binary_pre_execution(
     trust_store: Optional[TrustStore] = None,
     expected_commit: str = LLAMA_CPP_PINNED_COMMIT,
     allow_local_build_receipt: bool = True,
+    allow_development_build: bool = False,
 ) -> BinaryVerificationResult:
     """
     P0-1: Pre-Execution Native Binary Verification with Explicit Provenance Classification.
     Returns:
-      BinaryVerificationResult containing trust_level ('signed-release' or 'local-build-receipt').
+      BinaryVerificationResult containing trust_level ('signed-release', 'local-build-receipt', or 'development-local-build').
     ANTI-DOWNGRADE GUARANTEE:
       If a signed manifest exists (*.manifest.json), it MUST pass Ed25519 signature verification.
       An invalid signed manifest NEVER falls back to local build receipt.
     """
-    if binary_path.is_symlink():
-        raise SecurityVerificationError(f"Symlink native binary '{binary_path}' is forbidden.")
-
-    if not binary_path.is_file():
-        raise SecurityVerificationError(f"Required binary '{binary_path}' does not exist.")
+    require_regular_non_symlink_file(binary_path, "Native runtime binary")
 
     manifest_path = binary_path.with_suffix(binary_path.suffix + ".manifest.json")
     receipt_path = binary_path.with_suffix(binary_path.suffix + ".build-receipt.json")
 
     # 1. Official Signed Release Pathway (Highest Trust Level)
-    if manifest_path.is_file():
+    if manifest_path.exists():
+        require_regular_non_symlink_file(manifest_path, "Binary release manifest")
         if trust_store is None:
             trust_store = TrustStore()
 
@@ -763,7 +789,8 @@ def verify_binary_pre_execution(
         )
 
     # 2. Local Native Build Receipt Pathway (Consistent Local Build Trust Level)
-    if receipt_path.is_file() and allow_local_build_receipt:
+    if receipt_path.exists() and allow_local_build_receipt:
+        require_regular_non_symlink_file(receipt_path, "Local build receipt")
         try:
             receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
         except Exception as e:
@@ -778,10 +805,26 @@ def verify_binary_pre_execution(
         commit = require_non_empty_string(receipt, "llama_cpp_commit", "Build receipt")
         preset = require_non_empty_string(receipt, "build_preset", "Build receipt")
 
-        if artifact_type != "local-native-build":
+        trust_level = RECEIPT_TYPE_TO_TRUST_LEVEL.get(artifact_type)
+        if trust_level is None:
             raise SecurityVerificationError(
-                f"Build receipt artifact_type must be 'local-native-build', got '{artifact_type}'"
+                f"Unsupported build receipt artifact_type: '{artifact_type}'. "
+                f"Allowed types: {list(RECEIPT_TYPE_TO_TRUST_LEVEL.keys())}"
             )
+
+        if trust_level == BinaryTrustLevel.DEVELOPMENT_BUILD:
+            if not allow_development_build:
+                raise SecurityVerificationError(
+                    "Development build receipt ('development-local-build') is denied by current execution policy. "
+                    "Set allow_development_build=True or use a standard production build."
+                )
+            if not _COMMIT_RE.fullmatch(commit):
+                raise SecurityVerificationError(f"Invalid development commit SHA in receipt: '{commit}'")
+        else:
+            if not hmac.compare_digest(commit.lower(), expected_commit.lower()):
+                raise SecurityVerificationError(
+                    f"Local build binary commit mismatch!\nExpected: {expected_commit}\nReceipt: {commit}"
+                )
 
         if preset not in ALLOWED_BUILD_PRESETS:
             raise SecurityVerificationError(f"Unknown or untrusted build_preset in receipt: '{preset}'")
@@ -789,11 +832,6 @@ def verify_binary_pre_execution(
         if artifact_filename != binary_path.name:
             raise SecurityVerificationError(
                 f"Build receipt artifact mismatch. Expected '{binary_path.name}', got '{artifact_filename}'"
-            )
-
-        if not hmac.compare_digest(commit.lower(), expected_commit.lower()):
-            raise SecurityVerificationError(
-                f"Local build binary commit mismatch!\nExpected: {expected_commit}\nReceipt: {commit}"
             )
 
         if not _SHA256_RE.fullmatch(expected_sha):
@@ -806,11 +844,13 @@ def verify_binary_pre_execution(
             )
 
         return BinaryVerificationResult(
-            trust_level=BinaryTrustLevel.LOCAL_BUILD_RECEIPT,
+            trust_level=trust_level,
             sha256=actual_sha,
             llama_cpp_commit=commit,
             artifact_filename=artifact_filename,
             build_preset=preset,
+            source_override_used=receipt.get("source_override_used", False),
+            upstream_url=receipt.get("upstream_url"),
         )
 
     # 3. Fail-Closed if neither verified signed manifest nor build receipt is present
@@ -827,15 +867,13 @@ def verify_model_pre_execution(
     """
     P0-3: Strict Pre-Execution Signed GGUF Model Manifest & Hash Verification.
     """
-    if model_path.is_symlink():
-        raise SecurityVerificationError(f"Symlink model file '{model_path}' is forbidden.")
-
-    if not model_path.is_file():
-        raise SecurityVerificationError(f"Model file '{model_path}' does not exist.")
+    require_regular_non_symlink_file(model_path, "GGUF Model file")
 
     manifest_path = model_path.with_suffix(model_path.suffix + ".manifest.json")
-    if not manifest_path.is_file():
+    if not manifest_path.exists():
         raise SecurityVerificationError(f"Required signed model manifest is missing: {manifest_path}")
+
+    require_regular_non_symlink_file(manifest_path, "Model manifest sidecar")
 
     if trust_store is None:
         trust_store = TrustStore()
@@ -1031,14 +1069,24 @@ def save_signed_model_manifest(
 
 ```json
 {
-  "source_repository": "https://github.com/uno-km/termux-llamacpp",
-  "source_commit_pinned": "08f32c9b68a8b13a890a827038e21946059d57a2",
+  "schema_version": 1,
+  "termux_llamacpp_source_repository": "https://github.com/uno-km/termux-llamacpp",
+  "termux_llamacpp_source_commit": "f9ae9e34ac629e10ab266445e3f0751bda79f30b",
+  "termux_llamacpp_source_tree": "b1851005566d4f23eb01f97d26a803653cf06afd",
+  "working_tree_state": "clean",
+  "llama_cpp_upstream_repository": "https://github.com/ggerganov/llama.cpp.git",
+  "llama_cpp_upstream_commit_pinned": "08f32c9b68a8b13a890a827038e21946059d57a2",
   "package_version": "1.0.0b1",
   "status": "Development Status :: 4 - Beta",
-  "pyproject_toml_sha256": "4C6F4B6AA07C0D0C7DBDF6207A250886A2E44B7415494CFFFEACD25D3457D7A0",
-  "wheel_sha256": "EB7AF85A6BDB231C9DA9A3EB10E8EC96D160C46400E387B64120620E7F2B9582",
-  "sdist_sha256": "D95F217A917DED3CDD7238488980AFF0F3851DCA0ACF9C646CA6D55028127F72",
-  "test_suite_status": "31 passed, 0 failed, 0 error",
+  "pyproject_toml_sha256": "164FB8F0720110F2B08F000F93343012FD7D8DDCE8E86F43AC8A09F6A5F904E1",
+  "wheel_sha256": "1AF62D527F786D29AEE1BEDDE563022100E730E4339888E4E10422F7EC8B7975",
+  "sdist_sha256": "C7AE8D285A4834F0BAC003208000E5510075DEF60EAE29299A160854C7F69CB9",
+  "tests": {
+    "total": 34,
+    "passed": 34,
+    "failed": 0,
+    "errors": 0
+  },
   "execution_target_validation": "Internal Packaging Beta Verified / Native Android Termux ARM64 hardware testing pending"
 }
 ```

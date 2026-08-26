@@ -1,13 +1,14 @@
 {
   "schema_version": 1,
   "termux_llamacpp_source_repository": "https://github.com/uno-km/termux-llamacpp",
-  "termux_llamacpp_source_commit": "e8a719d84f17c86519448102d847192a5bc418a0",
-  "termux_llamacpp_source_tree": "clean",
+  "termux_llamacpp_source_commit": "f9ae9e34ac629e10ab266445e3f0751bda79f30b",
+  "termux_llamacpp_source_tree": "b1851005566d4f23eb01f97d26a803653cf06afd",
+  "working_tree_state": "clean",
   "llama_cpp_upstream_repository": "https://github.com/ggerganov/llama.cpp.git",
   "llama_cpp_upstream_commit_pinned": "08f32c9b68a8b13a890a827038e21946059d57a2",
   "package_version": "1.0.0b1",
   "status": "Development Status :: 4 - Beta",
-  "pyproject_toml_sha256": "4C6F4B6AA07C0D0C7DBDF6207A250886A2E44B7415494CFFFEACD25D3457D7A0",
+  "pyproject_toml_sha256": "164FB8F0720110F2B08F000F93343012FD7D8DDCE8E86F43AC8A09F6A5F904E1",
   "wheel_sha256": "1AF62D527F786D29AEE1BEDDE563022100E730E4339888E4E10422F7EC8B7975",
   "sdist_sha256": "C7AE8D285A4834F0BAC003208000E5510075DEF60EAE29299A160854C7F69CB9",
   "tests": {
