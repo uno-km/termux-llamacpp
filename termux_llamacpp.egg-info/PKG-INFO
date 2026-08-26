@@ -1,0 +1,130 @@
+Metadata-Version: 2.4
+Name: termux-llamacpp
+Version: 1.0.0b1
+Summary: Supply-Chain Verified GGUF Runtime, Model Manager & OpenAI Supervisor for Android Termux & ARM64
+Author-email: uno-km <dev@ameva.org>
+License: Apache-2.0
+Project-URL: Homepage, https://uno-km.github.io/termux-llamacpp
+Project-URL: Repository, https://github.com/uno-km/termux-llamacpp
+Project-URL: Documentation, https://uno-km.github.io/termux-llamacpp
+Keywords: termux,llama.cpp,gguf,android,llm,arm64,openai-server,supply-chain-security
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Operating System :: Android
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Security
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: requests>=2.31.0
+Requires-Dist: tqdm>=4.66.0
+Requires-Dist: cryptography>=42.0.0
+Provides-Extra: crawler
+Requires-Dist: termux-playwright>=1.70.0; extra == "crawler"
+Provides-Extra: test
+Requires-Dist: pytest>=7.0.0; extra == "test"
+Dynamic: license-file
+
+# termux-llamacpp
+
+**Universal GGUF Runtime, Model Manager & OpenAI-Compatible Local Server for Android Termux & ARM64**
+
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Platform](https://img.shields.io/badge/Platform-Android%20Termux%20%7C%20ARM64-green.svg)]()
+[![OpenAI API](https://img.shields.io/badge/OpenAI%20API-Compatible-orange.svg)]()
+
+> **Notice**: This project is an independent open-source tool and is not affiliated with or endorsed by Meta Platforms, Inc.
+
+---
+
+## 📌 Features
+
+- **🚀 One-Click ARM64 Compilation**: Auto-detects Android Termux hardware, NEON, FP16, and DotProd SIMD capabilities with `-O3` compiler optimization flags.
+- **📦 GGUF Model Management & Safe Interrupt**: Automatic streaming download from Hugging Face with SHA-256 checksum verification, unified model caching (`~/.termux-llama/models/`), and explicit `ModelNotFoundError` interrupts.
+- **🌐 Zero-Config OpenAI Server**: Built-in supervisor for `llama-server` exposing `/health`, `/v1/models`, and `/v1/chat/completions` (streaming SSE & JSON).
+- **🔍 Hugging Face Discovery & Playwright Bridge**: Search models directly from CLI/SDK, with optional deep crawling powered by `termux-playwright`.
+- **🔗 Seamless Ecosystem Interoperability**: Plug-and-play with `termux-aichain` via `LocalAgent.create(mode="connect", endpoint="http://127.0.0.1:8080")`.
+
+---
+
+## ⚡ Quick Start
+
+### 1. Installation
+
+```bash
+# Python
+pip install termux-llamacpp
+
+# Node.js
+npm install termux-llamacpp
+```
+
+### 2. Python SDK
+
+```python
+from termux_llamacpp import LlamaRuntime
+
+# 1. Initialize runtime
+runtime = LlamaRuntime.install(preset="android-arm64")
+
+# 2. Download curated model preset
+model_path = runtime.models.download("qwen2.5-1.5b-instruct")
+
+# 3. Start local OpenAI-compatible server
+server = runtime.serve(
+    model="qwen2.5-1.5b-instruct",
+    host="127.0.0.1",
+    port=8080
+)
+
+print(f"OpenAI API Server is ready at {server.endpoint}")
+```
+
+### 3. Connection with `termux-aichain`
+
+```python
+from termux_aichain import LocalAgent
+
+agent = LocalAgent.create(
+    mode="connect",
+    endpoint="http://127.0.0.1:8080"
+)
+
+response = agent.run("Analyze Android system memory and optimize background processes.")
+print(response)
+```
+
+---
+
+## 🛠️ CLI Usage
+
+```bash
+# System and hardware diagnostic
+termux-llama doctor
+
+# List curated models
+termux-llama models
+
+# Search Hugging Face
+termux-llama find "qwen2.5 gguf"
+
+# Download model
+termux-llama download qwen2.5-1.5b-instruct
+
+# Start server
+termux-llama serve qwen2.5-1.5b-instruct --port 8080
+```
+
+---
+
+## 📄 License
+
+Licensed under the [Apache License, Version 2.0](LICENSE).

@@ -1,0 +1,89 @@
+{
+  "registry_version": "1.0",
+  "models": {
+    "qwen2.5-0.5b-instruct": {
+      "model_id": "qwen2.5-0.5b-instruct",
+      "repo_id": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+      "artifact_filename": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+      "repo_revision": "08f32c9b68a8b13a890a827038e21946059d57a2",
+      "size_mb": 398.0,
+      "quant_type": "Q4_K_M",
+      "architecture": "qwen2",
+      "license_id": "Apache-2.0",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "requires_acceptance": false,
+      "description": "Ultra-lightweight Qwen 2.5 0.5B model, ideal for low-RAM mobile devices.",
+      "min_ram_mb": 1500
+    },
+    "qwen2.5-1.5b-instruct": {
+      "model_id": "qwen2.5-1.5b-instruct",
+      "repo_id": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+      "artifact_filename": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+      "repo_revision": "08f32c9b68a8b13a890a827038e21946059d57a2",
+      "size_mb": 986.0,
+      "quant_type": "Q4_K_M",
+      "architecture": "qwen2",
+      "license_id": "Apache-2.0",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "requires_acceptance": false,
+      "description": "Balanced Qwen 2.5 1.5B model with high reasoning and coding proficiency.",
+      "min_ram_mb": 2500
+    },
+    "qwen2.5-3b-instruct": {
+      "model_id": "qwen2.5-3b-instruct",
+      "repo_id": "Qwen/Qwen2.5-3B-Instruct-GGUF",
+      "artifact_filename": "qwen2.5-3b-instruct-q4_k_m.gguf",
+      "repo_revision": "08f32c9b68a8b13a890a827038e21946059d57a2",
+      "size_mb": 1930.0,
+      "quant_type": "Q4_K_M",
+      "architecture": "qwen2",
+      "license_id": "Apache-2.0",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "requires_acceptance": false,
+      "description": "High-capability Qwen 2.5 3B model for 8GB+ RAM mobile devices.",
+      "min_ram_mb": 4500
+    },
+    "llama-3.2-1b-instruct": {
+      "model_id": "llama-3.2-1b-instruct",
+      "repo_id": "bartowski/Llama-3.2-1B-Instruct-GGUF",
+      "artifact_filename": "Llama-3.2-1B-Instruct-Q4_K_M.gguf",
+      "repo_revision": "e932906b3e945c7429188e7a82c69d82136015b6",
+      "size_mb": 881.0,
+      "quant_type": "Q4_K_M",
+      "architecture": "llama",
+      "license_id": "Llama-3.2-Community",
+      "license_url": "https://llama.meta.com/llama3/license/",
+      "requires_acceptance": true,
+      "description": "Meta Llama 3.2 1B Instruct model, optimized for mobile edge inference.",
+      "min_ram_mb": 2000
+    },
+    "llama-3.2-3b-instruct": {
+      "model_id": "llama-3.2-3b-instruct",
+      "repo_id": "bartowski/Llama-3.2-3B-Instruct-GGUF",
+      "artifact_filename": "Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+      "repo_revision": "e932906b3e945c7429188e7a82c69d82136015b6",
+      "size_mb": 2020.0,
+      "quant_type": "Q4_K_M",
+      "architecture": "llama",
+      "license_id": "Llama-3.2-Community",
+      "license_url": "https://llama.meta.com/llama3/license/",
+      "requires_acceptance": true,
+      "description": "Meta Llama 3.2 3B Instruct model, robust general purpose assistant.",
+      "min_ram_mb": 4500
+    },
+    "gemma-2-2b-it": {
+      "model_id": "gemma-2-2b-it",
+      "repo_id": "bartowski/gemma-2-2b-it-GGUF",
+      "artifact_filename": "gemma-2-2b-it-Q4_K_M.gguf",
+      "repo_revision": "c7429188e7a82c69d82136015b69c4a45ec466cf",
+      "size_mb": 1630.0,
+      "quant_type": "Q4_K_M",
+      "architecture": "gemma2",
+      "license_id": "Gemma-Terms-of-Use",
+      "license_url": "https://ai.google.dev/gemma/terms",
+      "requires_acceptance": true,
+      "description": "Google Gemma 2 2B Instruct model with high accuracy.",
+      "min_ram_mb": 3500
+    }
+  }
+}

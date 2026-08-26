@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "termux-llamacpp"
+version = "1.0.0b1"
+description = "Supply-Chain Verified GGUF Runtime, Model Manager & OpenAI Supervisor for Android Termux & ARM64"
+readme = "README.md"
+authors = [{ name = "uno-km", email = "dev@ameva.org" }]
+license = { text = "Apache-2.0" }
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Android",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Security",
+]
+keywords = ["termux", "llama.cpp", "gguf", "android", "llm", "arm64", "openai-server", "supply-chain-security"]
+requires-python = ">=3.8"
+dependencies = [
+    "requests>=2.31.0",
+    "tqdm>=4.66.0",
+    "cryptography>=42.0.0",
+]
+
+[project.optional-dependencies]
+crawler = [
+    "termux-playwright>=1.70.0",
+]
+test = [
+    "pytest>=7.0.0",
+]
+
+[project.scripts]
+termux-llama = "termux_llamacpp.cli:main"
+termux-llamacpp = "termux_llamacpp.cli:main"
+
+[project.urls]
+Homepage = "https://uno-km.github.io/termux-llamacpp"
+Repository = "https://github.com/uno-km/termux-llamacpp"
+Documentation = "https://uno-km.github.io/termux-llamacpp"
+
+[tool.setuptools.packages.find]
+include = ["termux_llamacpp", "termux_llamacpp.*"]
+
+[tool.setuptools.package-data]
+termux_llamacpp = [
+    "scripts/*.sh",
+    "registry/*.json",
+    "trust/*.pub",
+    "trust/*.json",
+]

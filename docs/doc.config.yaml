@@ -1,0 +1,38 @@
+# termux-llamacpp/docs/doc.config.yaml
+name: "termux-llamacpp"
+package_name_pypi: "termux-llamacpp"
+package_name_npm: "termux-llamacpp"
+version: "v1.0.0"
+release_name: "Production Release"
+license: "Apache-2.0"
+platform: "Android ARM64 / Linux / Termux"
+github_repo_url: "https://github.com/uno-km/termux-llamacpp"
+
+tagline_en: "Universal GGUF Runtime, Model Manager & OpenAI Server for Android Termux & ARM64"
+tagline_ko: "Android Termux 및 ARM64 환경을 위한 범용 GGUF 런타임, 모델 매니저 및 OpenAI 서버"
+
+quick_install_cmd: "pip install termux-llamacpp\n# or: npm install -g termux-llamacpp\ntermux-llama install"
+
+why_challenge_en: "Executing diverse GGUF models on mobile Android requires complex cross-compilation, manual weight caching, and delicate process supervision."
+why_challenge_ko: "모바일 안드로이드 환경에서 다양한 GGUF 모델을 실행하기 위해서는 복잡한 크로스 컴파일, 수동 가중치 캐싱 및 불안정한 프로세스 관리가 요구됩니다."
+
+description_en: "termux-llamacpp provides automated pinned-commit native compilation, verified GGUF model streaming with HTTP Range resume, PID-locked OpenAI server supervision, and termux-aichain handshake compatibility."
+description_ko: "termux-llamacpp는 고정 커밋 네이티브 자동 빌드, HTTP Range 재개 지원 GGUF 모델 다운로드, PID 락 기반 OpenAI 서버 수퍼바이저 및 termux-aichain 핸드셰이크 호환성을 제공합니다."
+
+features:
+  - title_en: "Pinned-Commit Native Compilation"
+    title_ko: "고정 커밋 네이티브 자동 빌드"
+    desc_en: "Safely builds llama.cpp from pinned release commits with baseline armv8-a and dotprod presets."
+    desc_ko: "검증된 고정 커밋에서 armv8-a 베이스라인 및 dotprod 프리셋으로 안전하게 네이티브 컴파일합니다."
+  - title_en: "GGUF Model Hub & HTTP Range Resume"
+    title_ko: "GGUF 모델 허브 및 Resume 다운로더"
+    desc_en: "Downloads curated GGUF models with SHA-256 validation, atomic rename, and sidecar manifest storage."
+    desc_ko: "SHA-256 검증, 원자적 파일 교체 및 매니페스트 저장을 통해 GGUF 모델을 안전하게 다운로드합니다."
+  - title_en: "OpenAI & termux-aichain Aligned Serving"
+    title_ko: "OpenAI 및 termux-aichain 호환 서빙"
+    desc_en: "Exposes /v1/chat/completions and handshake-compliant /health endpoints with PID locking and rollback."
+    desc_ko: "PID 락 및 롤백 라이프사이클과 함께 /v1/chat/completions 및 핸드셰이크 규격 /health 엔드포인트를 제공합니다."
+  - title_en: "Zero-Isolation Pip Packaging"
+    title_ko: "순수 Python SDK & 격리된 CLI 설치"
+    desc_en: "pip install delivers pure SDK and CLI without invasive C++ compilation during wheel setup."
+    desc_ko: "pip install 시 C++ 컴파일을 배제하고 순수 SDK와 CLI를 신속하게 배포합니다."

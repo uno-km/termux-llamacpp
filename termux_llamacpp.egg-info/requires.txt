@@ -1,0 +1,9 @@
+requests>=2.31.0
+tqdm>=4.66.0
+cryptography>=42.0.0
+
+[crawler]
+termux-playwright>=1.70.0
+
+[test]
+pytest>=7.0.0
