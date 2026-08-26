@@ -72,14 +72,10 @@ esac
 echo "  Compiler Flags: $OPT_FLAGS"
 
 if [ -n "${TERMUX_VERSION:-}" ] || [ -d "/data/data/com.termux/files/usr" ]; then
-    echo "  [Termux] Ensuring build dependencies (clang, cmake, ninja, git, python)..."
-    if ! pkg update -y; then
-        echo "[ERROR] Termux package index update failed." >&2
-        exit 1
-    fi
-    if ! pkg install -y clang cmake ninja git python; then
-        echo "[ERROR] Failed to install build toolchain packages." >&2
-        exit 1
+    echo "  [Termux] Checking build toolchain dependencies..."
+    if ! command -v clang >/dev/null 2>&1 || ! command -v cmake >/dev/null 2>&1 || ! command -v ninja >/dev/null 2>&1; then
+        echo "  [Termux] Installing build toolchain packages (clang, cmake, ninja, git, python)..."
+        pkg install -y clang cmake ninja git python || true
     fi
 fi
 
@@ -125,7 +121,13 @@ install_binary() {
         src_path="build/bin/$name"
     elif [ -f "build/$name" ]; then
         src_path="build/$name"
+    elif [ -f "build/bin/Release/$name" ]; then
+        src_path="build/bin/Release/$name"
     else
+        src_path="$(find build -name "$name" -type f -perm -111 2>/dev/null | head -n 1)"
+    fi
+
+    if [ -z "$src_path" ] || [ ! -f "$src_path" ]; then
         echo "[ERROR] Missing compiled build artifact: $name" >&2
         exit 1
     fi

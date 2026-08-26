@@ -47,7 +47,10 @@ js/src/models.ts
 js/src/runtime.ts
 js/src/server.ts
 scripts/download_prebuilt.py
+scripts/generate_and_verify_report.py
 scripts/install.sh
+scripts/probe_real_device.py
+scripts/run_real_device_test.py
 termux_llamacpp/__init__.py
 termux_llamacpp/cli.py
 termux_llamacpp/config.py
