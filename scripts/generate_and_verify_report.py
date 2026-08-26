@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
 def compute_sha256(path: Path) -> str:
     h = hashlib.sha256()
@@ -37,6 +38,8 @@ def main():
     sdist_sha = compute_sha256(sdist_path)
     pyproject_sha = compute_sha256(pyproject_path)
 
+    from termux_llamacpp.config import LLAMA_CPP_PINNED_COMMIT
+
     # 1. Update artifacts/digest-chain.json
     digest_data = {
         "schema_version": 1,
@@ -45,7 +48,7 @@ def main():
         "termux_llamacpp_source_tree": "b1851005566d4f23eb01f97d26a803653cf06afd",
         "working_tree_state": "clean",
         "llama_cpp_upstream_repository": "https://github.com/ggerganov/llama.cpp.git",
-        "llama_cpp_upstream_commit_pinned": "08f32c9b68a8b13a890a827038e21946059d57a2",
+        "llama_cpp_upstream_commit_pinned": LLAMA_CPP_PINNED_COMMIT,
         "package_version": "1.0.0b1",
         "status": "Development Status :: 4 - Beta",
         "pyproject_toml_sha256": pyproject_sha,

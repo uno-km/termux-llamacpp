@@ -46,13 +46,11 @@ js/src/index.ts
 js/src/models.ts
 js/src/runtime.ts
 js/src/server.ts
+scripts/check_git_remotes.py
 scripts/download_prebuilt.py
-scripts/find_built_so.py
 scripts/generate_and_verify_report.py
 scripts/install.sh
-scripts/probe_real_device.py
-scripts/run_real_device_test.py
-scripts/test_git_fetch.py
+scripts/setup_github_repo.py
 termux_llamacpp/__init__.py
 termux_llamacpp/cli.py
 termux_llamacpp/config.py

@@ -1,8 +1,7 @@
 {
   "device": "Samsung Galaxy S20+ (SM-G986N)",
-  "host": "125.132.13.175",
-  "port": 58020,
-  "user": "u0_a172",
+  "transport": "SSH/Termux ARM64 (Authenticated)",
+  "arch": "aarch64 / arm64-v8a",
   "total_score": 70.0,
   "scores": {
     "test_archive_hash_match": {
