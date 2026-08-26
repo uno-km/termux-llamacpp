@@ -126,7 +126,10 @@ def cmd_curated(args):
     print(f"{'Alias':<26} {'Size':<10} {'RAM':<10} {'Repo / File'}")
     print("-" * 75)
     for alias, info in CURATED_MODELS.items():
-        print(f"{alias:<26} {info['size']:<10} {info['recommended_ram']:<10} {info['repo_id']}")
+        size = getattr(info, "size", info.get("size") if isinstance(info, dict) else "")
+        ram = getattr(info, "recommended_ram", info.get("recommended_ram") if isinstance(info, dict) else "")
+        repo = getattr(info, "repo_id", info.get("repo_id") if isinstance(info, dict) else "")
+        print(f"{alias:<26} {size:<10} {ram:<10} {repo}")
     print("\nTo download, run: termux-llama download <alias>\n")
 
 
