@@ -171,9 +171,14 @@ class LlamaRuntime:
         """
         resolved_model_path = self.models.get(model)
         cli_bin = self.get_binary_path("llama-cli")
-
         if not cli_bin:
-            return f"[termux-llamacpp] Generated response for: '{prompt[:40]}...' using model {resolved_model_path.name}"
+            raise RuntimeBuildError(
+                f"Binary 'llama-cli' not found in '{self.bin_dir}' or PATH.\n"
+                f"Please install or compile the runtime first by running:\n"
+                f"  termux-llama install\n"
+                f"Or in Python:\n"
+                f"  from termux_llamacpp import LlamaRuntime; LlamaRuntime.install()"
+            )
 
         cmd = [
             str(cli_bin),

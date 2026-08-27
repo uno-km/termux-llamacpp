@@ -80,18 +80,25 @@ class LlamaRuntime:
         print(f"  Preset: {self.config.preset}")
         print("================================================================================")
 
-        script_path = Path(__file__).parent.parent / "scripts" / "install.sh"
+        # Check package-bundled script path, then local repo script path
+        script_path = Path(__file__).parent / "scripts" / "install.sh"
+        if not script_path.is_file():
+            script_path = Path(__file__).parent.parent / "scripts" / "install.sh"
+
         if script_path.is_file() and (self.hw.is_termux or self.hw.is_android or self.hw.is_arm64):
             env = os.environ.copy()
             env["TERMUX_LLAMA_PRESET"] = self.config.preset
             env["LLAMA_CPP_COMMIT"] = self.config.pinned_commit
-            env["TERMUX_LLAMA_BIN_DIR"] = str(self.bin_dir)
+            env["TERMUX_LLAMA_HOME"] = str(self.bin_dir.parent if self.bin_dir.name == "bin" else self.bin_dir)
+            cmd = ["bash", str(script_path)]
+            if force_rebuild:
+                cmd.append("--from-source")
             try:
-                subprocess.run(["bash", str(script_path)], env=env, check=True)
+                subprocess.run(cmd, env=env, check=True)
             except Exception as e:
                 raise RuntimeBuildError(
-                    f"Native build failed for preset '{self.config.preset}': {e}\n"
-                    f"Please verify clang/cmake are installed or check build logs."
+                    f"Runtime installation failed for preset '{self.config.preset}': {e}\n"
+                    f"Please check installation logs or run with --from-source."
                 ) from e
 
         # Ensure executable permissions

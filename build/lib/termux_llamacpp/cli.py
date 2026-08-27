@@ -59,94 +59,93 @@ def cmd_serve(args):
         print(f"\n[termux-llama] Server running at {server.endpoint} (Ctrl+C to stop)")
         while True:
             time.sleep(1)
-    except ModelNotFoundError as e:
-        print(e, file=sys.stderr)
-        sys.exit(1)
     except KeyboardInterrupt:
-        print("\n[termux-llama] Shutting down...")
-        if 'server' in locals():
-            server.stop()
-    except Exception as e:
-        print(f"[Error] {e}", file=sys.stderr)
+        print("\n[termux-llama] Stopping server...")
+    except TermuxLlamaError as e:
+        print(f"\n[Error] {e}", file=sys.stderr)
         sys.exit(1)
 
 
 def cmd_find(args):
-    """Search Hugging Face for GGUF models via REST API."""
+    """Search for GGUF models on Hugging Face."""
     crawler = HuggingFaceCrawler()
-    print(f"[termux-llama] Searching Hugging Face for '{args.query}'...\n")
+    print(f"[termux-llama] Searching Hugging Face for '{args.query}' (deep_crawl={args.deep})...")
     try:
-        models = crawler.discover(query=args.query, limit=args.limit, deep_crawl=args.deep)
-        print(f"{'Repository ID':<45} | {'Downloads':<10} | {'Recommended File'}")
-        print("-" * 80)
-        for m in models:
-            print(f"{m.repo_id:<45} | {m.downloads:<10,} | {m.recommended_file}")
-        print("\n다운로드 예시: termux-llama download <repo_id> <filename>")
+        results = crawler.search_models(
+            query=args.query,
+            limit=args.limit,
+            deep_crawl=args.deep,
+        )
+        if not results:
+            print("[termux-llama] No models found.")
+            return
+
+        print(f"\nFound {len(results)} GGUF models:\n")
+        for r in results:
+            likes = f"❤️ {r.likes}" if r.likes else ""
+            downloads = f"⬇️ {r.downloads}" if r.downloads else ""
+            stats = f"({likes} {downloads})".strip()
+            print(f" • {r.repo_id} {stats}")
+            if r.direct_download_url:
+                print(f"   URL: {r.direct_download_url}")
+            if r.description:
+                print(f"   Desc: {r.description[:80]}...")
+            print()
     except DependencyMissingError as e:
-        print(e, file=sys.stderr)
-        sys.exit(1)
+        print(f"\n[Warning] {e}")
+        print("Falling back to standard REST API search...")
+        results = crawler.search_models(query=args.query, limit=args.limit, deep_crawl=False)
+        for r in results:
+            print(f" • {r.repo_id}")
     except Exception as e:
-        print(f"[Error] {e}", file=sys.stderr)
+        print(f"[Error] Search failed: {e}", file=sys.stderr)
         sys.exit(1)
 
 
 def cmd_list(args):
-    """List locally cached GGUF models."""
+    """List local downloaded GGUF models in cache."""
     manager = ModelManager()
     models = manager.list_local_models()
-    print("================================================================================")
-    print(f"  Local GGUF Models in Cache ({manager.models_dir})")
-    print("================================================================================")
     if not models:
-        print("  (No GGUF models found in local cache)")
-        print("  다운로드 가이드: termux-llama download qwen2.5-1.5b-instruct")
-    else:
-        print(f"  {'Filename':<45} | {'Size':<10} | Full Path")
-        print("  " + "-" * 76)
-        for m in models:
-            size_str = f"{m['size_mb']} MB"
-            print(f"  {m['filename']:<45} | {size_str:<10} | {m['path']}")
-    print("================================================================================")
+        print("[termux-llama] No cached models found in ~/.termux-llama/models/")
+        return
+
+    print(f"\nCached GGUF Models ({len(models)}):\n")
+    for m in models:
+        size_mb = m["size_bytes"] / (1024 * 1024)
+        verified = " [VERIFIED]" if m.get("manifest_verified") else ""
+        print(f" • {m['filename']}{verified}")
+        print(f"   Size: {size_mb:.1f} MB | Model ID: {m.get('model_id', 'unknown')}")
+        print(f"   Path: {m['path']}")
+        print()
 
 
 def cmd_curated(args):
-    """List pre-configured curated model presets."""
-    print("================================================================================")
-    print("  termux-llamacpp Curated Model Presets (from registry/models.json)")
-    print("================================================================================")
-    print(f"  {'Alias':<25} | {'Size':<8} | {'Quant':<6} | Description")
-    print("  " + "-" * 76)
+    """Display curated high-performance model aliases."""
+    print("\nCurated Recommended Models for Termux & ARM64:\n")
+    print(f"{'Alias':<26} {'Size':<10} {'RAM':<10} {'Repo / File'}")
+    print("-" * 75)
     for alias, info in CURATED_MODELS.items():
-        print(f"  {alias:<25} | {info.size_mb:>6.0f}MB | {info.quant_type:<6} | {info.description}")
-    print("\n  실행 가이드:")
-    print("    termux-llama download qwen2.5-1.5b-instruct")
-    print("    termux-llama serve qwen2.5-1.5b-instruct")
-    print("================================================================================")
+        size = getattr(info, "size", info.get("size") if isinstance(info, dict) else "")
+        ram = getattr(info, "recommended_ram", info.get("recommended_ram") if isinstance(info, dict) else "")
+        repo = getattr(info, "repo_id", info.get("repo_id") if isinstance(info, dict) else "")
+        print(f"{alias:<26} {size:<10} {ram:<10} {repo}")
+    print("\nTo download, run: termux-llama download <alias>\n")
 
 
 def cmd_presets(args):
-    """List supported hardware build presets."""
-    print("================================================================================")
-    print("  Supported llama.cpp Build Presets")
-    print("================================================================================")
-    print(f"  {'Preset':<26} | {'Flags':<30} | Description")
-    print("  " + "-" * 76)
+    """List available hardware build presets."""
+    print("\nHardware Build Presets for llama.cpp:\n")
+    print(f"{'Preset':<25} {'Opt Flags':<35} {'Description'}")
+    print("-" * 80)
     for name, p in BUILD_PRESETS.items():
-        print(f"  {name:<26} | {p.cflags:<30} | {p.description}")
-    print("================================================================================")
+        print(f"{name:<25} {p['cflags']:<35} {p['description']}")
+    print()
 
 
 def cmd_doctor(args):
-    """System hardware and runtime diagnostics."""
+    """Diagnose hardware and installation environment."""
     print_hardware_summary()
-    runtime = LlamaRuntime()
-    print("  Pinned Commit       : " + LLAMA_CPP_PINNED_COMMIT)
-    print("  llama.cpp Binaries  :")
-    for b in ["llama-server", "llama-cli", "llama-quantize"]:
-        path = runtime.get_binary_path(b)
-        status = f"Found ({path})" if path else "Not Found (Run: termux-llama install)"
-        print(f"    - {b:<16}: {status}")
-    print("================================================================================\n")
 
 
 def main():
@@ -154,6 +153,7 @@ def main():
         prog="termux-llama",
         description="Universal GGUF Runtime, Model Manager & OpenAI Server for Android Termux & ARM64",
     )
+    parser.add_argument("--version", action="version", version="termux-llamacpp 1.0.0b1")
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
 
     # install
@@ -192,8 +192,9 @@ def main():
     # presets
     subparsers.add_parser("presets", help="List hardware build presets")
 
-    # doctor
+    # doctor / hardware
     subparsers.add_parser("doctor", help="Inspect hardware topology & binary status")
+    subparsers.add_parser("hardware", help="Inspect hardware topology & binary status")
 
     args = parser.parse_args()
     if not args.command:
@@ -209,6 +210,7 @@ def main():
         "models": cmd_curated,
         "presets": cmd_presets,
         "doctor": cmd_doctor,
+        "hardware": cmd_doctor,
     }
 
     fn = dispatch.get(args.command)

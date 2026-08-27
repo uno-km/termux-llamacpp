@@ -9,6 +9,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import sys
 import urllib.parse
 from dataclasses import dataclass
@@ -34,6 +35,13 @@ class BinaryTrustLevel(str, Enum):
     """Explicit provenance classification for verified native runtime binaries."""
     SIGNED_RELEASE = "signed-release"
     LOCAL_BUILD_RECEIPT = "local-build-receipt"
+    DEVELOPMENT_BUILD = "development-local-build"
+
+
+RECEIPT_TYPE_TO_TRUST_LEVEL = {
+    "local-native-build": BinaryTrustLevel.LOCAL_BUILD_RECEIPT,
+    "development-local-build": BinaryTrustLevel.DEVELOPMENT_BUILD,
+}
 
 
 @dataclass(frozen=True)
@@ -45,6 +53,19 @@ class BinaryVerificationResult:
     artifact_filename: str
     signing_key_id: Optional[str] = None
     build_preset: Optional[str] = None
+    source_override_used: bool = False
+    upstream_url: Optional[str] = None
+
+
+def require_regular_non_symlink_file(path: Path, context: str) -> None:
+    """Strictly reject symbolic links and verify that target is an accessible regular file."""
+    try:
+        if path.is_symlink():
+            raise SecurityVerificationError(f"{context} must not be a symbolic link: '{path}'")
+        if not path.is_file():
+            raise SecurityVerificationError(f"{context} does not exist or is not a regular file: '{path}'")
+    except OSError as exc:
+        raise SecurityVerificationError(f"Unable to safely inspect {context} at '{path}': {exc}") from exc
 
 
 def require_non_empty_string(data: Dict[str, Any], field: str, context: str) -> str:
@@ -58,7 +79,7 @@ def require_non_empty_string(data: Dict[str, Any], field: str, context: str) -> 
 
 
 def canonicalize_json(data: Dict[str, Any]) -> bytes:
-    """Deterministic Canonical JSON serialization (sorted keys, compact separators, UTF-8 encoded)."""
+    """Deterministic UTF-8 JSON serialization with sorted keys and compact separators."""
     return json.dumps(
         data,
         sort_keys=True,
@@ -68,7 +89,8 @@ def canonicalize_json(data: Dict[str, Any]) -> bytes:
 
 
 def compute_sha256(file_path: Path, chunk_size: int = 1024 * 1024) -> str:
-    """Compute SHA-256 hash of a local file."""
+    """Compute SHA-256 hash of a regular local file."""
+    require_regular_non_symlink_file(file_path, "File for SHA-256 calculation")
     hasher = hashlib.sha256()
     with open(file_path, "rb") as f:
         for chunk in iter(lambda: f.read(chunk_size), b""):
@@ -104,7 +126,8 @@ class TrustStore:
             raise SecurityVerificationError(f"Trust directory not found: {self.trust_dir}")
 
         revoked_file = self.trust_dir / "revoked-keys.json"
-        if revoked_file.is_file():
+        if revoked_file.exists():
+            require_regular_non_symlink_file(revoked_file, "Revocation file")
             try:
                 data = json.loads(revoked_file.read_text(encoding="utf-8"))
                 if not isinstance(data, dict) or "revoked_key_ids" not in data:
@@ -125,6 +148,7 @@ class TrustStore:
             raise SecurityVerificationError(f"No trusted Ed25519 public keys found in '{self.trust_dir}'.")
 
         for pub_path in pub_files:
+            require_regular_non_symlink_file(pub_path, "Trust root public key file")
             try:
                 current_key_id = None
                 key_found = False
@@ -208,9 +232,12 @@ def atomic_replace_verified(
     expected_sha256: str,
     executable: bool = False,
 ) -> Path:
-    """Atomic verified file replacement with crash-resilient rollback backup."""
+    """Atomic verified single file replacement with crash-resilient rollback backup."""
     if not _SHA256_RE.fullmatch(expected_sha256):
         raise SecurityVerificationError(f"Invalid expected SHA-256 hash format: {expected_sha256}")
+
+    if destination.is_symlink():
+        raise SecurityVerificationError(f"Symlink destination '{destination}' is forbidden.")
 
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination_dir = destination.parent
@@ -275,8 +302,12 @@ def verify_manifest_and_binary(
     temp_binary_path: Path,
     target_destination: Path,
     trust_store: Optional[TrustStore] = None,
+    expected_commit: str = LLAMA_CPP_PINNED_COMMIT,
 ) -> Path:
-    """Strict 8-Step Cryptographic Verification Pipeline for Native Binaries."""
+    """
+    P1-1: Strict 8-Step Cryptographic Verification Pipeline for Native Binaries.
+    Validates manifest structure, commit pin equality, Ed25519 signature, and staged SHA-256 hash.
+    """
     if trust_store is None:
         trust_store = TrustStore()
 
@@ -299,6 +330,11 @@ def verify_manifest_and_binary(
     if not _COMMIT_RE.fullmatch(commit):
         raise SecurityVerificationError(f"Invalid commit SHA in binary manifest: {commit}")
 
+    if not hmac.compare_digest(commit.lower(), expected_commit.lower()):
+        raise SecurityVerificationError(
+            f"Binary manifest commit mismatch. Expected '{expected_commit}', got '{commit}'."
+        )
+
     if not trust_store.is_key_trusted(key_id):
         raise SecurityVerificationError(f"Signing key '{key_id}' is not in local trust store or has been revoked.")
 
@@ -309,8 +345,7 @@ def verify_manifest_and_binary(
     if not verify_ed25519_signature(pub_key, canonical_bytes, signature):
         raise SecurityVerificationError(f"Ed25519 manifest signature verification failed for key '{key_id}'.")
 
-    if not temp_binary_path.is_file():
-        raise SecurityVerificationError(f"Temporary binary file '{temp_binary_path}' not found.")
+    require_regular_non_symlink_file(temp_binary_path, "Temporary staged binary")
 
     return atomic_replace_verified(
         staged_file=temp_binary_path,
@@ -325,23 +360,24 @@ def verify_binary_pre_execution(
     trust_store: Optional[TrustStore] = None,
     expected_commit: str = LLAMA_CPP_PINNED_COMMIT,
     allow_local_build_receipt: bool = True,
+    allow_development_build: bool = False,
 ) -> BinaryVerificationResult:
     """
     P0-1: Pre-Execution Native Binary Verification with Explicit Provenance Classification.
     Returns:
-      BinaryVerificationResult containing trust_level ('signed-release' or 'local-build-receipt').
+      BinaryVerificationResult containing trust_level ('signed-release', 'local-build-receipt', or 'development-local-build').
     ANTI-DOWNGRADE GUARANTEE:
       If a signed manifest exists (*.manifest.json), it MUST pass Ed25519 signature verification.
       An invalid signed manifest NEVER falls back to local build receipt.
     """
-    if not binary_path.is_file():
-        raise SecurityVerificationError(f"Required binary '{binary_path}' does not exist.")
+    require_regular_non_symlink_file(binary_path, "Native runtime binary")
 
     manifest_path = binary_path.with_suffix(binary_path.suffix + ".manifest.json")
     receipt_path = binary_path.with_suffix(binary_path.suffix + ".build-receipt.json")
 
     # 1. Official Signed Release Pathway (Highest Trust Level)
-    if manifest_path.is_file():
+    if manifest_path.exists():
+        require_regular_non_symlink_file(manifest_path, "Binary release manifest")
         if trust_store is None:
             trust_store = TrustStore()
 
@@ -369,7 +405,7 @@ def verify_binary_pre_execution(
         if not _COMMIT_RE.fullmatch(commit):
             raise SecurityVerificationError(f"Invalid commit SHA in binary manifest: {commit}")
 
-        if commit != expected_commit:
+        if not hmac.compare_digest(commit.lower(), expected_commit.lower()):
             raise SecurityVerificationError(
                 f"Binary commit mismatch!\nExpected: {expected_commit}\nManifest: {commit}"
             )
@@ -397,7 +433,8 @@ def verify_binary_pre_execution(
         )
 
     # 2. Local Native Build Receipt Pathway (Consistent Local Build Trust Level)
-    if receipt_path.is_file() and allow_local_build_receipt:
+    if receipt_path.exists() and allow_local_build_receipt:
+        require_regular_non_symlink_file(receipt_path, "Local build receipt")
         try:
             receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
         except Exception as e:
@@ -412,10 +449,26 @@ def verify_binary_pre_execution(
         commit = require_non_empty_string(receipt, "llama_cpp_commit", "Build receipt")
         preset = require_non_empty_string(receipt, "build_preset", "Build receipt")
 
-        if artifact_type != "local-native-build":
+        trust_level = RECEIPT_TYPE_TO_TRUST_LEVEL.get(artifact_type)
+        if trust_level is None:
             raise SecurityVerificationError(
-                f"Build receipt artifact_type must be 'local-native-build', got '{artifact_type}'"
+                f"Unsupported build receipt artifact_type: '{artifact_type}'. "
+                f"Allowed types: {list(RECEIPT_TYPE_TO_TRUST_LEVEL.keys())}"
             )
+
+        if trust_level == BinaryTrustLevel.DEVELOPMENT_BUILD:
+            if not allow_development_build:
+                raise SecurityVerificationError(
+                    "Development build receipt ('development-local-build') is denied by current execution policy. "
+                    "Set allow_development_build=True or use a standard production build."
+                )
+            if not _COMMIT_RE.fullmatch(commit):
+                raise SecurityVerificationError(f"Invalid development commit SHA in receipt: '{commit}'")
+        else:
+            if not hmac.compare_digest(commit.lower(), expected_commit.lower()):
+                raise SecurityVerificationError(
+                    f"Local build binary commit mismatch!\nExpected: {expected_commit}\nReceipt: {commit}"
+                )
 
         if preset not in ALLOWED_BUILD_PRESETS:
             raise SecurityVerificationError(f"Unknown or untrusted build_preset in receipt: '{preset}'")
@@ -423,11 +476,6 @@ def verify_binary_pre_execution(
         if artifact_filename != binary_path.name:
             raise SecurityVerificationError(
                 f"Build receipt artifact mismatch. Expected '{binary_path.name}', got '{artifact_filename}'"
-            )
-
-        if commit != expected_commit:
-            raise SecurityVerificationError(
-                f"Local build binary commit mismatch!\nExpected: {expected_commit}\nReceipt: {commit}"
             )
 
         if not _SHA256_RE.fullmatch(expected_sha):
@@ -440,11 +488,13 @@ def verify_binary_pre_execution(
             )
 
         return BinaryVerificationResult(
-            trust_level=BinaryTrustLevel.LOCAL_BUILD_RECEIPT,
+            trust_level=trust_level,
             sha256=actual_sha,
             llama_cpp_commit=commit,
             artifact_filename=artifact_filename,
             build_preset=preset,
+            source_override_used=receipt.get("source_override_used", False),
+            upstream_url=receipt.get("upstream_url"),
         )
 
     # 3. Fail-Closed if neither verified signed manifest nor build receipt is present
@@ -461,12 +511,13 @@ def verify_model_pre_execution(
     """
     P0-3: Strict Pre-Execution Signed GGUF Model Manifest & Hash Verification.
     """
-    if not model_path.is_file():
-        raise SecurityVerificationError(f"Model file '{model_path}' does not exist.")
+    require_regular_non_symlink_file(model_path, "GGUF Model file")
 
     manifest_path = model_path.with_suffix(model_path.suffix + ".manifest.json")
-    if not manifest_path.is_file():
+    if not manifest_path.exists():
         raise SecurityVerificationError(f"Required signed model manifest is missing: {manifest_path}")
+
+    require_regular_non_symlink_file(manifest_path, "Model manifest sidecar")
 
     if trust_store is None:
         trust_store = TrustStore()

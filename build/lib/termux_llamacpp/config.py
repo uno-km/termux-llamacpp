@@ -9,8 +9,8 @@ from typing import Optional, Dict, Any, List
 
 # SSOT Native Engine Pinned Source Definition
 LLAMA_CPP_UPSTREAM = "https://github.com/ggerganov/llama.cpp.git"
-LLAMA_CPP_RELEASE_LABEL = "b3900"
-LLAMA_CPP_PINNED_COMMIT = "08f32c9b68a8b13a890a827038e21946059d57a2"
+LLAMA_CPP_RELEASE_LABEL = "release-5e6a37c"
+LLAMA_CPP_PINNED_COMMIT = "5e6a37cb115dc1074e274ac004373f5661909695"
 PROTOCOL_VERSION = "1.0"
 
 # Default Network Ports for Supervisor & Native Engines

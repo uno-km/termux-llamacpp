@@ -50,8 +50,8 @@ scripts/check_git_remotes.py
 scripts/download_prebuilt.py
 scripts/generate_and_verify_report.py
 scripts/install.sh
-scripts/republish.py
 termux_llamacpp/__init__.py
+termux_llamacpp/__main__.py
 termux_llamacpp/cli.py
 termux_llamacpp/config.py
 termux_llamacpp/crawler.py
@@ -68,6 +68,7 @@ termux_llamacpp.egg-info/entry_points.txt
 termux_llamacpp.egg-info/requires.txt
 termux_llamacpp.egg-info/top_level.txt
 termux_llamacpp/__pycache__/__init__.cpython-312.pyc
+termux_llamacpp/__pycache__/__main__.cpython-312.pyc
 termux_llamacpp/__pycache__/cli.cpython-312.pyc
 termux_llamacpp/__pycache__/config.cpython-312.pyc
 termux_llamacpp/__pycache__/crawler.cpython-312.pyc
