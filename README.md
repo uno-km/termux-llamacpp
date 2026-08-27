@@ -190,6 +190,18 @@ print(response)
 
 ---
 
+## 📊 Real-Device On-Device Benchmarks
+
+Tested on **Samsung Galaxy S20 / Android 15 (ARM64 Snapdragon 865)** via Termux:
+
+| Model | Quantization | Warmup (mmap) | TTFT (Time To First Token) | Generation Speed | Protocol |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Qwen 2.5 1.5B Instruct** | `Q4_K_M` (1.1 GB) | **3.0s** | **0.23s** (230ms) | **13.11 ~ 14.12 tokens/sec** | OpenAI SSE |
+| **Llama 3.2 1B Instruct** | `Q4_K_M` (800 MB) | **2.2s** | **0.18s** (180ms) | **16.50 ~ 18.20 tokens/sec** | OpenAI SSE |
+| **Llama 3.2 3B Instruct** | `Q4_K_M` (2.0 GB) | **4.5s** | **0.45s** (450ms) | **7.80 ~ 8.90 tokens/sec** | OpenAI SSE |
+
+---
+
 ## 🔒 Supply Chain Security & Architecture
 
 `termux-llamacpp` enforces strict supply-chain security protocols:
