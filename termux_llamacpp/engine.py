@@ -27,6 +27,23 @@ from termux_llamacpp.exceptions import (
 )
 
 
+def ensure_system_dependencies() -> None:
+    """Ensure optional Termux system packages (like python-cryptography) are present without triggering Rust builds."""
+    try:
+        import cryptography
+        return
+    except ImportError:
+        pass
+
+    if shutil.which("pkg"):
+        print("[termux-llamacpp] Auto-installing precompiled 'python-cryptography' via Termux pkg...")
+        try:
+            subprocess.run(["pkg", "install", "-y", "python-cryptography"], check=True)
+            print("[termux-llamacpp] 'python-cryptography' installed successfully.")
+        except Exception as e:
+            print(f"[termux-llamacpp] Notice: Failed to auto-install python-cryptography via pkg: {e}")
+
+
 class LlamaRuntime:
     """Universal GGUF Runtime manager for Android Termux & ARM64."""
 
@@ -58,6 +75,7 @@ class LlamaRuntime:
         Returns:
             LlamaRuntime: Initialized runtime ready for model execution.
         """
+        ensure_system_dependencies()
         config = RuntimeConfig(
             preset=preset,
             bin_dir=Path(bin_dir) if bin_dir else DEFAULT_BIN_DIR,

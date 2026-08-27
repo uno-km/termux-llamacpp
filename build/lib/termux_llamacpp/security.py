@@ -200,10 +200,22 @@ def verify_ed25519_signature(
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
         from cryptography.exceptions import InvalidSignature
     except ImportError as exc:
-        raise SecurityVerificationError(
-            "Ed25519 cryptographic verification requires 'cryptography>=42.0.0'. "
-            "Please install via: pip install cryptography"
-        ) from exc
+        if shutil.which("pkg"):
+            try:
+                import subprocess
+                subprocess.run(["pkg", "install", "-y", "python-cryptography"], check=True)
+                from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+                from cryptography.exceptions import InvalidSignature
+            except Exception:
+                raise SecurityVerificationError(
+                    "Ed25519 cryptographic verification requires 'python-cryptography'. "
+                    "Please install via: pkg install -y python-cryptography"
+                ) from exc
+        else:
+            raise SecurityVerificationError(
+                "Ed25519 cryptographic verification requires 'cryptography>=42.0.0'. "
+                "Please install via: pip install cryptography or pkg install -y python-cryptography"
+            ) from exc
 
     try:
         if not public_key_hex or not signature_base64:

@@ -27,6 +27,23 @@ from termux_llamacpp.exceptions import (
 )
 
 
+def ensure_system_dependencies() -> None:
+    """Ensure optional Termux system packages (like python-cryptography) are present without triggering Rust builds."""
+    try:
+        import cryptography
+        return
+    except ImportError:
+        pass
+
+    if shutil.which("pkg"):
+        print("[termux-llamacpp] Auto-installing precompiled 'python-cryptography' via Termux pkg...")
+        try:
+            subprocess.run(["pkg", "install", "-y", "python-cryptography"], check=True)
+            print("[termux-llamacpp] 'python-cryptography' installed successfully.")
+        except Exception as e:
+            print(f"[termux-llamacpp] Notice: Failed to auto-install python-cryptography via pkg: {e}")
+
+
 class LlamaRuntime:
     """Universal GGUF Runtime manager for Android Termux & ARM64."""
 
@@ -58,6 +75,7 @@ class LlamaRuntime:
         Returns:
             LlamaRuntime: Initialized runtime ready for model execution.
         """
+        ensure_system_dependencies()
         config = RuntimeConfig(
             preset=preset,
             bin_dir=Path(bin_dir) if bin_dir else DEFAULT_BIN_DIR,
@@ -171,9 +189,14 @@ class LlamaRuntime:
         """
         resolved_model_path = self.models.get(model)
         cli_bin = self.get_binary_path("llama-cli")
-
         if not cli_bin:
-            return f"[termux-llamacpp] Generated response for: '{prompt[:40]}...' using model {resolved_model_path.name}"
+            raise RuntimeBuildError(
+                f"Binary 'llama-cli' not found in '{self.bin_dir}' or PATH.\n"
+                f"Please install or compile the runtime first by running:\n"
+                f"  termux-llama install\n"
+                f"Or in Python:\n"
+                f"  from termux_llamacpp import LlamaRuntime; LlamaRuntime.install()"
+            )
 
         cmd = [
             str(cli_bin),

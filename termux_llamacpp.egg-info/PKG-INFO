@@ -1,6 +1,6 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: termux-llamacpp
-Version: 1.0.0b2
+Version: 1.0.0b3
 Summary: Supply-Chain Verified GGUF Runtime, Model Manager & OpenAI Supervisor for Android Termux & ARM64
 Author-email: uno-km <dev@ameva.org>
 License: Apache-2.0
@@ -19,6 +19,7 @@ Classifier: Programming Language :: Python :: 3.9
 Classifier: Programming Language :: Python :: 3.10
 Classifier: Programming Language :: Python :: 3.11
 Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
 Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
 Classifier: Topic :: Security
 Requires-Python: >=3.8
@@ -26,11 +27,13 @@ Description-Content-Type: text/markdown
 License-File: LICENSE
 Requires-Dist: requests>=2.31.0
 Requires-Dist: tqdm>=4.66.0
-Requires-Dist: cryptography>=42.0.0
+Provides-Extra: security
+Requires-Dist: cryptography>=42.0.0; extra == "security"
 Provides-Extra: crawler
 Requires-Dist: termux-playwright>=1.70.0; extra == "crawler"
 Provides-Extra: test
 Requires-Dist: pytest>=7.0.0; extra == "test"
+Dynamic: license-file
 
 # termux-llamacpp
 

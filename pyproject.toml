@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "termux-llamacpp"
-version = "1.0.0b2"
+version = "1.0.0b3"
 description = "Supply-Chain Verified GGUF Runtime, Model Manager & OpenAI Supervisor for Android Termux & ARM64"
 readme = "README.md"
 authors = [{ name = "uno-km", email = "dev@ameva.org" }]
@@ -21,6 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Security",
 ]
@@ -29,10 +30,12 @@ requires-python = ">=3.8"
 dependencies = [
     "requests>=2.31.0",
     "tqdm>=4.66.0",
-    "cryptography>=42.0.0",
 ]
 
 [project.optional-dependencies]
+security = [
+    "cryptography>=42.0.0",
+]
 crawler = [
     "termux-playwright>=1.70.0",
 ]
