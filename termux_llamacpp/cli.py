@@ -47,6 +47,63 @@ def cmd_download(args):
 
 def cmd_serve(args):
     """Start OpenAI and termux-aichain compliant server."""
+    if getattr(args, "daemon", False):
+        import shutil
+        py_bin = sys.executable or "python3"
+        cmd = [
+            py_bin,
+            "-m", "termux_llamacpp",
+            "serve",
+            str(args.model),
+            "--host", str(args.host),
+            "--port", str(args.port),
+            "--ctx", str(args.ctx),
+        ]
+        if args.threads is not None:
+            cmd.extend(["--threads", str(args.threads)])
+
+        log_dir = Path.home() / ".termux-llama" / "logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = log_dir / "daemon.log"
+        log_handle = open(log_file, "a", encoding="utf-8")
+
+        popen_kwargs = {
+            "stdout": log_handle,
+            "stderr": subprocess.STDOUT,
+        }
+        if sys.platform != "win32":
+            popen_kwargs["start_new_session"] = True
+
+        proc = subprocess.Popen(cmd, **popen_kwargs)
+
+        print("================================================================================")
+        print(f"  [termux-llamacpp] Launching Background Server Daemon (PID: {proc.pid})")
+        print("================================================================================")
+        print(f"  Endpoint : http://{args.host}:{args.port}")
+        print(f"  Log File : {log_file}")
+        print("================================================================================")
+
+        endpoint = f"http://{args.host}:{args.port}"
+        print(f"[termux-llama] Waiting for server readiness probe at {endpoint}...")
+        import requests
+        ready = False
+        for _ in range(30):
+            time.sleep(0.5)
+            try:
+                r = requests.get(f"{endpoint}/health", timeout=1)
+                if r.status_code == 200:
+                    ready = True
+                    break
+            except Exception:
+                pass
+
+        if ready:
+            print(f"[termux-llama] Server is ACTIVE and READY on {endpoint} (PID: {proc.pid})")
+        else:
+            print(f"[termux-llama] Background server launched (PID: {proc.pid}). Check logs at {log_file}")
+        print("[termux-llama] Use 'termux-llama stop' to stop server.\n")
+        return
+
     runtime = LlamaRuntime()
     try:
         server = runtime.serve(
@@ -56,12 +113,7 @@ def cmd_serve(args):
             ctx_size=args.ctx,
             threads=args.threads,
         )
-        print(f"\n[termux-llama] Server running at {server.endpoint}")
-        if getattr(args, "daemon", False):
-            print("[termux-llama] Running in background. Use 'termux-llama stop' or 'pkill -f llama-server' to stop.")
-            return
-
-        print("Press Ctrl+C to stop.")
+        print(f"\n[termux-llama] Server running at {server.endpoint} (Ctrl+C to stop)")
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
@@ -167,7 +219,7 @@ def main():
         prog="termux-llama",
         description="Universal GGUF Runtime, Model Manager & OpenAI Server for Android Termux & ARM64",
     )
-    parser.add_argument("--version", action="version", version="termux-llamacpp 1.0.0b4")
+    parser.add_argument("--version", action="version", version="termux-llamacpp 1.0.0b5")
     parser.add_argument("-d", "--daemon", action="store_true", help="Run in background daemon mode")
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
 
