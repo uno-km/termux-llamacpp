@@ -92,7 +92,14 @@ termux-llama download bartowski/Llama-3.2-3B-Instruct-GGUF Llama-3.2-3B-Instruct
 
 ### Launch OpenAI-Compatible HTTP / SSE Server
 ```bash
-termux-llama serve Llama-3.2-3B-Instruct-Q4_K_M.gguf --port 8080 --ctx 2048 --threads 4
+# Foreground execution (interactive)
+termux-llama serve qwen2.5-1.5b-instruct --port 8080 --ctx 2048 --threads 4
+
+# Background Daemon mode (frees current terminal session immediately)
+termux-llama serve qwen2.5-1.5b-instruct -d
+
+# Stop background server instances
+termux-llama stop
 ```
 
 ---
