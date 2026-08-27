@@ -785,7 +785,6 @@ class ServerManager:
                 "-np", "1",
                 "-t", str(threads),
                 "-ngl", str(n_gpu_layers),
-                "--no-mmap",
             ]
 
             log_handle = open(self.logger.log_file, "a", encoding="utf-8")

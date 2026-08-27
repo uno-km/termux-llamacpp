@@ -36,7 +36,7 @@ from termux_llamacpp.exceptions import (
     SecurityVerificationError,
 )
 
-__version__ = "1.0.0b8"
+__version__ = "1.0.0b9"
 __author__ = "uno-km"
 
 __all__ = [
