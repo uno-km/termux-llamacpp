@@ -377,7 +377,7 @@ class ReverseProxyHTTPHandler(BaseHTTPRequestHandler):
                 if k.lower() not in HOP_BY_HOP_HEADERS and k.lower() != "host":
                     req.add_header(k, v)
 
-            with urllib.request.urlopen(req, timeout=10) as resp:
+            with urllib.request.urlopen(req, timeout=300) as resp:
                 self.send_response(resp.status)
                 for k, v in resp.headers.items():
                     if k.lower() not in HOP_BY_HOP_HEADERS:
@@ -400,8 +400,7 @@ class ReverseProxyHTTPHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(exc.read())
         except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
-            self.state.is_ready = False
-            self._send_proxy_error(503, "LLAMA_SERVER_UNAVAILABLE", "Native llama-server is unavailable.", str(exc))
+            self._send_proxy_error(503, "LLAMA_SERVER_UNAVAILABLE", "Native llama-server request timed out or unavailable.", str(exc))
 
     def _send_proxy_error(self, status: int, code: str, message: str = "Native llama-server is unavailable.", detail: str = ""):
         payload = {

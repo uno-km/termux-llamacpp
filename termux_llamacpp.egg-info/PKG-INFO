@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: termux-llamacpp
-Version: 1.0.0b6
+Version: 1.0.0b7
 Summary: Supply-Chain Verified GGUF Runtime, Model Manager & OpenAI Supervisor for Android Termux & ARM64
 Author-email: uno-km <dev@ameva.org>
 License: Apache-2.0
