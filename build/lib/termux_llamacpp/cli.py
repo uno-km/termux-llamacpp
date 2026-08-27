@@ -1,9 +1,13 @@
 """Command line interface for termux-llamacpp."""
 
 import argparse
+import os
+import shutil
+import subprocess
 import sys
 import time
 from pathlib import Path
+import requests
 
 from termux_llamacpp.engine import LlamaRuntime
 from termux_llamacpp.downloader import ModelManager
@@ -219,7 +223,7 @@ def main():
         prog="termux-llama",
         description="Universal GGUF Runtime, Model Manager & OpenAI Server for Android Termux & ARM64",
     )
-    parser.add_argument("--version", action="version", version="termux-llamacpp 1.0.0b5")
+    parser.add_argument("--version", action="version", version="termux-llamacpp 1.0.0b6")
     parser.add_argument("-d", "--daemon", action="store_true", help="Run in background daemon mode")
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
 
