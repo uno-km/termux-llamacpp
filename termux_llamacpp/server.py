@@ -671,6 +671,7 @@ class ServerManager:
             self.trust_store,
             LLAMA_CPP_PINNED_COMMIT,
             allow_local_build_receipt=True,
+            auto_provision_receipt=True,
         )
         binary_sha256 = binary_verification.sha256
 

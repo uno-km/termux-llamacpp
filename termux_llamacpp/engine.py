@@ -127,19 +127,48 @@ class LlamaRuntime:
                 pass
 
     def get_binary_path(self, binary_name: str) -> Optional[Path]:
-        """Find the absolute path of a llama.cpp binary in bin_dir or PATH."""
+        """Find the absolute path of a llama.cpp binary across standard Termux locations."""
+        import re
         ext = ".exe" if sys.platform == "win32" else ""
-        candidate = self.bin_dir / f"{binary_name}{ext}"
-        if candidate.is_file():
-            return candidate.resolve()
+        candidates = [
+            self.bin_dir / f"{binary_name}{ext}",
+            self.bin_dir / binary_name,
+            self.bin_dir.parent / "current" / "bin" / binary_name,
+            Path.home() / ".termux-llama" / "current" / "bin" / binary_name,
+            Path.home() / ".termux-llama" / "bin" / binary_name,
+            Path.home() / ".termux-llamacpp" / "current" / "bin" / binary_name,
+            Path.home() / ".termux-llamacpp" / "bin" / binary_name,
+        ]
 
-        candidate_no_ext = self.bin_dir / binary_name
-        if candidate_no_ext.is_file():
-            return candidate_no_ext.resolve()
+        for cand in candidates:
+            if cand.is_file():
+                return cand.resolve()
+
+        # Search in versions directory
+        for base in [Path.home() / ".termux-llama", Path.home() / ".termux-llamacpp"]:
+            versions_dir = base / "versions"
+            if versions_dir.is_dir():
+                for v in versions_dir.iterdir():
+                    cand = v / "bin" / binary_name
+                    if cand.is_file():
+                        return cand.resolve()
 
         sys_path = shutil.which(binary_name)
         if sys_path:
-            return Path(sys_path).resolve()
+            p = Path(sys_path).resolve()
+            try:
+                content = p.read_text(encoding="utf-8", errors="ignore")
+                for line in content.splitlines():
+                    if "exec " in line and binary_name in line:
+                        match = re.search(r'exec\s+"?([^"\s]+)"?', line)
+                        if match:
+                            target_str = match.group(1).replace("$ROOT", str(Path.home() / ".termux-llamacpp"))
+                            real_p = Path(os.path.expanduser(os.path.expandvars(target_str)))
+                            if real_p.is_file():
+                                return real_p.resolve()
+            except Exception:
+                pass
+            return p
 
         return None
 

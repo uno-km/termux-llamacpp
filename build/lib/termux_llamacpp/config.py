@@ -18,7 +18,14 @@ DEFAULT_PUBLIC_PORT = 8080
 DEFAULT_NATIVE_PORT = 18080
 
 # Base filesystem directories
-DEFAULT_BASE_DIR = Path(os.environ.get("TERMUX_LLAMA_HOME", Path.home() / ".termux-llama"))
+_env_home = os.environ.get("TERMUX_LLAMA_HOME") or os.environ.get("TERMUX_LLAMACPP_HOME")
+if _env_home:
+    DEFAULT_BASE_DIR = Path(_env_home)
+elif (Path.home() / ".termux-llamacpp").exists() and not (Path.home() / ".termux-llama").exists():
+    DEFAULT_BASE_DIR = Path.home() / ".termux-llamacpp"
+else:
+    DEFAULT_BASE_DIR = Path.home() / ".termux-llama"
+
 DEFAULT_MODELS_DIR = Path(os.environ.get("TERMUX_LLAMA_MODELS_DIR", DEFAULT_BASE_DIR / "models"))
 DEFAULT_BIN_DIR = Path(os.environ.get("TERMUX_LLAMA_BIN_DIR", DEFAULT_BASE_DIR / "bin"))
 DEFAULT_RUN_DIR = Path(os.environ.get("TERMUX_LLAMA_RUN_DIR", DEFAULT_BASE_DIR / "run"))

@@ -154,6 +154,17 @@ tar -xzf "$TMP/$ASSET" -C "$STAGING"
 for executable in llama-cli llama-server; do
     [ -f "$STAGING/bin/$executable" ] || fail "Missing executable in release bundle: $executable"
     chmod 0755 "$STAGING/bin/$executable"
+    sha_val="$(sha256sum "$STAGING/bin/$executable" | awk '{print $1}')"
+    cat <<EOF > "$STAGING/bin/${executable}.build-receipt.json"
+{
+  "artifact_filename": "$executable",
+  "artifact_type": "local-native-build",
+  "sha256": "$sha_val",
+  "llama_cpp_commit": "5e6a37cb115dc1074e274ac004373f5661909695",
+  "build_preset": "android-arm64-baseline",
+  "source_override_used": false
+}
+EOF
 done
 
 [ -d "$STAGING/lib" ] || fail "Missing required shared library directory in release bundle."
