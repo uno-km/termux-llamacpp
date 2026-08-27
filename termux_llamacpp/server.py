@@ -444,34 +444,13 @@ def native_is_ready(native_endpoint: str, expected_model_id: str = "") -> bool:
             return False
 
         status = str(payload.get("status", "")).lower()
-        if status not in {"ok", "ready", "healthy"}:
-            return False
+        if status in {"ok", "ready", "healthy"}:
+            return True
 
-        if payload.get("ready") is False:
-            return False
+        if payload.get("ready") is True:
+            return True
 
-        if expected_model_id:
-            actual_model_id = None
-            if "model" in payload:
-                m = payload["model"]
-                actual_model_id = m.get("id") if isinstance(m, dict) else m
-
-            if actual_model_id and hmac.compare_digest(str(actual_model_id), str(expected_model_id)):
-                return True
-
-            try:
-                models_resp = requests.get(f"{native_endpoint}/v1/models", timeout=1, allow_redirects=False)
-                if models_resp.status_code == 200:
-                    models_data = models_resp.json().get("data", [])
-                    loaded_ids = [str(item.get("id")) for item in models_data if isinstance(item, dict) and item.get("id")]
-                    if any(hmac.compare_digest(lid, str(expected_model_id)) for lid in loaded_ids):
-                        return True
-            except Exception:
-                pass
-
-            return False
-
-        return True
+        return False
     except Exception:
         return False
 

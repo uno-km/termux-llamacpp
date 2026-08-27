@@ -56,7 +56,12 @@ def cmd_serve(args):
             ctx_size=args.ctx,
             threads=args.threads,
         )
-        print(f"\n[termux-llama] Server running at {server.endpoint} (Ctrl+C to stop)")
+        print(f"\n[termux-llama] Server running at {server.endpoint}")
+        if getattr(args, "daemon", False):
+            print("[termux-llama] Running in background. Use 'termux-llama stop' or 'pkill -f llama-server' to stop.")
+            return
+
+        print("Press Ctrl+C to stop.")
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
@@ -64,6 +69,15 @@ def cmd_serve(args):
     except TermuxLlamaError as e:
         print(f"\n[Error] {e}", file=sys.stderr)
         sys.exit(1)
+
+
+def cmd_stop(args):
+    """Stop running termux-llama server instances."""
+    import subprocess
+    print("[termux-llama] Stopping all running llama-server instances...")
+    subprocess.run(["pkill", "-f", "llama-server"], capture_output=True)
+    subprocess.run(["pkill", "-f", "termux-llama serve"], capture_output=True)
+    print("[termux-llama] Done.")
 
 
 def cmd_find(args):
@@ -176,6 +190,10 @@ def main():
     p_serve.add_argument("--port", type=int, default=8080, help="Port (default: 8080)")
     p_serve.add_argument("--ctx", type=int, default=2048, help="Context length in tokens")
     p_serve.add_argument("--threads", type=int, default=None, help="CPU threads")
+    p_serve.add_argument("-d", "--daemon", action="store_true", help="Run server in the background as a daemon")
+
+    # stop
+    subparsers.add_parser("stop", help="Stop all running termux-llama server instances")
 
     # find
     p_find = subparsers.add_parser("find", help="Discover GGUF models on Hugging Face")
@@ -205,6 +223,7 @@ def main():
         "install": cmd_install,
         "download": cmd_download,
         "serve": cmd_serve,
+        "stop": cmd_stop,
         "find": cmd_find,
         "list": cmd_list,
         "models": cmd_curated,
