@@ -1,32 +1,34 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 
-const { spawn } = require("node:child_process");
-const path = require("node:path");
-const fs = require("node:fs");
+/**
+ * termux-llamacpp CLI Entrypoint for Node.js / npm
+ * Bridges command line arguments to Python termux_llamacpp or native runtime.
+ */
+
+import { spawn } from 'child_process';
 
 const args = process.argv.slice(2);
-const isInstall = args[0] === "install";
 
-// Try python module first
-const pyCmd = process.platform === "win32" ? "py" : "python3";
-const pyArgs = process.platform === "win32" ? ["-3", "-m", "termux_llamacpp.cli", ...args] : ["-m", "termux_llamacpp.cli", ...args];
+function runPythonCLI() {
+  const pyCmd = process.env.PYTHON || 'python3';
+  const child = spawn(pyCmd, ['-m', 'termux_llamacpp', ...args], {
+    stdio: 'inherit',
+    env: process.env,
+  });
 
-const child = spawn(pyCmd, pyArgs, { stdio: "inherit" });
-
-child.on("error", () => {
-  // If python fails and command is install, run bash install.sh directly
-  if (isInstall) {
-    const installScript = path.join(__dirname, "..", "scripts", "install.sh");
-    if (fs.existsSync(installScript)) {
-      const sh = spawn("bash", [installScript, ...args.slice(1)], { stdio: "inherit" });
-      sh.on("exit", (code) => process.exit(code || 0));
-      return;
+  child.on('error', (err) => {
+    if (err.code === 'ENOENT') {
+      console.error('[termux-llama error] python3 is required to run the termux-llama runtime.');
+      console.error('Please install python in Termux: pkg install python');
+    } else {
+      console.error(`[termux-llama error] Execution failed: ${err.message}`);
     }
-  }
-  console.error("[Error] termux-llamacpp requires Python 3.9+ or bash in PATH.");
-  process.exit(1);
-});
+    process.exit(1);
+  });
 
-child.on("exit", (code) => {
-  process.exit(code || 0);
-});
+  child.on('exit', (code) => {
+    process.exit(code || 0);
+  });
+}
+
+runPythonCLI();

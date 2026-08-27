@@ -5,6 +5,13 @@
   "main": "js/esm/index.js",
   "module": "js/esm/index.js",
   "types": "js/esm/index.d.ts",
+  "files": [
+    "bin",
+    "js/esm",
+    "registry",
+    "LICENSE",
+    "README.md"
+  ],
   "bin": {
     "termux-llama": "bin/cli.js",
     "termux-llamacpp": "bin/cli.js"
