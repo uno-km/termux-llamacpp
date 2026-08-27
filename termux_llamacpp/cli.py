@@ -88,19 +88,36 @@ def cmd_serve(args):
         print("================================================================================")
 
         endpoint = f"http://{args.host}:{args.port}"
-        print(f"[termux-llama] Waiting for server readiness probe at {endpoint}...")
-        import requests
+        print(f"[termux-llama] Loading model & initializing server at {endpoint}...")
+        dots = [".", "..", "...", "....", "....."]
         ready = False
-        for _ in range(30):
-            time.sleep(0.5)
+        start_time = time.time()
+        try:
+            for i in range(120):  # up to 60s
+                time.sleep(0.5)
+                elapsed = int(time.time() - start_time)
+                dot = dots[i % len(dots)]
+                sys.stdout.write(f"\r[*] Warmup in progress (Elapsed: {elapsed}s) {dot:<6}")
+                sys.stdout.flush()
+                try:
+                    r = requests.get(f"{endpoint}/health", timeout=1)
+                    if r.status_code == 200:
+                        data = r.json()
+                        if data.get("ready") is True or data.get("status") in {"ok", "ready", "healthy"}:
+                            ready = True
+                            break
+                except Exception:
+                    pass
+        except KeyboardInterrupt:
+            print("\n\n[termux-llama] Initialization cancelled by user. Terminating server...")
             try:
-                r = requests.get(f"{endpoint}/health", timeout=1)
-                if r.status_code == 200:
-                    ready = True
-                    break
+                proc.terminate()
             except Exception:
                 pass
+            cmd_stop(args)
+            return
 
+        print()  # newline
         if ready:
             print(f"[termux-llama] Server is ACTIVE and READY on {endpoint} (PID: {proc.pid})")
         else:
@@ -223,7 +240,7 @@ def main():
         prog="termux-llama",
         description="Universal GGUF Runtime, Model Manager & OpenAI Server for Android Termux & ARM64",
     )
-    parser.add_argument("--version", action="version", version="termux-llamacpp 1.0.0b7")
+    parser.add_argument("--version", action="version", version="termux-llamacpp 1.0.0b8")
     parser.add_argument("-d", "--daemon", action="store_true", help="Run in background daemon mode")
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
 

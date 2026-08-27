@@ -801,7 +801,7 @@ class ServerManager:
             self.lock_mgr.write_metadata(lock_meta)
 
             native_ready = False
-            deadline = time.time() + 25
+            deadline = time.time() + 60
             while time.time() < deadline:
                 if self.readiness_probe(native_endpoint, model_id):
                     native_ready = True
