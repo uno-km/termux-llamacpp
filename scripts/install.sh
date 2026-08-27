@@ -190,7 +190,7 @@ mv -Tf "$ROOT/current.new" "$ROOT/current" 2>/dev/null || ln -sfn "$TARGET_DIR" 
 # 8. Register Thin Wrappers in $PREFIX/bin
 mkdir -p "$PREFIX/bin"
 
-for cmd_name in termux-llama-cli termux-llama-server termux-llama llama-cli llama-server; do
+for cmd_name in termux-llama-cli termux-llama-server llama-cli llama-server; do
     target_bin="llama-cli"
     if [ "$cmd_name" = "termux-llama-server" ] || [ "$cmd_name" = "llama-server" ]; then
         target_bin="llama-server"

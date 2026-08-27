@@ -167,7 +167,8 @@ def main():
         prog="termux-llama",
         description="Universal GGUF Runtime, Model Manager & OpenAI Server for Android Termux & ARM64",
     )
-    parser.add_argument("--version", action="version", version="termux-llamacpp 1.0.0b1")
+    parser.add_argument("--version", action="version", version="termux-llamacpp 1.0.0b4")
+    parser.add_argument("-d", "--daemon", action="store_true", help="Run in background daemon mode")
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
 
     # install
