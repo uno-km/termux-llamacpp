@@ -226,7 +226,9 @@ def cmd_presets(args):
     print(f"{'Preset':<25} {'Opt Flags':<35} {'Description'}")
     print("-" * 80)
     for name, p in BUILD_PRESETS.items():
-        print(f"{name:<25} {p['cflags']:<35} {p['description']}")
+        cflags = getattr(p, "cflags", p.get("cflags") if isinstance(p, dict) else "")
+        desc = getattr(p, "description", p.get("description") if isinstance(p, dict) else "")
+        print(f"{name:<25} {cflags:<35} {desc}")
     print()
 
 
@@ -240,7 +242,7 @@ def main():
         prog="termux-llama",
         description="Universal GGUF Runtime, Model Manager & OpenAI Server for Android Termux & ARM64",
     )
-    parser.add_argument("--version", action="version", version="termux-llamacpp 1.0.2")
+    parser.add_argument("--version", action="version", version="termux-llamacpp 1.1.0")
     parser.add_argument("-d", "--daemon", action="store_true", help="Run in background daemon mode")
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
 
