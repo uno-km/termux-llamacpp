@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 
 /**
  * termux-llamacpp CLI Entrypoint for Node.js / npm

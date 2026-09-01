@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { ModelManager } from "./models.js";
 import { ServerManager, ServerInstance, ServerOptions } from "./server.js";
 import { HuggingFaceCrawler } from "./crawler.js";
@@ -20,7 +21,22 @@ export class LlamaRuntime {
   }
 
   public static async install(options: RuntimeOptions = {}): Promise<LlamaRuntime> {
-    console.log(`[termux-llamacpp] Initializing runtime preset: ${options.preset || "android-arm64"}...`);
+    const pyCmd = process.env.PYTHON || "python3";
+    const args = ["-m", "termux_llamacpp", "install"];
+    if (options.preset) {
+      args.push("--preset", options.preset);
+    }
+    console.log(`[termux-llamacpp] Executing runtime installation (preset: ${options.preset || "android-arm64-baseline"})...`);
+
+    await new Promise<void>((resolve, reject) => {
+      const child = spawn(pyCmd, args, { stdio: "inherit", env: process.env });
+      child.on("error", (err) => reject(err));
+      child.on("exit", (code) => {
+        if (code === 0) resolve();
+        else reject(new Error(`Runtime installation failed with exit code ${code}`));
+      });
+    });
+
     return new LlamaRuntime(options);
   }
 

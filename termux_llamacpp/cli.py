@@ -133,6 +133,7 @@ def cmd_serve(args):
             port=args.port,
             ctx_size=args.ctx,
             threads=args.threads,
+            device=getattr(args, "device", "auto"),
         )
         print(f"\n[termux-llama] Server running at {server.endpoint} (Ctrl+C to stop)")
         while True:
@@ -144,13 +145,82 @@ def cmd_serve(args):
         sys.exit(1)
 
 
+def cmd_run(args):
+    """Run direct one-shot text generation with strict device routing."""
+    runtime = LlamaRuntime()
+    try:
+        output = runtime.generate(
+            model=args.model,
+            prompt=args.prompt,
+            max_tokens=args.max_tokens,
+            temperature=args.temp,
+            threads=args.threads,
+            device=args.device,
+        )
+        print(output)
+    except TermuxLlamaError as e:
+        print(f"\n[Error] {e}", file=sys.stderr)
+        sys.exit(1)
+
+
 def cmd_stop(args):
-    """Stop running termux-llama server instances."""
-    import subprocess
-    print("[termux-llama] Stopping all running llama-server instances...")
-    subprocess.run(["pkill", "-f", "llama-server"], capture_output=True)
-    subprocess.run(["pkill", "-f", "termux-llama serve"], capture_output=True)
-    print("[termux-llama] Done.")
+    """Stop running termux-llama server instances via tracked PID files without collateral pkill."""
+    import signal
+    from termux_llamacpp.config import DEFAULT_RUN_DIR
+    from termux_llamacpp.server import ProcessIdentityLock
+
+    print("[termux-llama] Stopping running server instance via tracked PID ledger...")
+    stopped_count = 0
+
+    # 1. Read ProcessIdentityLock metadata
+    lock_mgr = ProcessIdentityLock(run_dir=DEFAULT_RUN_DIR)
+    metadata = lock_mgr.read_metadata()
+    target_pids = set()
+
+    if metadata:
+        if "native_pid" in metadata and int(metadata["native_pid"]) > 0:
+            target_pids.add(int(metadata["native_pid"]))
+        if "lock_owner_pid" in metadata and int(metadata["lock_owner_pid"]) > 0:
+            target_pids.add(int(metadata["lock_owner_pid"]))
+        if "supervisor_pid" in metadata and int(metadata["supervisor_pid"]) > 0:
+            target_pids.add(int(metadata["supervisor_pid"]))
+
+    # 2. Check explicit server.pid file
+    pid_file = DEFAULT_RUN_DIR / "server.pid"
+    if pid_file.is_file():
+        try:
+            pid_content = pid_file.read_text(encoding="utf-8").strip()
+            if pid_content.isdigit():
+                target_pids.add(int(pid_content))
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning("Failed to read PID file '%s': %s", pid_file, e)
+
+    # 3. Gracefully terminate target PIDs only
+    for pid in target_pids:
+        try:
+            os.kill(pid, signal.SIGTERM)
+            print(f"[termux-llama] Sent SIGTERM to tracked server process (PID: {pid}).")
+            stopped_count += 1
+        except (ProcessLookupError, PermissionError) as e:
+            print(f"[termux-llama] PID {pid} is not running or already terminated: {e}")
+
+    # 4. Clean up state
+    if lock_mgr.lock_file.exists():
+        try:
+            lock_mgr.lock_file.unlink(missing_ok=True)
+        except Exception:
+            pass
+    if pid_file.exists():
+        try:
+            pid_file.unlink(missing_ok=True)
+        except Exception:
+            pass
+
+    if stopped_count > 0:
+        print(f"[termux-llama] Stopped {stopped_count} tracked server process(es).")
+    else:
+        print("[termux-llama] No active tracked server instances found.")
 
 
 def cmd_find(args):
@@ -199,7 +269,7 @@ def cmd_list(args):
 
     print(f"\nCached GGUF Models ({len(models)}):\n")
     for m in models:
-        size_mb = m["size_bytes"] / (1024 * 1024)
+        size_mb = m.get("size_mb", (m.get("size_bytes", 0) / (1024 * 1024)))
         verified = " [VERIFIED]" if m.get("manifest_verified") else ""
         print(f" • {m['filename']}{verified}")
         print(f"   Size: {size_mb:.1f} MB | Model ID: {m.get('model_id', 'unknown')}")
@@ -266,7 +336,17 @@ def main():
     p_serve.add_argument("--port", type=int, default=8080, help="Port (default: 8080)")
     p_serve.add_argument("--ctx", type=int, default=2048, help="Context length in tokens")
     p_serve.add_argument("--threads", type=int, default=None, help="CPU threads")
+    p_serve.add_argument("--device", default="auto", choices=["auto", "vulkan", "cpu"], help="Compute device: auto (Vulkan priority with CPU fallback), vulkan (strict GPU fail-fast), cpu")
     p_serve.add_argument("-d", "--daemon", action="store_true", help="Run server in the background as a daemon")
+
+    # run (direct one-shot inference)
+    p_run = subparsers.add_parser("run", help="Run direct text generation with strict device routing")
+    p_run.add_argument("model", help="Model filename, alias, or direct path")
+    p_run.add_argument("prompt", help="Input text prompt")
+    p_run.add_argument("--device", default="auto", choices=["auto", "vulkan", "cpu"], help="Compute device: auto (Vulkan priority with CPU fallback), vulkan (strict GPU fail-fast), cpu")
+    p_run.add_argument("-n", "--max-tokens", type=int, default=256, help="Max tokens to generate")
+    p_run.add_argument("-t", "--threads", type=int, default=None, help="CPU threads")
+    p_run.add_argument("--temp", type=float, default=0.7, help="Sampling temperature")
 
     # stop
     subparsers.add_parser("stop", help="Stop all running termux-llama server instances")
@@ -299,6 +379,7 @@ def main():
         "install": cmd_install,
         "download": cmd_download,
         "serve": cmd_serve,
+        "run": cmd_run,
         "stop": cmd_stop,
         "find": cmd_find,
         "list": cmd_list,

@@ -22,25 +22,52 @@ class TestHuggingFaceCrawler(unittest.TestCase):
             self.assertIn("pip install termux-playwright", err)
             self.assertIn("npm install termux-playwright", err)
 
-    def test_rest_api_discovery_mock(self):
-        """Verify standard REST API discovery formatting."""
-        mock_response = [
-            {
-                "id": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
-                "downloads": 12500,
-                "likes": 420,
-                "pipeline_tag": "text-generation"
-            }
-        ]
+    def test_resolve_repo_gguf_files_from_siblings(self):
+        """Verify that _resolve_repo_gguf_files parses siblings and picks optimal quantization."""
+        mock_model_info = {
+            "siblings": [
+                {"rfilename": "README.md"},
+                {"rfilename": "config.json"},
+                {"rfilename": "Llama-3.2-3B-Instruct-Q8_0.gguf"},
+                {"rfilename": "Llama-3.2-3B-Instruct-Q4_K_M.gguf"},
+                {"rfilename": "Llama-3.2-3B-Instruct-Q5_K_M.gguf"},
+            ]
+        }
         with patch("requests.get") as mock_get:
             mock_get.return_value.status_code = 200
-            mock_get.return_value.json.return_value = mock_response
+            mock_get.return_value.json.return_value = mock_model_info
 
-            results = self.crawler.discover(query="Qwen", deep_crawl=False)
-            self.assertEqual(len(results), 1)
-            self.assertEqual(results[0].repo_id, "Qwen/Qwen2.5-1.5B-Instruct-GGUF")
-            self.assertEqual(results[0].downloads, 12500)
-            self.assertIn("qwen2.5-1.5b-instruct-gguf", results[0].recommended_file.lower())
+            rec_file, quants = self.crawler._resolve_repo_gguf_files("bartowski/Llama-3.2-3B-Instruct-GGUF")
+            self.assertEqual(rec_file, "Llama-3.2-3B-Instruct-Q4_K_M.gguf")
+            self.assertIn("Q4_K_M", quants)
+            self.assertIn("Q5_K_M", quants)
+            self.assertIn("Q8_0", quants)
+
+    def test_resolve_repo_gguf_files_raises_on_no_gguf(self):
+        """Verify that repositories without .gguf files raise TermuxLlamaError instead of guessing."""
+        mock_model_info = {
+            "siblings": [
+                {"rfilename": "README.md"},
+                {"rfilename": "pytorch_model.bin"},
+            ]
+        }
+        with patch("requests.get") as mock_get:
+            mock_get.return_value.status_code = 200
+            mock_get.return_value.json.return_value = mock_model_info
+
+            with self.assertRaises(Exception) as ctx:
+                self.crawler._resolve_repo_gguf_files("some-user/non-gguf-repo")
+            self.assertIn("no .gguf files found", str(ctx.exception).lower())
+
+    def test_resolve_repo_gguf_files_raises_on_429_rate_limit(self):
+        """Verify that HTTP 429 rate limits raise explicit TermuxLlamaError with rate limit guidance."""
+        with patch("requests.get") as mock_get:
+            mock_get.return_value.status_code = 429
+            mock_get.return_value.text = "Rate limit exceeded"
+
+            with self.assertRaises(Exception) as ctx:
+                self.crawler._resolve_repo_gguf_files("some-user/rate-limited-repo")
+            self.assertIn("rate limit", str(ctx.exception).lower())
 
 
 if __name__ == "__main__":

@@ -34,18 +34,19 @@ def ensure_models_dir(directory: Optional[Union[str, Path]] = None) -> Path:
 
 
 def check_disk_space(target_dir: Path, required_bytes: int):
-    """Verify that the target storage volume has sufficient free space."""
+    """Check storage volume free space and warn if low, without hard-blocking user operations."""
     try:
         usage = shutil.disk_usage(str(target_dir))
         if usage.free < (required_bytes + 100 * 1024 * 1024):
             required_mb = required_bytes / (1024 * 1024)
             free_mb = usage.free / (1024 * 1024)
-            raise TermuxLlamaError(
-                f"Insufficient disk space in '{target_dir}'. "
-                f"Required: {required_mb:.1f} MB, Available: {free_mb:.1f} MB"
+            print(
+                f"[termux-llamacpp] WARNING: Low disk space detected in '{target_dir}'. "
+                f"Required: {required_mb:.1f} MB, Available: {free_mb:.1f} MB. "
+                f"Proceeding under user responsibility."
             )
     except OSError:
-        pass
+        pass  # Non-mounted or permission-restricted paths; proceed safely
 
 
 class ModelManager:
@@ -195,15 +196,30 @@ class ModelManager:
                     total_size = downloaded_bytes + int(resp.headers.get("content-length", 0))
                     write_mode = "ab"
                 elif resp.status_code == 416:
+                    expected_size = saved_meta.get("expected_size", 0)
                     if downloaded_bytes > 0:
-                        print("[termux-llamacpp] Range 416 returned. Validating full part file integrity...")
-                        final_sha = compute_sha256(part_file)
-                        if expected_sha256 and final_sha.lower() != expected_sha256.lower():
+                        print("[termux-llamacpp] Range 416 returned. Validating part file integrity...")
+                        if expected_size and downloaded_bytes != expected_size:
+                            print("[termux-llamacpp] Size mismatch on 416. Resetting part file...")
                             part_file.unlink(missing_ok=True)
                             meta_file.unlink(missing_ok=True)
-                            raise TermuxLlamaError("Part file size mismatch on 416. Re-download required.")
-                    total_size = downloaded_bytes
-                    write_mode = "wb"
+                            downloaded_bytes = 0
+                            total_size = 0
+                            write_mode = "wb"
+                        else:
+                            final_sha = compute_sha256(part_file)
+                            if expected_sha256 and not hmac.compare_digest(final_sha.lower(), expected_sha256.lower()):
+                                part_file.unlink(missing_ok=True)
+                                meta_file.unlink(missing_ok=True)
+                                raise TermuxLlamaError("Part file checksum mismatch on 416. Re-download required.")
+                            total_size = downloaded_bytes
+                            write_mode = "wb"
+                    else:
+                        part_file.unlink(missing_ok=True)
+                        meta_file.unlink(missing_ok=True)
+                        downloaded_bytes = 0
+                        total_size = 0
+                        write_mode = "wb"
                 else:
                     if downloaded_bytes > 0:
                         print("[termux-llamacpp] Server responded with 200 OK. Resetting part file to 0.")
@@ -275,7 +291,7 @@ class ModelManager:
                 raise e
             raise TermuxLlamaError(f"Failed to download model '{target_filename}': {e}") from e
 
-    def list_local_models(self) -> List[Dict[str, Union[str, float]]]:
+    def list_local_models(self) -> List[Dict[str, Union[str, float, int]]]:
         results = []
         for file_path in self.models_dir.glob("*.gguf"):
             stat = file_path.stat()
@@ -284,6 +300,7 @@ class ModelManager:
                 "filename": file_path.name,
                 "path": str(file_path.resolve()),
                 "size_mb": size_mb,
+                "size_bytes": stat.st_size,
                 "modified": stat.st_mtime,
             })
         return sorted(results, key=lambda x: str(x["filename"]))

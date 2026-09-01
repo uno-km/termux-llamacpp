@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: termux-llamacpp
-Version: 1.0.2
+Version: 1.2.0
 Summary: Supply-Chain Verified GGUF Runtime, Model Manager & OpenAI Supervisor for Android Termux & ARM64
 Author-email: uno-km <dev@ameva.org>
 License: Apache-2.0
@@ -27,6 +27,7 @@ Description-Content-Type: text/markdown
 License-File: LICENSE
 Requires-Dist: requests>=2.31.0
 Requires-Dist: tqdm>=4.66.0
+Requires-Dist: ameva-vulkan-runtime>=1.1.0
 Provides-Extra: security
 Requires-Dist: cryptography>=42.0.0; extra == "security"
 Provides-Extra: crawler
@@ -259,6 +260,20 @@ graph TD
 2. **Symlink Defense**: Rejects symlinks for binary paths, model weights, trust root public keys, and key revocation files to prevent TOCTOU attacks.
 3. **Loopback Isolation**: Native backend binds strictly to `127.0.0.1:18080` with loopback CORS filtering to block unauthorized cross-origin requests.
 4. **Atomic Installation & Rollback**: All installs stage to `.new` and swap cleanly, preserving `.previous` for automatic rollback upon verification failure.
+
+---
+
+## 📝 Release Notes
+
+### [v1.2.0] — 2026-09-01
+- **Unified AMEVA Vulkan HAL Integration**: Seamless binding with `ameva-vulkan-runtime>=1.1.0` supporting Android Bionic Vulkan ICD (`/system/lib64/libvulkan.so`).
+- **Strict 3-Tier Execution Mode**:
+  - `--device vulkan`: Strict GPU shader acceleration with Fail-Fast protection (no silent CPU fallback).
+  - `--device auto`: Intelligent hardware discovery with transparent CPU NEON fallback.
+  - `--device cpu`: Zero-overhead direct CPU NEON forward pass bypassing the Vulkan loader.
+- **Dynamic Topology Optimization**: Automatic big-core cluster detection (`-t 4`) on ARM octa-core processors (e.g., Exynos 1380, Snapdragon).
+- **Galaxy A35 Real-Device Certification**: Fully verified end-to-end token generation across CLI, Python SDK, Node.js npm, and OpenAI-compatible server daemon.
+- **Dual-Ecosystem Availability**: Synchronously published to PyPI (`pip install termux-llamacpp`) and npm (`npm install -g termux-llamacpp`).
 
 ---
 

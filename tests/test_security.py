@@ -342,6 +342,19 @@ class TestSecurityAndManifest(unittest.TestCase):
         self.assertIsNone(normalize_loopback_origin("https://evil-site.com"))
         self.assertIsNone(normalize_loopback_origin(""))
 
+    def test_unprovisioned_raw_binary_is_strictly_rejected(self):
+        """P0-Security: Ensure arbitrary unverified binary without manifest or receipt is strictly rejected."""
+        unverified_bin = self.work_dir / "unverified_llama_server"
+        unverified_bin.write_bytes(b"MALICIOUS_OR_UNTRUSTED_BYTES")
+        
+        with self.assertRaises(SecurityVerificationError) as ctx:
+            verify_binary_pre_execution(
+                binary_path=unverified_bin,
+                trust_store=self.trust_store,
+                expected_commit=LLAMA_CPP_PINNED_COMMIT,
+            )
+        self.assertIn("untrusted binary", str(ctx.exception).lower())
+
 
 if __name__ == "__main__":
     unittest.main()

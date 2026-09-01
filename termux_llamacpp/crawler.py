@@ -85,8 +85,55 @@ class HuggingFaceCrawler:
         print(" 일반 REST API 검색 모드를 사용하려면 deep_crawl=False 옵션으로 재시도하십시오.")
         print("=" * 80 + "\n")
 
+    def _resolve_repo_gguf_files(self, repo_id: str) -> tuple:
+        """Query Hugging Face model metadata API to discover actual .gguf files and quantization types."""
+        url = f"https://huggingface.co/api/models/{repo_id}"
+        try:
+            resp = requests.get(url, headers=self.headers, timeout=10)
+        except requests.RequestException as e:
+            raise TermuxLlamaError(f"Network error querying metadata for Hugging Face repo '{repo_id}': {e}") from e
+
+        if resp.status_code == 429:
+            raise TermuxLlamaError(
+                f"Hugging Face API rate limit reached (HTTP 429) while querying '{repo_id}'. "
+                f"Please provide an HF_TOKEN or try again later."
+            )
+        if resp.status_code == 404:
+            raise TermuxLlamaError(f"Hugging Face repository '{repo_id}' not found (HTTP 404).")
+        if resp.status_code != 200:
+            raise TermuxLlamaError(f"Hugging Face API returned HTTP {resp.status_code} for '{repo_id}': {resp.text}")
+
+        data = resp.json()
+        siblings = data.get("siblings", [])
+        gguf_files = [
+            s.get("rfilename") for s in siblings
+            if isinstance(s, dict) and s.get("rfilename", "").lower().endswith(".gguf")
+        ]
+        if not gguf_files:
+            raise TermuxLlamaError(f"No .gguf files found in repository '{repo_id}'.")
+
+        # Detect quantization types from actual file names
+        quant_types = []
+        for gf in gguf_files:
+            for q in ["Q4_K_M", "Q5_K_M", "Q8_0", "Q4_0", "Q4_K_S", "Q5_0", "Q6_K", "Q2_K", "Q3_K_M", "IQ4_XS", "IQ4_NL", "BF16", "F16"]:
+                if q.lower() in gf.lower() and q not in quant_types:
+                    quant_types.append(q)
+
+        # Select optimal recommended file (priority: Q4_K_M > Q5_K_M > Q4_0 > Q8_0 > first available)
+        preferred = None
+        for q in ["Q4_K_M", "Q5_K_M", "Q4_0", "Q8_0", "IQ4_XS"]:
+            for gf in gguf_files:
+                if q.lower() in gf.lower():
+                    preferred = gf
+                    break
+            if preferred:
+                break
+
+        rec_file = preferred or gguf_files[0]
+        return rec_file, quant_types or ["Q4_K_M"]
+
     def _rest_api_search(self, query: str, limit: int) -> List[DiscoveredGGUFModel]:
-        """Search Hugging Face Hub using the official REST API."""
+        """Search Hugging Face Hub using the official REST API and resolve real file trees."""
         url = "https://huggingface.co/api/models"
         params = {
             "search": query,
@@ -107,13 +154,20 @@ class HuggingFaceCrawler:
         results: List[DiscoveredGGUFModel] = []
         for item in raw_models:
             repo_id = item.get("id", "")
+            if not repo_id:
+                continue
             downloads = item.get("downloads", 0)
             likes = item.get("likes", 0)
             pipeline_tag = item.get("pipeline_tag", "text-generation") or "text-generation"
-
-            # Derive recommended filename default
             repo_name = repo_id.split("/")[-1]
-            rec_file = f"{repo_name}-Q4_K_M.gguf"
+
+            # Resolve actual GGUF file tree with fail-safe repository skip
+            try:
+                rec_file, quant_types = self._resolve_repo_gguf_files(repo_id)
+            except Exception as resolve_err:
+                print(f"[termux-llamacpp] Info: Skipping repository '{repo_id}' ({resolve_err})")
+                continue
+
             download_url = f"https://huggingface.co/{repo_id}/resolve/main/{rec_file}"
 
             results.append(
@@ -126,15 +180,14 @@ class HuggingFaceCrawler:
                     recommended_file=rec_file,
                     download_url=download_url,
                     description=f"Hugging Face GGUF repository ({downloads:,} downloads)",
-                    quant_types=["Q4_K_M", "Q5_K_M", "Q8_0"],
+                    quant_types=quant_types,
                 )
             )
 
         return results
 
     def _deep_crawl_with_playwright(self, query: str, limit: int) -> List[DiscoveredGGUFModel]:
-        """Execute headless browser scraping via termux-playwright."""
-        # Dynamic import to avoid static requirement
+        """Execute headless browser scraping via termux-playwright and resolve real file trees."""
         try:
             from playwright.sync_api import sync_playwright  # type: ignore
         except ImportError:
@@ -159,7 +212,7 @@ class HuggingFaceCrawler:
                         continue
 
                     repo_name = repo_id.split("/")[-1] if "/" in repo_id else repo_id
-                    rec_file = f"{repo_name}-Q4_K_M.gguf"
+                    rec_file, quant_types = self._resolve_repo_gguf_files(repo_id)
                     download_url = f"https://huggingface.co/{repo_id}/resolve/main/{rec_file}"
 
                     results.append(
@@ -172,7 +225,7 @@ class HuggingFaceCrawler:
                             recommended_file=rec_file,
                             download_url=download_url,
                             description="Deep crawled via termux-playwright",
-                            quant_types=["Q4_K_M", "Q5_K_M", "Q8_0"],
+                            quant_types=quant_types,
                         )
                     )
                 except Exception:

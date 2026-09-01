@@ -4,6 +4,7 @@ MANIFEST.in
 README.md
 pyproject.toml
 setup.py
+docs/ENGINEERING_BREAKTHROUGHS.md
 docs/build_pages.py
 docs/doc.config.yaml
 docs/favicon.svg

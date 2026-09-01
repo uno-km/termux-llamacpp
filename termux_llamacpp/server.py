@@ -386,11 +386,16 @@ class ReverseProxyHTTPHandler(BaseHTTPRequestHandler):
                 self.end_headers()
 
                 while True:
-                    chunk = resp.read(1024)
-                    if not chunk:
+                    try:
+                        chunk = resp.read(1024)
+                        if not chunk:
+                            break
+                        self.wfile.write(chunk)
+                        self.wfile.flush()
+                    except (BrokenPipeError, ConnectionResetError, TimeoutError) as stream_err:
+                        if self.state.logger:
+                            self.state.logger.log(f"Stream client disconnected prematurely: {stream_err}")
                         break
-                    self.wfile.write(chunk)
-                    self.wfile.flush()
         except urllib.error.HTTPError as exc:
             self.send_response(exc.code)
             for k, v in exc.headers.items():
@@ -398,7 +403,10 @@ class ReverseProxyHTTPHandler(BaseHTTPRequestHandler):
                     self.send_header(k, v)
             self._set_cors_headers()
             self.end_headers()
-            self.wfile.write(exc.read())
+            try:
+                self.wfile.write(exc.read())
+            except (BrokenPipeError, ConnectionResetError):
+                pass
         except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
             self._send_proxy_error(503, "LLAMA_SERVER_UNAVAILABLE", "Native llama-server request timed out or unavailable.", str(exc))
 
@@ -562,6 +570,20 @@ class ServerInstance:
 
         print("[termux-llamacpp] Server supervisor stopped successfully.")
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.stop()
+
+    def __del__(self):
+        try:
+            if getattr(self, "is_owned", False) and getattr(self, "process", None) is not None:
+                if self.process.poll() is None:
+                    self.stop()
+        except Exception:
+            pass
+
 
 class ServerManager:
     def __init__(
@@ -649,7 +671,6 @@ class ServerManager:
             self.trust_store,
             LLAMA_CPP_PINNED_COMMIT,
             allow_local_build_receipt=True,
-            auto_provision_receipt=True,
         )
         binary_sha256 = binary_verification.sha256
 

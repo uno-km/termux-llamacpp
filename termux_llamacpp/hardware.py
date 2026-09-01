@@ -91,9 +91,17 @@ def _read_hwcap_features() -> Dict[str, bool]:
     HWCAP_FPHP = 1 << 9
     HWCAP_ASIMDDP = 1 << 20
 
-    try:
-        libc = ctypes.CDLL(None)
-        if hasattr(libc, "getauxval"):
+    libc = None
+    for lib_target in [None, "libc.so", "libc.so.6"]:
+        try:
+            libc = ctypes.CDLL(lib_target)
+            if hasattr(libc, "getauxval"):
+                break
+        except Exception:
+            libc = None
+
+    if libc and hasattr(libc, "getauxval"):
+        try:
             libc.getauxval.restype = ctypes.c_ulong
             hwcap = libc.getauxval(AT_HWCAP)
             hwcap2 = libc.getauxval(AT_HWCAP2)
@@ -105,14 +113,14 @@ def _read_hwcap_features() -> Dict[str, bool]:
             if hwcap & HWCAP_ASIMDDP:
                 features["dotprod"] = True
             return features
-    except Exception as e:
-        logger.debug("[termux-llamacpp] getauxval HWCAP 읽기 실패 (비 Linux/Android 환경에서 정상): %s", e)
+        except Exception as e:
+            logger.debug("[termux-llamacpp] getauxval HWCAP reading failed: %s", e)
 
     return features
 
 
 def _read_cpuinfo_features() -> Dict[str, bool]:
-    """Read CPU features from /proc/cpuinfo."""
+    """Read CPU features from /proc/cpuinfo supporting standard Linux/Android ARM64 tokens."""
     features = {"neon": False, "fp16": False, "dotprod": False}
     if not os.path.exists("/proc/cpuinfo"):
         return features
@@ -121,10 +129,10 @@ def _read_cpuinfo_features() -> Dict[str, bool]:
         with open("/proc/cpuinfo", "r", encoding="utf-8", errors="ignore") as f:
             content = f.read().lower()
             features["neon"] = "neon" in content or "asimd" in content
-            features["fp16"] = "fp16" in content or "fphp" in content
+            features["fp16"] = "fp16" in content or "fphp" in content or "asimdhp" in content
             features["dotprod"] = "dotprod" in content or "asimddp" in content
     except Exception as e:
-        logger.debug("[termux-llamacpp] /proc/cpuinfo CPU feature 읽기 실패: %s", e)
+        logger.debug("[termux-llamacpp] /proc/cpuinfo reading failed: %s", e)
 
     return features
 

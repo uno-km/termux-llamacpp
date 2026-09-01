@@ -28,20 +28,28 @@ from termux_llamacpp.exceptions import (
 
 
 def ensure_system_dependencies() -> None:
-    """Ensure optional Termux system packages (like python-cryptography) are present without triggering Rust builds."""
+    """Ensure ecosystem dependencies (python-cryptography, ameva-vulkan-runtime) are provisioned."""
+    # 1. Check cryptography
     try:
         import cryptography
-        return
     except ImportError:
-        pass
+        if shutil.which("pkg"):
+            print("[termux-llamacpp] Auto-installing precompiled 'python-cryptography' via Termux pkg...")
+            try:
+                subprocess.run(["pkg", "install", "-y", "python-cryptography"], check=True)
+            except Exception as e:
+                print(f"[termux-llamacpp] Notice: Failed to auto-install python-cryptography via pkg: {e}")
 
-    if shutil.which("pkg"):
-        print("[termux-llamacpp] Auto-installing precompiled 'python-cryptography' via Termux pkg...")
-        try:
-            subprocess.run(["pkg", "install", "-y", "python-cryptography"], check=True)
-            print("[termux-llamacpp] 'python-cryptography' installed successfully.")
-        except Exception as e:
-            print(f"[termux-llamacpp] Notice: Failed to auto-install python-cryptography via pkg: {e}")
+    # 2. Check ameva-vulkan-runtime
+    try:
+        import ameva_vulkan_runtime
+    except ImportError:
+        if shutil.which("pip"):
+            print("[termux-llamacpp] Auto-provisioning 'ameva-vulkan-runtime' via pip...")
+            try:
+                subprocess.run([sys.executable, "-m", "pip", "install", "ameva-vulkan-runtime>=1.0.0"], check=False)
+            except Exception as e:
+                print(f"[termux-llamacpp] Notice: Failed to auto-install ameva-vulkan-runtime: {e}")
 
 
 class LlamaRuntime:
@@ -131,10 +139,10 @@ class LlamaRuntime:
         import re
         ext = ".exe" if sys.platform == "win32" else ""
         candidates = [
+            Path.home() / ".termux-llama" / "current" / "bin" / binary_name,
             self.bin_dir / f"{binary_name}{ext}",
             self.bin_dir / binary_name,
             self.bin_dir.parent / "current" / "bin" / binary_name,
-            Path.home() / ".termux-llama" / "current" / "bin" / binary_name,
             Path.home() / ".termux-llama" / "bin" / binary_name,
             Path.home() / ".termux-llamacpp" / "current" / "bin" / binary_name,
             Path.home() / ".termux-llamacpp" / "bin" / binary_name,
@@ -172,6 +180,66 @@ class LlamaRuntime:
 
         return None
 
+    def _prepare_env(self, device: str = "auto") -> Dict[str, str]:
+        """
+        Configure subprocess environment safely using the official ameva-vulkan-runtime HAL.
+
+        Args:
+            device: 'auto' (Vulkan priority with CPU fallback), 'vulkan' (strict GPU fail-fast), 'cpu' (pure NEON).
+
+        Returns:
+            Dict[str, str]: Prepared environment dictionary with verified LD_LIBRARY_PATH.
+        """
+        env = os.environ.copy()
+        dev_mode = str(device or "auto").strip().lower()
+
+        if dev_mode == "cpu" or sys.platform == "win32":
+            return env
+
+        try:
+            import ameva_vulkan_runtime as avr
+
+            # 1. Acquire Vulkan HAL context
+            if hasattr(avr, "create_context"):
+                ctx = avr.create_context(dev_mode)
+            elif hasattr(avr, "get_or_create_context"):
+                ctx = avr.get_or_create_context(dev_mode)
+            else:
+                ctx = avr.VulkanContext(dev_mode)
+
+            # 2. Verify GPU status
+            if ctx.backend_type == "vulkan" or getattr(ctx, "is_gpu", False):
+                # Dynamically resolve driver path from context or Android system
+                loader_path = getattr(ctx, "loader_path", "")
+                vk_dir = str(Path(loader_path).parent) if loader_path and os.path.exists(loader_path) else "/system/lib64"
+                if os.path.exists(vk_dir):
+                    existing_lp = env.get("LD_LIBRARY_PATH", "")
+                    if vk_dir not in existing_lp:
+                        env["LD_LIBRARY_PATH"] = f"{vk_dir}:{existing_lp}".rstrip(":")
+            elif dev_mode in ("vulkan", "gpu"):
+                raise TermuxLlamaError(
+                    f"Explicit Vulkan backend requested ('--device {device}'), but ameva-vulkan-runtime "
+                    f"initialized with non-GPU backend ('{ctx.backend_type}': {ctx.device_name})."
+                )
+        except ImportError:
+            if dev_mode in ("vulkan", "gpu"):
+                raise TermuxLlamaError(
+                    f"Explicit Vulkan acceleration requested ('--device {device}'), but 'ameva-vulkan-runtime' "
+                    f"is not installed. Please run 'pip install ameva-vulkan-runtime' or 'npm install ameva-vulkan-runtime'."
+                )
+            # Auto-mode graceful fallback to system Vulkan driver if present
+            if os.path.exists("/system/lib64/libvulkan.so"):
+                existing_lp = env.get("LD_LIBRARY_PATH", "")
+                if "/system/lib64" not in existing_lp:
+                    env["LD_LIBRARY_PATH"] = f"/system/lib64:{existing_lp}".rstrip(":")
+        except Exception as e:
+            if dev_mode in ("vulkan", "gpu"):
+                if isinstance(e, TermuxLlamaError):
+                    raise
+                raise TermuxLlamaError(f"AMEVA Vulkan Runtime initialization failed: {e}") from e
+
+        return env
+
     def serve(
         self,
         model: Union[str, Path],
@@ -180,6 +248,7 @@ class LlamaRuntime:
         ctx_size: int = 2048,
         threads: Optional[int] = None,
         n_gpu_layers: int = 0,
+        device: str = "auto",
         daemon: bool = False,
     ):
         """
@@ -198,7 +267,8 @@ class LlamaRuntime:
             port=port,
             ctx_size=ctx_size,
             threads=threads or self.hw.recommended_threads,
-            n_gpu_layers=n_gpu_layers,
+            n_gpu_layers=n_gpu_layers if device != "cpu" else 0,
+            device=device,
             daemon=daemon,
         )
 
@@ -209,12 +279,23 @@ class LlamaRuntime:
         max_tokens: int = 256,
         temperature: float = 0.7,
         threads: Optional[int] = None,
+        device: str = "auto",
+        n_gpu_layers: Optional[int] = None,
     ) -> str:
         """
-        Execute one-shot CLI text generation with the resolved model.
+        Execute one-shot CLI text generation with strict device routing (auto, vulkan, cpu).
+
+        Args:
+            model: Model name, alias, or path.
+            prompt: Text prompt input.
+            max_tokens: Maximum tokens to generate.
+            temperature: Sampling temperature.
+            threads: Worker threads count.
+            device: 'auto' (Vulkan priority with CPU fallback), 'vulkan' (strict GPU fail-fast), 'cpu' (pure NEON).
+            n_gpu_layers: Specific number of layers to offload to GPU.
 
         Raises:
-            ModelNotFoundError: If the model file is not found.
+            TermuxLlamaError: On inference failure or when strict Vulkan mode fails without fallback.
         """
         resolved_model_path = self.models.get(model)
         cli_bin = self.get_binary_path("llama-cli")
@@ -227,18 +308,81 @@ class LlamaRuntime:
                 f"  from termux_llamacpp import LlamaRuntime; LlamaRuntime.install()"
             )
 
-        cmd = [
-            str(cli_bin),
-            "-m", str(resolved_model_path),
-            "-p", prompt,
-            "-n", str(max_tokens),
-            "--temp", str(temperature),
-            "-t", str(threads or self.hw.recommended_threads),
-            "--no-display-prompt",
-        ]
+        t_count = str(threads or self.hw.recommended_threads)
+        ngl_target = 99 if n_gpu_layers is None else n_gpu_layers
 
-        try:
-            res = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        def _run_cmd(target_device: str, gpu_layers: int) -> subprocess.CompletedProcess:
+            env = self._prepare_env(device=target_device)
+            cmd = [
+                str(cli_bin),
+                "-m", str(resolved_model_path),
+                "-p", prompt,
+                "-n", str(max_tokens),
+                "--temp", str(temperature),
+                "-t", t_count,
+                "--single-turn",
+                "--simple-io",
+                "--no-display-prompt",
+            ]
+            if gpu_layers > 0 and target_device != "cpu":
+                cmd.extend(["-ngl", str(gpu_layers)])
+            else:
+                cmd.extend(["-ngl", "0"])
+
+            return subprocess.run(cmd, capture_output=True, text=True, env=env)
+
+        dev_mode = str(device or "auto").lower()
+
+        # 1. Strict GPU/Vulkan Mode (Fail-Fast: no fallback, return clear error on failure)
+        if dev_mode in ("vulkan", "gpu"):
+            res = _run_cmd("vulkan", ngl_target)
+            err_lower = (res.stderr or "").lower()
+            if "no usable gpu found" in err_lower or "no devices found" in err_lower or res.returncode != 0:
+                raise TermuxLlamaError(
+                    f"[ERROR] Vulkan GPU device initialization failed or unavailable on this device.\n"
+                    f"Fallback suppressed in strict '--device {dev_mode}' mode.\n"
+                    f"Please run in CPU mode using '--device cpu' or auto mode with '--device auto'.\n"
+                    f"Details: {res.stderr.strip()}"
+                )
             return res.stdout.strip()
-        except subprocess.CalledProcessError as e:
-            raise TermuxLlamaError(f"llama-cli inference failed: {e.stderr}") from e
+
+        # 2. Auto Mode (Check Vulkan capability first to prevent double-load overhead)
+        elif dev_mode == "auto":
+            use_vulkan = False
+            try:
+                import ameva_vulkan_runtime as avr
+                if hasattr(avr, "create_context"):
+                    use_vulkan = avr.create_context("auto").backend_type == "vulkan"
+                elif hasattr(avr, "get_or_create_context"):
+                    use_vulkan = avr.get_or_create_context("auto").backend_type == "vulkan"
+                else:
+                    use_vulkan = avr.VulkanContext("auto").backend_type == "vulkan"
+            except Exception:
+                pass
+
+            if use_vulkan:
+                res = _run_cmd("vulkan", ngl_target)
+                err_lower = (res.stderr or "").lower()
+                if "no usable gpu found" in err_lower or "no devices found" in err_lower or res.returncode != 0:
+                    sys.stderr.write("[WARN] Vulkan GPU execution failed. Falling back to ARM64 CPU NEON engine...\n")
+                    sys.stderr.flush()
+                    cpu_res = _run_cmd("cpu", 0)
+                    if cpu_res.returncode != 0:
+                        raise TermuxLlamaError(f"CPU NEON inference fallback failed: {cpu_res.stderr}")
+                    return cpu_res.stdout.strip()
+                return res.stdout.strip()
+            else:
+                cpu_res = _run_cmd("cpu", 0)
+                if cpu_res.returncode != 0:
+                    raise TermuxLlamaError(f"CPU NEON inference failed: {cpu_res.stderr}")
+                return cpu_res.stdout.strip()
+
+        # 3. CPU Mode (Direct ARM64 NEON execution)
+        elif dev_mode == "cpu":
+            res = _run_cmd("cpu", 0)
+            if res.returncode != 0:
+                raise TermuxLlamaError(f"CPU NEON inference failed: {res.stderr}")
+            return res.stdout.strip()
+
+        else:
+            raise ValueError(f"Unsupported device '{device}'. Must be one of ['auto', 'gpu', 'vulkan', 'cpu'].")

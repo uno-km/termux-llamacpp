@@ -68,6 +68,16 @@ BUILD_PRESETS: Dict[str, BuildPreset] = {
         description="SIMD-accelerated preset with DotProd and FP16 (requires runtime verification).",
         requires=["dotprod", "fp16"],
     ),
+    "android-arm64-vulkan": BuildPreset(
+        name="android-arm64-vulkan",
+        march="armv8-a",
+        cflags="-O3 -march=armv8-a",
+        cxxflags="-O3 -march=armv8-a",
+        openmp=False,
+        vulkan=True,
+        description="Vulkan GPU-accelerated preset with system Bionic ICD binding (Adreno & Mali).",
+        requires=["vulkan"],
+    ),
     "android-arm64-native": BuildPreset(
         name="android-arm64-native",
         march="native",
@@ -145,8 +155,11 @@ def _load_registry_models() -> Dict[str, ModelInfo]:
                         description=item.get("description", ""),
                         min_ram_mb=item.get("min_ram_mb", 2048),
                     )
-        except Exception:
-            pass
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Failed to load model registry from '%s': %s", registry_path, e
+            )
 
     return models_map
 
@@ -159,6 +172,7 @@ AVAILABLE_MODELS = list(CURATED_MODELS.keys())
 class RuntimeConfig:
     """Runtime configuration for llama.cpp native toolchain."""
     preset: str = "android-arm64-baseline"
+    device: str = "auto"
     bin_dir: Path = DEFAULT_BIN_DIR
     models_dir: Path = DEFAULT_MODELS_DIR
     run_dir: Path = DEFAULT_RUN_DIR
@@ -180,6 +194,7 @@ class ServerConfig:
     n_predict: int = 512
     threads: int = 4
     n_gpu_layers: int = 0
+    device: str = "auto"
     batch_size: int = 512
     ubatch_size: int = 512
     timeout_seconds: int = 30

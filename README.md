@@ -225,6 +225,20 @@ graph TD
 
 ---
 
+## 📝 Release Notes
+
+### [v1.2.0] — 2026-09-01
+- **Unified AMEVA Vulkan HAL Integration**: Seamless binding with `ameva-vulkan-runtime>=1.1.0` supporting Android Bionic Vulkan ICD (`/system/lib64/libvulkan.so`).
+- **Strict 3-Tier Execution Mode**:
+  - `--device vulkan`: Strict GPU shader acceleration with Fail-Fast protection (no silent CPU fallback).
+  - `--device auto`: Intelligent hardware discovery with transparent CPU NEON fallback.
+  - `--device cpu`: Zero-overhead direct CPU NEON forward pass bypassing the Vulkan loader.
+- **Dynamic Topology Optimization**: Automatic big-core cluster detection (`-t 4`) on ARM octa-core processors (e.g., Exynos 1380, Snapdragon).
+- **Galaxy A35 Real-Device Certification**: Fully verified end-to-end token generation across CLI, Python SDK, Node.js npm, and OpenAI-compatible server daemon.
+- **Dual-Ecosystem Availability**: Synchronously published to PyPI (`pip install termux-llamacpp`) and npm (`npm install -g termux-llamacpp`).
+
+---
+
 ## 📄 License
 
 This project is licensed under the [Apache-2.0 License](LICENSE).
