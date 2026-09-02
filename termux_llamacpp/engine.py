@@ -242,7 +242,7 @@ class LlamaRuntime:
 
     def serve(
         self,
-        model: Union[str, Path],
+        model: Optional[Union[str, Path]] = None,
         host: str = "127.0.0.1",
         port: int = 8080,
         ctx_size: int = 2048,
@@ -261,21 +261,22 @@ class LlamaRuntime:
 
         resolved_model_path = self.models.get(model)
         server_mgr = ServerManager(runtime=self)
+        dev_mode = "vulkan" if str(device).lower() == "gpu" else device
         return server_mgr.serve(
             model_path=resolved_model_path,
             host=host,
             port=port,
             ctx_size=ctx_size,
             threads=threads or self.hw.recommended_threads,
-            n_gpu_layers=n_gpu_layers if device != "cpu" else 0,
-            device=device,
+            n_gpu_layers=n_gpu_layers if dev_mode != "cpu" else 0,
+            device=dev_mode,
             daemon=daemon,
         )
 
     def generate(
         self,
-        model: Union[str, Path],
-        prompt: str,
+        model: Optional[Union[str, Path]] = None,
+        prompt: str = "",
         max_tokens: int = 256,
         temperature: float = 0.7,
         threads: Optional[int] = None,
@@ -283,21 +284,28 @@ class LlamaRuntime:
         n_gpu_layers: Optional[int] = None,
     ) -> str:
         """
-        Execute one-shot CLI text generation with strict device routing (auto, vulkan, cpu).
+        Execute one-shot CLI text generation with strict device routing (auto, vulkan, cpu, gpu).
 
         Args:
-            model: Model name, alias, or path.
+            model: Model name, alias, path, or None for auto-resolved default model.
             prompt: Text prompt input.
             max_tokens: Maximum tokens to generate.
             temperature: Sampling temperature.
             threads: Worker threads count.
-            device: 'auto' (Vulkan priority with CPU fallback), 'vulkan' (strict GPU fail-fast), 'cpu' (pure NEON).
+            device: 'auto' (Vulkan priority with CPU fallback), 'vulkan' / 'gpu' (strict GPU fail-fast), 'cpu' (pure NEON).
             n_gpu_layers: Specific number of layers to offload to GPU.
 
         Raises:
             TermuxLlamaError: On inference failure or when strict Vulkan mode fails without fallback.
         """
+        # If model is passed as prompt (single positional string) or model is omitted
+        if model is not None and prompt == "" and isinstance(model, str) and not (model.endswith(".gguf") or model in CURATED_MODELS):
+            # Model argument was used as prompt
+            prompt = model
+            model = None
+
         resolved_model_path = self.models.get(model)
+
         cli_bin = self.get_binary_path("llama-cli")
         if not cli_bin:
             raise RuntimeBuildError(

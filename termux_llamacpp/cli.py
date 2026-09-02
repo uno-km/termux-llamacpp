@@ -149,10 +149,25 @@ def cmd_serve(args):
 def cmd_run(args):
     """Run direct one-shot text generation with strict device routing."""
     runtime = LlamaRuntime()
+    # Resolve prompt from flag or positional argument
+    prompt_val = getattr(args, "prompt_flag", None) or getattr(args, "prompt", None) or getattr(args, "prompt_pos", "")
+    model_val = args.model
+
+    # If only one positional argument was provided and prompt is empty, check if model is prompt
+    if model_val and not prompt_val:
+        # Check if model_val looks like prompt
+        if not (model_val.endswith(".gguf") or model_val in CURATED_MODELS):
+            prompt_val = model_val
+            model_val = None
+
+    if not prompt_val:
+        print("[Error] Input prompt is required. Use 'termux-llama run [model] <prompt>' or 'termux-llama run -p \"<prompt>\"'", file=sys.stderr)
+        sys.exit(1)
+
     try:
         output = runtime.generate(
-            model=args.model,
-            prompt=args.prompt,
+            model=model_val,
+            prompt=prompt_val,
             max_tokens=args.max_tokens,
             temperature=args.temp,
             threads=args.threads,
@@ -162,6 +177,7 @@ def cmd_run(args):
     except TermuxLlamaError as e:
         print(f"\n[Error] {e}", file=sys.stderr)
         sys.exit(1)
+
 
 
 def cmd_stop(args):
@@ -335,22 +351,24 @@ def main():
 
     # serve
     p_serve = subparsers.add_parser("serve", help="Start OpenAI/termux-aichain server")
-    p_serve.add_argument("model", help="Model filename, alias, or direct path")
+    p_serve.add_argument("model", nargs="?", default=None, help="Model filename, alias, or direct path (default: first cached model)")
     p_serve.add_argument("--host", default="127.0.0.1", help="Host address (default: 127.0.0.1)")
     p_serve.add_argument("--port", type=int, default=8080, help="Port (default: 8080)")
     p_serve.add_argument("--ctx", type=int, default=2048, help="Context length in tokens")
     p_serve.add_argument("--threads", type=int, default=None, help="CPU threads")
-    p_serve.add_argument("--device", default="auto", choices=["auto", "vulkan", "cpu"], help="Compute device: auto (Vulkan priority with CPU fallback), vulkan (strict GPU fail-fast), cpu")
+    p_serve.add_argument("--device", default="auto", choices=["auto", "vulkan", "cpu", "gpu"], help="Compute device: auto (Vulkan priority with CPU fallback), vulkan/gpu (strict GPU fail-fast), cpu")
     p_serve.add_argument("-d", "--daemon", action="store_true", help="Run server in the background as a daemon")
 
     # run (direct one-shot inference)
     p_run = subparsers.add_parser("run", help="Run direct text generation with strict device routing")
-    p_run.add_argument("model", help="Model filename, alias, or direct path")
-    p_run.add_argument("prompt", help="Input text prompt")
-    p_run.add_argument("--device", default="auto", choices=["auto", "vulkan", "cpu"], help="Compute device: auto (Vulkan priority with CPU fallback), vulkan (strict GPU fail-fast), cpu")
+    p_run.add_argument("model", nargs="?", default=None, help="Model filename, alias, or direct path (default: first cached model)")
+    p_run.add_argument("prompt", nargs="?", default=None, help="Input text prompt (positional)")
+    p_run.add_argument("-p", "--prompt", dest="prompt_flag", default=None, help="Input text prompt (flag)")
+    p_run.add_argument("--device", default="auto", choices=["auto", "vulkan", "cpu", "gpu"], help="Compute device: auto (Vulkan priority with CPU fallback), vulkan/gpu (strict GPU fail-fast), cpu")
     p_run.add_argument("-n", "--max-tokens", type=int, default=256, help="Max tokens to generate")
     p_run.add_argument("-t", "--threads", type=int, default=None, help="CPU threads")
     p_run.add_argument("--temp", type=float, default=0.7, help="Sampling temperature")
+
 
     # stop
     subparsers.add_parser("stop", help="Stop all running termux-llama server instances")

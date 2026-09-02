@@ -56,13 +56,22 @@ class ModelManager:
     def __init__(self, models_dir: Optional[Union[str, Path]] = None):
         self.models_dir = ensure_models_dir(models_dir)
 
-    def resolve_model_path(self, model_identifier: Union[str, Path]) -> Path:
+    def resolve_model_path(self, model_identifier: Optional[Union[str, Path]] = None) -> Path:
         """
         Resolve a model name, alias, filename, or direct path to a validated local GGUF file.
+        If model_identifier is None, resolves to the first cached GGUF or default curated model.
 
         Raises:
             ModelNotFoundError: If the model file is missing from local storage.
         """
+        if model_identifier is None or str(model_identifier).strip() == "":
+            # Check cached models first
+            cached = list(self.models_dir.glob("*.gguf"))
+            if cached:
+                return cached[0].resolve()
+            # Default fallback alias
+            model_identifier = "qwen2.5-0.5b-instruct"
+
         path = Path(model_identifier)
         if path.is_file() and path.suffix.lower() == ".gguf":
             return path.resolve()
@@ -88,9 +97,10 @@ class ModelManager:
 
         raise ModelNotFoundError(str(model_identifier), str(self.models_dir))
 
-    def get(self, model_identifier: Union[str, Path]) -> Path:
+    def get(self, model_identifier: Optional[Union[str, Path]] = None) -> Path:
         """Alias for resolve_model_path with automatic verification."""
         return self.resolve_model_path(model_identifier)
+
 
     def download(
         self,
