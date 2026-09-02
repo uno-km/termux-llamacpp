@@ -1,6 +1,7 @@
 """GGUF Model Downloader, Cache Manager, HTTP Range Resume with ETag, and Integrity Verifier."""
 
 import hashlib
+import hmac
 import json
 import os
 import shutil

@@ -9,6 +9,7 @@ import time
 from pathlib import Path
 import requests
 
+from termux_llamacpp import __version__
 from termux_llamacpp.engine import LlamaRuntime
 from termux_llamacpp.downloader import ModelManager
 from termux_llamacpp.crawler import HuggingFaceCrawler
@@ -228,7 +229,7 @@ def cmd_find(args):
     crawler = HuggingFaceCrawler()
     print(f"[termux-llama] Searching Hugging Face for '{args.query}' (deep_crawl={args.deep})...")
     try:
-        results = crawler.search_models(
+        results = crawler.discover(
             query=args.query,
             limit=args.limit,
             deep_crawl=args.deep,
@@ -243,15 +244,15 @@ def cmd_find(args):
             downloads = f"⬇️ {r.downloads}" if r.downloads else ""
             stats = f"({likes} {downloads})".strip()
             print(f" • {r.repo_id} {stats}")
-            if r.direct_download_url:
-                print(f"   URL: {r.direct_download_url}")
+            if getattr(r, "download_url", None):
+                print(f"   URL: {r.download_url}")
             if r.description:
                 print(f"   Desc: {r.description[:80]}...")
             print()
     except DependencyMissingError as e:
         print(f"\n[Warning] {e}")
         print("Falling back to standard REST API search...")
-        results = crawler.search_models(query=args.query, limit=args.limit, deep_crawl=False)
+        results = crawler.discover(query=args.query, limit=args.limit, deep_crawl=False)
         for r in results:
             print(f" • {r.repo_id}")
     except Exception as e:
@@ -283,10 +284,10 @@ def cmd_curated(args):
     print(f"{'Alias':<26} {'Size':<10} {'RAM':<10} {'Repo / File'}")
     print("-" * 75)
     for alias, info in CURATED_MODELS.items():
-        size = getattr(info, "size", info.get("size") if isinstance(info, dict) else "")
-        ram = getattr(info, "recommended_ram", info.get("recommended_ram") if isinstance(info, dict) else "")
-        repo = getattr(info, "repo_id", info.get("repo_id") if isinstance(info, dict) else "")
-        print(f"{alias:<26} {size:<10} {ram:<10} {repo}")
+        size_str = f"{info.size_mb:.1f} MB" if hasattr(info, "size_mb") and info.size_mb > 0 else "-"
+        ram_str = f"{info.min_ram_mb} MB" if hasattr(info, "min_ram_mb") and info.min_ram_mb > 0 else "-"
+        repo = getattr(info, "repo_id", "")
+        print(f"{alias:<26} {size_str:<10} {ram_str:<10} {repo}")
     print("\nTo download, run: termux-llama download <alias>\n")
 
 
@@ -312,7 +313,7 @@ def main():
         prog="termux-llama",
         description="Universal GGUF Runtime, Model Manager & OpenAI Server for Android Termux & ARM64",
     )
-    parser.add_argument("--version", action="version", version="termux-llamacpp 1.1.0")
+    parser.add_argument("--version", action="version", version=f"termux-llamacpp {__version__}")
     parser.add_argument("-d", "--daemon", action="store_true", help="Run in background daemon mode")
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
 

@@ -55,3 +55,8 @@ temp/
 state.json
 *.tmp
 
+
+*ssh*.py
+ssh_real_device_test.py
+*.env
+.env.*

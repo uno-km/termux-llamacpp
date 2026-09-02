@@ -1,0 +1,211 @@
+name: Termux-LlamaCpp
+package_name_pypi: termux-llamacpp
+package_name_npm: termux-llamacpp
+version: v1.2.0
+release_name: Production Release
+license: Apache-2.0
+platform: Android ARM64 / Termux Bionic
+github_repo_url: https://github.com/uno-km/termux-llamacpp
+tagline_en: Production-Grade Prebuilt GGUF LLM Runtime, Model Manager & OpenAI Server
+  for Android ARM64
+tagline_ko: Android Termux ARM64 전용 제로 컴파일 사전 빌드 GGUF LLM 런타임, 모델 매니저 및 OpenAI 호환
+  REST/SSE 서버
+quick_install_cmd: 'pip install termux-llamacpp && termux-llama install
+
+  # or Node.js:
+
+  npm install -g termux-llamacpp && termux-llama install'
+why_challenge_en: Running local LLMs on mobile Android typically requires multi-gigabyte
+  compiler toolchains (Clang, CMake, Ninja), 20+ minute compilation times, fragile
+  Bionic linker dependencies, and severe memory thrashing under default mmap allocations.
+why_challenge_ko: 스마트폰 및 엣지 단말기에서 로컬 LLM을 실행하려면 수 기가바이트의 컴파일러 툴체인(Clang, CMake, Ninja)
+  설치, 20~30분에 달하는 기기 발열 컴파일, 공유 라이브러리 동적 링커 누락, 모바일 mmap 메모리 잠금으로 인한 강제 프로세스 종료 등의
+  심각한 문제가 발생합니다.
+description_en: Ships verified, cryptographically signed Android ARM64 native binaries
+  with bundled shared libraries and unified Vulkan HAL acceleration, enabling instant
+  zero-compilation local inference and a robust OpenAI-compatible REST/SSE supervisor
+  in under 3 seconds.
+description_ko: 암호학적으로 검증된 Android Bionic ARM64 네이티브 바이너리와 필수 공유 라이브러리, 그리고 AMEVA
+  Vulkan HAL을 통합 제공하여 3초 이내 즉각적인 제로 컴파일 실행과 안정적인 OpenAI 호환 REST/SSE 스트리밍 수퍼바이저 서버를
+  구현합니다.
+features:
+- title_en: Zero-Compilation Instant Deployment
+  title_ko: 제로 컴파일 즉시 설치
+  desc_en: Installs verified Android Bionic ARM64 binaries and bundled shared libraries
+    via cryptographic SHA-256 checks in under 3 seconds without local Clang/CMake.
+  desc_ko: Clang이나 CMake 없이 검증된 Android ARM64 바이너리와 공유 라이브러리를 SHA-256 무결성 검증을 거쳐 3초
+    이내에 원자적으로 설치합니다.
+- title_en: Unified Vulkan HAL & Big-Core Tuning
+  title_ko: 통합 Vulkan HAL 및 빅코어 최적화
+  desc_en: Deep integration with ameva-vulkan-runtime v1.1.0 supporting GPU shader
+    acceleration and automated octa-core big.LITTLE cluster thread pinning (-t 4).
+  desc_ko: 통합 ameva-vulkan-runtime v1.1.0과 연동하여 GPU 셰이더 가속을 지원하고, ARM 옥타코어 빅.리틀 토폴로지를
+    자동 감지하여 빅코어(-t 4)에 전담 스케줄링합니다.
+- title_en: Strict 3-Tier Execution Mode
+  title_ko: 엄격한 3단계 실행 모드
+  desc_en: Supports --device vulkan (Fail-Fast GPU compute), --device auto (transparent
+    CPU NEON recovery), and --device cpu (zero-overhead direct forward pass).
+  desc_ko: --device vulkan(GPU 엄격 가속 및 Fail-Fast), --device auto(상태 감지 및 투명한 CPU 복구),
+    --device cpu(0ms 오버헤드 순수 NEON 직결) 3단계 모드를 제공합니다.
+- title_en: OpenAI REST & SSE Streaming Supervisor
+  title_ko: OpenAI 호환 REST/SSE 수퍼바이저
+  desc_en: Built-in reverse proxy supervisor exposing /health, /v1/models, and /v1/chat/completions
+    with real-time SSE streaming and loopback CORS isolation.
+  desc_ko: 내장 리버스 프록시 수퍼바이저가 /health, /v1/models, /v1/chat/completions REST 및 실시간
+    SSE 스트리밍 엔드포인트를 완벽 격리 제공합니다.
+- title_en: Automated Process Lifecycle & Cleanup
+  title_ko: 엄격한 프로세스 수명주기 관리
+  desc_en: Guarantees 100% process termination on shutdown or error, with bounded
+    health check polling and zero leftover orphaned daemon processes.
+  desc_ko: 서버 종료나 예외 발생 시 전용 PID 추적 및 시그널 전파를 통해 백그라운드 좀비 프로세스를 0개로 완전 정리합니다.
+- title_en: Supply-Chain Cryptographic Integrity
+  title_ko: 공급망 보안 및 암호학적 무결성
+  desc_en: Enforces Ed25519 signed manifests, anti-downgrade policies, symlink traversal
+    blocking, and local build receipts.
+  desc_ko: Ed25519 전자서명 검증, 버전 다운그레이드 방지, 심볼릭 링크 공격 차단 및 로컬 빌드 증적 검증으로 최고 수준의 공급망
+    보안을 보장합니다.
+matrix_table:
+- category: Inference Engine
+  operations: llama.cpp (Vulkan GPU Acceleration & ARM64 NEON DotProd)
+  status: Production
+- category: Architecture Support
+  operations: Android aarch64 / arm64-v8a (Bionic libc, Qualcomm Adreno, ARM Mali,
+    Samsung Xclipse)
+  status: Production
+- category: Supported Quantizations
+  operations: Q4_K_M, Q5_K_M, Q8_0, IQ4_XS, Q2_K, F16 GGUF v3
+  status: Production
+- category: Protocols & APIs
+  operations: OpenAI Chat Completions (JSON & SSE Stream), Models List, Health Check
+  status: Production
+- category: SDK Bindings
+  operations: Python 3.8+ (termux-llamacpp), Node.js / TypeScript 16+ (termux-llamacpp)
+  status: Production
+code_example_py: "from termux_llamacpp import LlamaRuntime, RuntimeConfig\n\n# 1.\
+  \ Initialize Runtime with Vulkan GPU Acceleration\nconfig = RuntimeConfig(\n   \
+  \ model_path=\"models/Llama-3.2-1B-Instruct-Q4_K_M.gguf\",\n    device=\"auto\"\
+  ,\n    threads=4,\n    context_size=2048\n)\nruntime = LlamaRuntime(config)\n\n\
+  # 2. Synchronous or Streaming Text Generation\noutput = runtime.generate(\"한국의 사계절\
+  \ 중 가을의 매력에 대해 설명해줘.\", max_tokens=256)\nprint(output.text)\nprint(f\"Speed: {output.metrics.eval_tokens_per_sec:.2f}\
+  \ t/s (Prompt: {output.metrics.prompt_tokens_per_sec:.2f} t/s)\")"
+code_example_js: "import { LlamaRuntime } from \"termux-llamacpp\";\n\n// 1. Initialize\
+  \ ESM Runtime\nconst runtime = new LlamaRuntime({\n  modelPath: \"models/Llama-3.2-1B-Instruct-Q4_K_M.gguf\"\
+  ,\n  device: \"auto\",\n  threads: 4\n});\n\n// 2. Generate Completion\nconst result\
+  \ = await runtime.generate({\n  prompt: \"Explain the architectural philosophy of\
+  \ edge computing.\",\n  maxTokens: 256\n});\nconsole.log(\"Response:\", result.text);\n\
+  console.log(`Generation Speed: ${result.metrics.evalTokensPerSec} t/s`);"
+installation_body: "<div class=\"alert alert-tip\">\n  <span class=\"alert-title\"\
+  >1-Line Zero-Compilation Automated Installation</span>\n  <p><code>termux-llamacpp</code>\
+  \ includes prebuilt ARM64 native binaries with bundled Bionic shared libraries and\
+  \ cryptographic SHA-256 validation. No compiler toolchain required.</p>\n</div>\n\
+  <h3>1. Python (PyPI) Installation</h3>\n<pre><code>pip install --upgrade termux-llamacpp\n\
+  termux-llama install</code></pre>\n<h3>2. Node.js / TypeScript (npm) Installation</h3>\n\
+  <pre><code>npm install -g termux-llamacpp\ntermux-llama install</code></pre>\n<h3>3.\
+  \ Automated One-Line Shell Script</h3>\n<pre><code>curl -sSL https://raw.githubusercontent.com/uno-km/termux-llamacpp/master/scripts/install.sh\
+  \ | bash</code></pre>"
+quickstart_body: "<h3>1. Instant CLI Chat Execution</h3>\n<pre><code># Run interactive\
+  \ CLI inference with auto-detected Vulkan GPU / CPU NEON\ntermux-llama run -m models/Llama-3.2-1B-Instruct-Q4_K_M.gguf\
+  \ -p \"안녕하세요!\" --device auto</code></pre>\n\n<h3>2. Background OpenAI-Compatible\
+  \ Server Daemon</h3>\n<pre><code># Start background server daemon on port 8080 (zero-zombie\
+  \ supervisor)\ntermux-llama serve -m models/Llama-3.2-1B-Instruct-Q4_K_M.gguf --port\
+  \ 8080 -d\n\n# Send standard OpenAI Chat Completion request\ncurl http://127.0.0.1:8080/v1/chat/completions\
+  \ \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"model\": \"Llama-3.2-1B\"\
+  ,\n    \"messages\": [{\"role\": \"user\", \"content\": \"로컬 엣지 AI의 장점은?\"}],\n\
+  \    \"stream\": true\n  }'\n\n# Gracefully terminate daemon\ntermux-llama serve\
+  \ --stop</code></pre>"
+api_body: "<h3>Core Engine & Runtime API</h3>\n<table class=\"data-table\">\n  <thead>\n\
+  \    <tr><th>Class / Function</th><th>Parameters</th><th>Description</th></tr>\n\
+  \  </thead>\n  <tbody>\n    <tr>\n      <td><code>LlamaRuntime</code></td>\n   \
+  \   <td><code>config: RuntimeConfig</code></td>\n      <td>High-level local inference\
+  \ supervisor with auto backend selection.</td>\n    </tr>\n    <tr>\n      <td><code>LlamaRuntime.generate</code></td>\n\
+  \      <td><code>prompt: str, max_tokens: int = 512, stream: bool = False</code></td>\n\
+  \      <td>Generates tokens with latency profiling and GenerationMetrics.</td>\n\
+  \    </tr>\n    <tr>\n      <td><code>ServerManager</code></td>\n      <td><code>config:\
+  \ ServerConfig</code></td>\n      <td>Manages lifecycle of OpenAI-compatible reverse\
+  \ proxy daemon.</td>\n    </tr>\n    <tr>\n      <td><code>ModelManager.download</code></td>\n\
+  \      <td><code>model_id: str, destination: Path</code></td>\n      <td>Downloads\
+  \ curated GGUF models with SHA-256 verification.</td>\n    </tr>\n  </tbody>\n</table>"
+benchmarks_body: "<h3>1. Real-Device Samsung Galaxy A35 (Exynos 1380 / Mali-G68 GPU)</h3>\n\
+  <p>Measured on Samsung Galaxy A35 5G running Android 14 Termux:</p>\n<table class=\"\
+  data-table\">\n  <thead>\n    <tr><th>Interface Mode</th><th>Model</th><th>Prompt\
+  \ Speed</th><th>Generation Speed</th><th>Status</th></tr>\n  </thead>\n  <tbody>\n\
+  \    <tr>\n      <td><strong>CLI Mode</strong> (<code>termux-llama run</code>)</td>\n\
+  \      <td>Qwen 2.5 0.5B Instruct</td>\n      <td><strong>9.4 tokens/sec</strong></td>\n\
+  \      <td><strong>5.0 tokens/sec</strong></td>\n      <td><span class=\"status-badge\
+  \ active\">PASS</span></td>\n    </tr>\n    <tr>\n      <td><strong>Python SDK</strong>\
+  \ (<code>LlamaRuntime.generate</code>)</td>\n      <td>Qwen 2.5 0.5B Instruct</td>\n\
+  \      <td><strong>13.9 tokens/sec</strong></td>\n      <td><strong>8.5 tokens/sec</strong></td>\n\
+  \      <td><span class=\"status-badge active\">PASS</span></td>\n    </tr>\n   \
+  \ <tr>\n      <td><strong>Node.js ESM</strong> (<code>termux-llama</code> Bridge)</td>\n\
+  \      <td>Qwen 2.5 0.5B Instruct</td>\n      <td><strong>12.5 tokens/sec</strong></td>\n\
+  \      <td><strong>6.4 tokens/sec</strong></td>\n      <td><span class=\"status-badge\
+  \ active\">PASS</span></td>\n    </tr>\n  </tbody>\n</table>\n\n<h3>2. Samsung Galaxy\
+  \ S20+ (Snapdragon 865 / Adreno 650)</h3>\n<table class=\"data-table\">\n  <thead>\n\
+  \    <tr><th>Model</th><th>Quantization</th><th>Cold Warmup</th><th>Prompt Speed</th><th>Generation\
+  \ Speed</th></tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td><strong>Llama 3.2\
+  \ 1B Instruct</strong></td>\n      <td><code>Q4_K_M</code> (800 MB)</td>\n     \
+  \ <td>1.8s</td>\n      <td><strong>18.2 tokens/sec</strong></td>\n      <td><strong>16.5\
+  \ tokens/sec</strong></td>\n    </tr>\n    <tr>\n      <td><strong>Llama 3.2 3B\
+  \ Instruct</strong></td>\n      <td><code>Q4_K_M</code> (1.92 GB)</td>\n      <td>2.3s</td>\n\
+  \      <td><strong>16.2 tokens/sec</strong></td>\n      <td><strong>10.2 tokens/sec</strong></td>\n\
+  \    </tr>\n  </tbody>\n</table>"
+advanced_parameters_body: "<h3>1. Device Backend & Acceleration Modes</h3>\n<table\
+  \ class=\"data-table\">\n  <thead>\n    <tr><th>CLI Flag</th><th>SDK Parameter</th><th>Default</th><th>Behavior</th></tr>\n\
+  \  </thead>\n  <tbody>\n    <tr>\n      <td><code>--device vulkan</code></td>\n\
+  \      <td><code>device=\"vulkan\"</code></td>\n      <td>-</td>\n      <td>Strict\
+  \ GPU shader acceleration mode with Fail-Fast protection (no CPU fallback).</td>\n\
+  \    </tr>\n    <tr>\n      <td><code>--device auto</code></td>\n      <td><code>device=\"\
+  auto\"</code></td>\n      <td><strong>Recommended</strong></td>\n      <td>Intelligent\
+  \ 12-stage hardware probe with automatic CPU NEON fallback.</td>\n    </tr>\n  \
+  \  <tr>\n      <td><code>--device cpu</code></td>\n      <td><code>device=\"cpu\"\
+  </code></td>\n      <td>-</td>\n      <td>Bypasses Vulkan loader for 0ms direct\
+  \ pure-ARM64 NEON execution.</td>\n    </tr>\n  </tbody>\n</table>\n\n<h3>2. Core\
+  \ Thread Pinning & Thermal Mitigation</h3>\n<pre><code># Target 4 high-performance\
+  \ big cores (Cortex-A78 / X-series)\ntermux-llama run -m models/Llama-3.2-1B.gguf\
+  \ --threads 4</code></pre>"
+changelog:
+- version: v1.2.0
+  date: '2026-09-01'
+  title: Unified AMEVA Vulkan HAL & Galaxy A35 Validation
+  type: Production Release (Latest)
+  changes:
+  - 'Unified AMEVA Vulkan HAL Integration: Deep binding with ameva-vulkan-runtime
+    v1.1.0 utilizing Android Bionic Vulkan ICD (/system/lib64/libvulkan.so).'
+  - 'Strict 3-Tier Execution Mode: Added --device vulkan (Fail-Fast GPU compute),
+    --device auto (transparent CPU recovery), and --device cpu (0ms direct NEON forward
+    pass).'
+  - 'Dynamic Octa-Core Thread Tuning: Automatic detection of ARM big.LITTLE architectures
+    (Exynos 1380, Snapdragon) injecting optimal big-core threads (-t 4).'
+  - 'Dual Package Distribution: Synchronously released to Python PyPI (termux-llamacpp
+    v1.2.0) and Node.js npm (termux-llamacpp v1.2.0).'
+  - 'Real-Device Galaxy A35 Validation: End-to-end verification across CLI, Python
+    SDK, Node.js npm, and background OpenAI REST server daemon.'
+  - 'Supply-Chain Receipt Gatekeeper: Added verified build receipt support (llama-server.build-receipt.json)
+    for local native binaries.'
+- version: v1.1.0
+  date: '2026-08-30'
+  title: Supply-Chain Cryptographic Verification & Multi-Channel Crawler
+  type: Stable Release
+  changes:
+  - 'Ed25519 Public Key Verification: Cryptographic manifest verification with SHA-256
+    binary validation.'
+  - 'Multi-Channel HuggingFace GGUF Crawler: Deep model discovery and automated quant
+    downloader.'
+  - 'Process Supervisor Resilience: Guaranteed zero-zombie process termination with
+    tracked PID ledger.'
+- version: v1.0.2
+  date: '2026-08-28'
+  title: Bionic Dynamic Linker Stabilization & Dual-Ecosystem Publishing
+  type: Stable Release
+  changes:
+  - 'Bionic Shared Library Bundling: Packaged libgomp and libstdc++ to prevent missing
+    symbol errors on raw Termux.'
+  - 'NPM Binary Wrapper: Added standalone ESM binary resolver for Node.js environments.'
+- version: v1.0.0
+  date: '2026-08-27'
+  title: Initial Production GGUF LLM Runtime Release
+  type: Initial Release
+  changes:
+  - 'Prebuilt ARM64 llama.cpp Native Binaries: Direct extraction in under 3 seconds.'
+  - 'Loopback Isolated OpenAI Server: /v1/chat/completions REST and SSE streaming
+    supervisor.'
