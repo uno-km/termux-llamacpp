@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "termux-llamacpp"
-version = "1.2.0"
+version = "1.2.1"
 description = "Supply-Chain Verified GGUF Runtime, Model Manager & OpenAI Supervisor for Android Termux & ARM64"
 readme = "README.md"
 authors = [{ name = "uno-km", email = "dev@ameva.org" }]

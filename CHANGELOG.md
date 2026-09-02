@@ -7,12 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.2.0] - 2026-09-02
+## [1.2.1] - 2026-09-02
 
 ### Added
 - **Reverse Proxy Supervisor**: Production reverse proxy with OpenAI /v1/chat/completions compatibility.
 - **Trust Store**: Ed25519 cryptographic binary verification for ARM64 server builds.
-- **Hardware Prober**: Auto-detection of Qualcomm Adreno Vulkan and ARM NEON SIMD vector units.
+- **Standard 3-View READMEs**: Complete PyPI and NPM documentation parity.
 
 ### Fixed
 - **CLI Exception Transparency**: Differentiated HTTP health probe timeout and connection errors in warmup loop.
