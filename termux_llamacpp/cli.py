@@ -403,6 +403,15 @@ def main():
     subparsers.add_parser("doctor", help="Inspect hardware topology & binary status")
     subparsers.add_parser("hardware", help="Inspect hardware topology & binary status")
 
+    # ── AMEVA Component Protocol v1 ─────────────────────────────────────────
+    try:
+        from ameva_component.cli_support import build_protocol_subcommands
+        build_protocol_subcommands(subparsers)
+        _protocol_available = True
+    except ImportError:
+        _protocol_available = False
+    # ────────────────────────────────────────────────────────────────────────
+
     args = parser.parse_args()
     if not args.command:
         parser.print_help()
@@ -425,7 +434,17 @@ def main():
     fn = dispatch.get(args.command)
     if fn:
         fn(args)
+    elif args.command in ("component", "model", "instance") and _protocol_available:
+        # AMEVA Component Protocol v1 명령 처리
+        from ameva_component.cli_support import dispatch_protocol
+        from termux_llamacpp.control import LlamaCppControl
+        control = LlamaCppControl()
+        dispatch_protocol(args, control)
+    elif args.command in ("component", "model", "instance"):
+        print("[ERROR] ameva-component-sdk not installed. Run: pip install ameva-component-sdk", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
     main()
+
