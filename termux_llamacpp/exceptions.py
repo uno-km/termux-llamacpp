@@ -1,7 +1,5 @@
 """Custom exceptions for termux-llamacpp."""
 
-import sys
-
 
 class TermuxLlamaError(Exception):
     """Base exception for all termux-llamacpp errors."""

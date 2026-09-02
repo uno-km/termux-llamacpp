@@ -2,7 +2,6 @@
 
 import logging
 import os
-import platform
 import shutil
 import subprocess
 import sys
@@ -13,11 +12,8 @@ logger = logging.getLogger("termux_llamacpp.engine")
 
 from termux_llamacpp.config import (
     RuntimeConfig,
-    ServerConfig,
-    GenerationMetrics,
     DEFAULT_BIN_DIR,
     DEFAULT_MODELS_DIR,
-    BUILD_PRESETS,
     LLAMA_CPP_PINNED_COMMIT,
 )
 from termux_llamacpp.downloader import ModelManager
@@ -25,7 +21,6 @@ from termux_llamacpp.crawler import HuggingFaceCrawler
 from termux_llamacpp.hardware import detect_hardware, HardwareProfile
 from termux_llamacpp.exceptions import (
     RuntimeBuildError,
-    ModelNotFoundError,
     TermuxLlamaError,
 )
 

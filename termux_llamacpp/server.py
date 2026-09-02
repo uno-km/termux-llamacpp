@@ -3,11 +3,9 @@
 import ipaddress
 import json
 import os
-import signal
 import subprocess
 import sys
 import time
-import uuid
 import hmac
 import logging
 import urllib.request

@@ -9,8 +9,6 @@ import json
 import os
 import re
 import shutil
-import stat
-import sys
 import urllib.parse
 from dataclasses import dataclass
 from enum import Enum
