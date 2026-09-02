@@ -39,6 +39,7 @@ def main():
     pyproject_sha = compute_sha256(pyproject_path)
 
     from termux_llamacpp.config import LLAMA_CPP_PINNED_COMMIT
+    from termux_llamacpp import __version__
 
     # 1. Update artifacts/digest-chain.json
     digest_data = {
@@ -49,8 +50,8 @@ def main():
         "working_tree_state": "clean",
         "llama_cpp_upstream_repository": "https://github.com/ggerganov/llama.cpp.git",
         "llama_cpp_upstream_commit_pinned": LLAMA_CPP_PINNED_COMMIT,
-        "package_version": "1.0.0b1",
-        "status": "Development Status :: 4 - Beta",
+        "package_version": __version__,
+        "status": "Development Status :: 5 - Production/Stable",
         "pyproject_toml_sha256": pyproject_sha,
         "wheel_sha256": wheel_sha,
         "sdist_sha256": sdist_sha,
