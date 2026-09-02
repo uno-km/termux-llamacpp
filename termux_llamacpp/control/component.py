@@ -66,6 +66,10 @@ class LlamaCppControl(ComponentControl):
         self._inst_reg   = InstanceRegistry(self.COMPONENT_ID)
         self._act_lock   = ActivationLock()
 
+        # Phase 4: Heartbeat Writer
+        from termux_llamacpp.control.status import LlamaCppStatusWriter
+        self._heartbeat = LlamaCppStatusWriter(self)
+
         # 기존 ModelManager는 선택적 import (termux-llamacpp 자체 내에서만 사용)
         self._model_manager: Any = None
         try:
@@ -73,6 +77,7 @@ class LlamaCppControl(ComponentControl):
             self._model_manager = ModelManager(str(self._models_dir))
         except Exception as e:
             log_stderr(f"[llamacpp] ModelManager import failed (non-fatal): {e}")
+
 
     # ------------------------------------------------------------------
     # 1. component_info
@@ -439,7 +444,10 @@ class LlamaCppControl(ComponentControl):
         self._inst_reg.register(inst)
         self._inst_reg.update_state(instance_id, InstanceState.HOT)
         self._write_state()
+        # Phase 4: Heartbeat 시작 (Worker 시작 트리거)
+        self._heartbeat.start()
         return {"instance_id": instance_id, "state": InstanceState.HOT.value}
+
 
     # ------------------------------------------------------------------
     # 11. drain_instance
@@ -464,8 +472,14 @@ class LlamaCppControl(ComponentControl):
             raise InstanceNotFound(instance_id)
         self._inst_reg.update_state(instance_id, InstanceState.STOPPED)
         self._inst_reg.remove(instance_id)
-        self._write_state()
+        # Phase 4: Heartbeat 중단 (정상 종료 트리거)
+        remaining = self._inst_reg.list_all()
+        if not remaining:
+            self._heartbeat.stop()
+        else:
+            self._write_state()
         return {"instance_id": instance_id, "state": InstanceState.STOPPED.value}
+
 
     # ------------------------------------------------------------------
     # 내부 헬퍼

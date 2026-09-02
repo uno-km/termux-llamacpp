@@ -1,4 +1,4 @@
-"""termux_llamacpp.control — AMEVA Component Protocol v1 공개 API."""
+"""termux_llamacpp.control — AMEVA Component Protocol v1."""
 from .component import LlamaCppControl
-
-__all__ = ["LlamaCppControl"]
+from .status import LlamaCppStatusWriter
+__all__ = ["LlamaCppControl", "LlamaCppStatusWriter"]
