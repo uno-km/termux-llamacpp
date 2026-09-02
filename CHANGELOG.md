@@ -1,38 +1,25 @@
-# Changelog
+﻿# Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to 	ermux-llamacpp will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2026-09-01
+---
+
+## [1.2.0] - 2026-09-02
 
 ### Added
-- **Unified AMEVA Vulkan HAL v1.1.0 Integration**: Added deep integration with meva-vulkan-runtime>=1.1.0 providing certified 12-stage hardware diagnostic checks.
-- **Strict 3-Tier Execution Mode**:
-  - --device vulkan: Strict GPU compute with Fail-Fast protection (no silent CPU fallback).
-  - --device auto: Intelligent hardware discovery with transparent ARM64 NEON fallback.
-  - --device cpu: Zero-overhead direct CPU NEON forward pass bypassing Vulkan loader.
-- **Dynamic Octa-Core Thread Tuning**: Automatic detection of ARM big.LITTLE architectures (e.g. Exynos 1380, Snapdragon) injecting -t 4 for optimal big-core throughput.
-- **Dual Package Distribution**: Synchronized distribution across Python PyPI (	ermux-llamacpp) and Node.js npm (	ermux-llamacpp).
-- **Real-Device Galaxy A35 Validation**: End-to-end multi-modal inference and OpenAI-compatible REST server verification on Samsung Galaxy A35 (Android 14, Bionic ICD /system/lib64/libvulkan.so).
+- **Reverse Proxy Supervisor**: Production reverse proxy with OpenAI /v1/chat/completions compatibility.
+- **Trust Store**: Ed25519 cryptographic binary verification for ARM64 server builds.
+- **Hardware Prober**: Auto-detection of Qualcomm Adreno Vulkan and ARM NEON SIMD vector units.
 
 ### Fixed
-- **Supply-Chain Receipt Gatekeeper**: Added verified build receipt support (llama-server.build-receipt.json) for local and custom native binaries.
-- **Process Supervisor Resilience**: Guaranteed zero-zombie process termination with tracked PID ledger.
+- **CLI Exception Transparency**: Differentiated HTTP health probe timeout and connection errors in warmup loop.
+- **Lock File Cleanup**: Added structured warning logs on server shutdown lock file removal failures.
+- **PIDLockManager Refactor**: Removed dead legacy alias and unified under ProcessIdentityLock.
+- **Model Verification**: Added strict expected_model_id validation in 
+ative_is_ready().
 
----
-
-## [1.1.0] - 2026-08-30
-
-### Added
-- Supply-chain security verification with Ed25519 signatures and SHA-256 binary manifests.
-- Multi-channel HuggingFace GGUF crawler and downloader.
-- Background OpenAI server daemon mode (	ermux-llama serve -d).
-
----
-
-## [1.0.0] - 2026-08-15
-
-### Added
-- Initial release with prebuilt ARM64 llama.cpp binaries for Android Termux.
+### Cleaned
+- Purged tracked uild/ directory and orphan .pyc cache files.
