@@ -9,6 +9,7 @@ import sys
 import time
 import uuid
 import hmac
+import logging
 import urllib.request
 import urllib.error
 import urllib.parse
@@ -16,6 +17,8 @@ from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 from typing import Optional, Union, Dict, Any, List, Callable
 import threading
+
+logger = logging.getLogger("termux_llamacpp.server")
 
 import requests
 
@@ -146,10 +149,10 @@ class BoundedRingLogger:
 
             try:
                 self.log_file.chmod(0o600)
-            except Exception:
-                pass
-        except Exception:
-            pass
+            except OSError as e:
+                logger.debug("chmod 0600 on log file failed: %s", e)
+        except Exception as e:
+            logger.debug("Failed to write line to log file %s: %s", self.log_file, e)
 
     def get_last_error_tail(self, max_count: int = 20) -> str:
         return "\n".join(self.recent_lines[-max_count:])
@@ -405,8 +408,8 @@ class ReverseProxyHTTPHandler(BaseHTTPRequestHandler):
             self.end_headers()
             try:
                 self.wfile.write(exc.read())
-            except (BrokenPipeError, ConnectionResetError):
-                pass
+            except (BrokenPipeError, ConnectionResetError) as e:
+                logger.debug("Client disconnected during error response write: %s", e)
         except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
             self._send_proxy_error(503, "LLAMA_SERVER_UNAVAILABLE", "Native llama-server request timed out or unavailable.", str(exc))
 
@@ -581,8 +584,8 @@ class ServerInstance:
             if getattr(self, "is_owned", False) and getattr(self, "process", None) is not None:
                 if self.process.poll() is None:
                     self.stop()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Exception in ServerInstance.__del__: %s", e)
 
 
 class ServerManager:

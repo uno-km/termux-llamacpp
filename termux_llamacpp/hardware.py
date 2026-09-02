@@ -5,6 +5,7 @@ import logging
 import os
 import platform
 import subprocess
+import sys
 from dataclasses import dataclass
 from typing import Dict, Any, Optional
 
@@ -158,6 +159,7 @@ def _get_memory_info() -> tuple:
     total_mb = 4096.0
     avail_mb = 2048.0
 
+    # 1. Linux / Android /proc/meminfo
     if os.path.exists("/proc/meminfo"):
         try:
             with open("/proc/meminfo", "r", encoding="utf-8", errors="ignore") as f:
@@ -170,7 +172,41 @@ def _get_memory_info() -> tuple:
                             avail_mb = float(parts[1]) / 1024.0
             return total_mb, avail_mb
         except Exception as e:
-            logger.debug("[termux-llamacpp] /proc/meminfo 읽기 실패 (비 Linux 환경에서 정상): %s", e)
+            logger.debug("[termux-llamacpp] /proc/meminfo read failed: %s", e)
+
+    # 2. Windows GlobalMemoryStatusEx via ctypes
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            class MEMORYSTATUSEX(ctypes.Structure):
+                _fields_ = [
+                    ("dwLength", ctypes.c_ulong),
+                    ("dwMemoryLoad", ctypes.c_ulong),
+                    ("ullTotalPhys", ctypes.c_ulonglong),
+                    ("ullAvailPhys", ctypes.c_ulonglong),
+                    ("ullTotalPageFile", ctypes.c_ulonglong),
+                    ("ullAvailPageFile", ctypes.c_ulonglong),
+                    ("ullTotalVirtual", ctypes.c_ulonglong),
+                    ("ullAvailVirtual", ctypes.c_ulonglong),
+                    ("sullAvailExtendedVirtual", ctypes.c_ulonglong),
+                ]
+            stat = MEMORYSTATUSEX()
+            stat.dwLength = ctypes.sizeof(MEMORYSTATUSEX)
+            if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stat)):
+                return stat.ullTotalPhys / (1024.0 * 1024.0), stat.ullAvailPhys / (1024.0 * 1024.0)
+        except Exception as e:
+            logger.debug("[termux-llamacpp] Windows memory detection failed: %s", e)
+
+    # 3. macOS / POSIX sysconf
+    if hasattr(os, "sysconf"):
+        try:
+            phys_pages = os.sysconf("SC_PHYS_PAGES")
+            page_size = os.sysconf("SC_PAGE_SIZE")
+            if phys_pages > 0 and page_size > 0:
+                tot = (phys_pages * page_size) / (1024.0 * 1024.0)
+                return tot, tot * 0.5
+        except (ValueError, OSError) as e:
+            logger.debug("[termux-llamacpp] POSIX sysconf memory detection failed: %s", e)
 
     return total_mb, avail_mb
 

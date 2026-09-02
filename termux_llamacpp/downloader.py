@@ -3,6 +3,7 @@
 import hashlib
 import hmac
 import json
+import logging
 import os
 import shutil
 import sys
@@ -11,6 +12,8 @@ from typing import Optional, List, Dict, Union
 
 import requests
 from tqdm import tqdm
+
+logger = logging.getLogger("termux_llamacpp.downloader")
 
 from termux_llamacpp.config import (
     DEFAULT_MODELS_DIR,
@@ -46,8 +49,8 @@ def check_disk_space(target_dir: Path, required_bytes: int):
                 f"Required: {required_mb:.1f} MB, Available: {free_mb:.1f} MB. "
                 f"Proceeding under user responsibility."
             )
-    except OSError:
-        pass  # Non-mounted or permission-restricted paths; proceed safely
+    except OSError as e:
+        logger.debug("Disk usage check bypassed for '%s': %s", target_dir, e)
 
 
 class ModelManager:
