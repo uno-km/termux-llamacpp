@@ -240,10 +240,13 @@ def cmd_find(args):
 
         print(f"\nFound {len(results)} GGUF models:\n")
         for r in results:
-            likes = f"❤️ {r.likes}" if r.likes else ""
-            downloads = f"⬇️ {r.downloads}" if r.downloads else ""
-            stats = f"({likes} {downloads})".strip()
-            print(f" • {r.repo_id} {stats}")
+            stats_parts = []
+            if r.likes:
+                stats_parts.append(f"Likes: {r.likes}")
+            if r.downloads:
+                stats_parts.append(f"Downloads: {r.downloads:,}")
+            stats_str = f" ({', '.join(stats_parts)})" if stats_parts else ""
+            print(f" * {r.repo_id}{stats_str}")
             if getattr(r, "download_url", None):
                 print(f"   URL: {r.download_url}")
             if r.description:
