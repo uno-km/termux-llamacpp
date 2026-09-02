@@ -434,7 +434,8 @@ class ReverseProxyHTTPHandler(BaseHTTPRequestHandler):
 
 def native_is_ready(native_endpoint: str, expected_model_id: str = "") -> bool:
     """
-    P0-2 & P0-4 & P0-5: Robust Native llama-server Readiness Probe with Identity Handshake.
+    Robust Native llama-server Readiness Probe with Identity Handshake.
+    Optionally validates that the loaded model matches expected_model_id.
     """
     try:
         resp = requests.get(
@@ -454,13 +455,17 @@ def native_is_ready(native_endpoint: str, expected_model_id: str = "") -> bool:
             return False
 
         status = str(payload.get("status", "")).lower()
-        if status in {"ok", "ready", "healthy"}:
-            return True
+        is_healthy = status in {"ok", "ready", "healthy"} or payload.get("ready") is True
+        if not is_healthy:
+            return False
 
-        if payload.get("ready") is True:
-            return True
+        if expected_model_id:
+            model_in_health = payload.get("model") or payload.get("model_id") or ""
+            if model_in_health and expected_model_id.lower() not in str(model_in_health).lower():
+                logger.debug("Model ID mismatch in health probe: expected '%s', got '%s'", expected_model_id, model_in_health)
+                return False
 
-        return False
+        return True
     except Exception:
         return False
 
@@ -900,6 +905,3 @@ class ServerManager:
             if isinstance(exc, TermuxLlamaError):
                 raise exc
             raise ServerStartupError(f"Failed to start reverse proxy server: {exc}") from exc
-
-
-PIDLockManager = ProcessIdentityLock

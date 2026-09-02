@@ -16,7 +16,7 @@ from termux_llamacpp.engine import LlamaRuntime
 from termux_llamacpp.downloader import ModelManager, download_model
 from termux_llamacpp.crawler import HuggingFaceCrawler, discover_hf_models
 from termux_llamacpp.hardware import detect_hardware, print_hardware_summary
-from termux_llamacpp.server import ServerManager, ServerInstance, PIDLockManager
+from termux_llamacpp.server import ServerManager, ServerInstance, ProcessIdentityLock
 from termux_llamacpp.security import (
     compute_sha256,
     verify_binary_integrity,
@@ -44,7 +44,7 @@ __all__ = [
     "ModelManager",
     "ServerManager",
     "ServerInstance",
-    "PIDLockManager",
+    "ProcessIdentityLock",
     "HuggingFaceCrawler",
     "discover_hf_models",
     "download_model",
