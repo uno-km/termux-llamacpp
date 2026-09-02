@@ -1,11 +1,14 @@
 """Hugging Face GGUF Discovery Engine with Optional termux-playwright Scraper."""
 
 import json
+import logging
 import os
 import sys
 from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
 import requests
+
+logger = logging.getLogger("termux_llamacpp.crawler")
 
 from termux_llamacpp.exceptions import DependencyMissingError, TermuxLlamaError
 
@@ -130,7 +133,10 @@ class HuggingFaceCrawler:
                 break
 
         rec_file = preferred or gguf_files[0]
-        return rec_file, quant_types or ["Q4_K_M"]
+        if not quant_types:
+            logger.debug("No explicit quant type pattern parsed from GGUF filenames; defaulting to ['Q4_K_M']")
+            quant_types = ["Q4_K_M"]
+        return rec_file, quant_types
 
     def _rest_api_search(self, query: str, limit: int) -> List[DiscoveredGGUFModel]:
         """Search Hugging Face Hub using the official REST API and resolve real file trees."""

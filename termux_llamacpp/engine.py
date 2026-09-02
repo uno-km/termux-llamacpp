@@ -1,5 +1,6 @@
 """Core LlamaRuntime engine and native execution orchestrator."""
 
+import logging
 import os
 import platform
 import shutil
@@ -7,6 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Optional, Union, List, Dict, Any
+
+logger = logging.getLogger("termux_llamacpp.engine")
 
 from termux_llamacpp.config import (
     RuntimeConfig,
@@ -365,13 +368,15 @@ class LlamaRuntime:
                     use_vulkan = avr.get_or_create_context("auto").backend_type == "vulkan"
                 else:
                     use_vulkan = avr.VulkanContext("auto").backend_type == "vulkan"
-            except Exception:
-                pass
+                logger.debug("Auto device probe: use_vulkan=%s", use_vulkan)
+            except Exception as e:
+                logger.debug("Vulkan runtime probe unavailable (%s); using CPU mode.", e)
 
             if use_vulkan:
                 res = _run_cmd("vulkan", ngl_target)
                 err_lower = (res.stderr or "").lower()
                 if "no usable gpu found" in err_lower or "no devices found" in err_lower or res.returncode != 0:
+                    logger.warning("[termux-llamacpp] Vulkan GPU execution failed; falling back to CPU NEON engine.")
                     sys.stderr.write("[WARN] Vulkan GPU execution failed. Falling back to ARM64 CPU NEON engine...\n")
                     sys.stderr.flush()
                     cpu_res = _run_cmd("cpu", 0)
