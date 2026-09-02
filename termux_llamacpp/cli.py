@@ -1,6 +1,7 @@
 """Command line interface for termux-llamacpp."""
 
 import argparse
+import logging
 import os
 import shutil
 import subprocess
@@ -8,6 +9,8 @@ import sys
 import time
 from pathlib import Path
 import requests
+
+logger = logging.getLogger("termux_llamacpp.cli")
 
 from termux_llamacpp import __version__
 from termux_llamacpp.engine import LlamaRuntime
@@ -107,8 +110,14 @@ def cmd_serve(args):
                         if data.get("ready") is True or data.get("status") in {"ok", "ready", "healthy"}:
                             ready = True
                             break
-                except Exception:
-                    pass
+                    else:
+                        logger.debug("Health probe returned status code %d", r.status_code)
+                except requests.exceptions.Timeout:
+                    logger.debug("Health probe timed out (attempt %d/120)", i + 1)
+                except requests.exceptions.ConnectionError:
+                    logger.debug("Health probe connection refused (server booting, attempt %d/120)", i + 1)
+                except Exception as exc:
+                    logger.debug("Health probe error during warmup: %s", exc)
         except KeyboardInterrupt:
             print("\n\n[termux-llama] Initialization cancelled by user. Terminating server...")
             try:
@@ -226,13 +235,15 @@ def cmd_stop(args):
     if lock_mgr.lock_file.exists():
         try:
             lock_mgr.lock_file.unlink(missing_ok=True)
-        except Exception:
-            pass
+            logger.debug("Cleaned up lock file: %s", lock_mgr.lock_file)
+        except OSError as e:
+            logger.warning("[termux-llamacpp] Failed to remove lock file (%s): %s", lock_mgr.lock_file, e)
     if pid_file.exists():
         try:
             pid_file.unlink(missing_ok=True)
-        except Exception:
-            pass
+            logger.debug("Cleaned up PID file: %s", pid_file)
+        except OSError as e:
+            logger.warning("[termux-llamacpp] Failed to remove PID file (%s): %s", pid_file, e)
 
     if stopped_count > 0:
         print(f"[termux-llama] Stopped {stopped_count} tracked server process(es).")
