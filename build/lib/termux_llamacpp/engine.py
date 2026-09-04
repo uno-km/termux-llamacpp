@@ -275,6 +275,8 @@ class LlamaRuntime:
         self,
         model: Optional[Union[str, Path]] = None,
         prompt: str = "",
+        mmproj: Optional[Union[str, Path]] = None,
+        image: Optional[Union[str, Path]] = None,
         max_tokens: int = 256,
         temperature: float = 0.7,
         threads: Optional[int] = None,
@@ -282,11 +284,13 @@ class LlamaRuntime:
         n_gpu_layers: Optional[int] = None,
     ) -> str:
         """
-        Execute one-shot CLI text generation with strict device routing (auto, vulkan, cpu, gpu).
+        Execute one-shot CLI text or multimodal generation with strict device routing (auto, vulkan, cpu, gpu).
 
         Args:
             model: Model name, alias, path, or None for auto-resolved default model.
             prompt: Text prompt input.
+            mmproj: Multimodal vision projector file path (e.g. mmproj-*.gguf).
+            image: Path to input image file for visual reasoning.
             max_tokens: Maximum tokens to generate.
             temperature: Sampling temperature.
             threads: Worker threads count.
@@ -330,6 +334,11 @@ class LlamaRuntime:
                 "--simple-io",
                 "--no-display-prompt",
             ]
+            if mmproj:
+                cmd.extend(["--mmproj", str(mmproj)])
+            if image:
+                cmd.extend(["--image", str(image)])
+
             if gpu_layers > 0 and target_device != "cpu":
                 cmd.extend(["-ngl", str(gpu_layers)])
             else:

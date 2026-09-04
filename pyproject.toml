@@ -48,6 +48,9 @@ test = [
 termux-llama = "termux_llamacpp.cli:main"
 termux-llamacpp = "termux_llamacpp.cli:main"
 
+[project.entry-points."ameva.components"]
+termux-llamacpp = "termux_llamacpp.adapter:create_adapter"
+
 [project.urls]
 Homepage = "https://uno-km.github.io/termux-llamacpp"
 Repository = "https://github.com/uno-km/termux-llamacpp"

@@ -51,6 +51,7 @@ scripts/generate_and_verify_report.py
 scripts/install.sh
 termux_llamacpp/__init__.py
 termux_llamacpp/__main__.py
+termux_llamacpp/adapter.py
 termux_llamacpp/cli.py
 termux_llamacpp/config.py
 termux_llamacpp/crawler.py
@@ -76,6 +77,12 @@ termux_llamacpp/__pycache__/exceptions.cpython-312.pyc
 termux_llamacpp/__pycache__/hardware.cpython-312.pyc
 termux_llamacpp/__pycache__/security.cpython-312.pyc
 termux_llamacpp/__pycache__/server.cpython-312.pyc
+termux_llamacpp/control/__init__.py
+termux_llamacpp/control/component.py
+termux_llamacpp/control/status.py
+termux_llamacpp/control/__pycache__/__init__.cpython-312.pyc
+termux_llamacpp/control/__pycache__/component.cpython-312.pyc
+termux_llamacpp/control/__pycache__/status.cpython-312.pyc
 termux_llamacpp/registry/models.json
 termux_llamacpp/scripts/install.sh
 termux_llamacpp/trust/release-2026-01.pub
