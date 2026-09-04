@@ -274,8 +274,12 @@ def atomic_replace_verified(
     if executable:
         try:
             local_stage.chmod(0o755)
-        except Exception:
-            pass
+        except OSError as _chmod_err:
+            import logging
+            logging.getLogger(__name__).warning(
+                "security: chmod 0o755 failed for %s: %s (non-fatal, may already be executable on Termux)",
+                local_stage, _chmod_err,
+            )
 
     backup_file = destination_dir / f"{destination.name}.bak.{os.getpid()}.tmp"
     has_existing = destination.exists()
