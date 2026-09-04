@@ -2,7 +2,7 @@
 name: "termux-llamacpp"
 package_name_pypi: "termux-llamacpp"
 package_name_npm: "termux-llamacpp"
-version: "v1.0.0"
+version: "v1.0.1"
 release_name: "Production Release"
 license: "Apache-2.0"
 platform: "Android ARM64 / Linux / Termux"

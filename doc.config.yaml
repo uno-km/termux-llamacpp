@@ -6,10 +6,8 @@ release_name: Production Release
 license: Apache-2.0
 platform: Android ARM64 / Termux Bionic
 github_repo_url: https://github.com/uno-km/termux-llamacpp
-tagline_en: Production-Grade Prebuilt GGUF LLM Runtime, Model Manager & OpenAI Server
-  for Android ARM64
-tagline_ko: Android Termux ARM64 전용 제로 컴파일 사전 빌드 GGUF LLM 런타임, 모델 매니저 및 OpenAI 호환
-  REST/SSE 서버
+tagline_en: Production-Grade GGUF LLM Runtime Utilizing Device Resources, Model Manager & OpenAI Server for Android ARM64
+tagline_ko: 디바이스 리소스를 활용한 Android Termux ARM64 전용 GGUF LLM 런타임, 모델 매니저 및 OpenAI 호환 REST/SSE 서버
 quick_install_cmd: 'pip install termux-llamacpp && termux-llama install
 
   # or Node.js:
@@ -21,13 +19,11 @@ why_challenge_en: Running local LLMs on mobile Android typically requires multi-
 why_challenge_ko: 스마트폰 및 엣지 단말기에서 로컬 LLM을 실행하려면 수 기가바이트의 컴파일러 툴체인(Clang, CMake, Ninja)
   설치, 20~30분에 달하는 기기 발열 컴파일, 공유 라이브러리 동적 링커 누락, 모바일 mmap 메모리 잠금으로 인한 강제 프로세스 종료 등의
   심각한 문제가 발생합니다.
-description_en: Ships verified, cryptographically signed Android ARM64 native binaries
-  with bundled shared libraries and unified Vulkan HAL acceleration, enabling instant
-  zero-compilation local inference and a robust OpenAI-compatible REST/SSE supervisor
-  in under 3 seconds.
-description_ko: 암호학적으로 검증된 Android Bionic ARM64 네이티브 바이너리와 필수 공유 라이브러리, 그리고 AMEVA
-  Vulkan HAL을 통합 제공하여 3초 이내 즉각적인 제로 컴파일 실행과 안정적인 OpenAI 호환 REST/SSE 스트리밍 수퍼바이저 서버를
-  구현합니다.
+description_en: Ships verified Android ARM64 native binaries with bundled shared libraries
+  and device resource optimization, enabling instant zero-compilation local inference
+  and a robust OpenAI-compatible REST/SSE server.
+description_ko: 검증된 Android Bionic ARM64 네이티브 바이너리와 필수 공유 라이브러리, 디바이스 리소스 최적화 연동을 통해
+  제로 컴파일 로컬 실행과 안정적인 OpenAI 호환 REST/SSE 스트리밍 서버를 제공합니다.
 features:
 - title_en: Zero-Compilation Instant Deployment
   title_ko: 제로 컴파일 즉시 설치
@@ -35,18 +31,15 @@ features:
     via cryptographic SHA-256 checks in under 3 seconds without local Clang/CMake.
   desc_ko: Clang이나 CMake 없이 검증된 Android ARM64 바이너리와 공유 라이브러리를 SHA-256 무결성 검증을 거쳐 3초
     이내에 원자적으로 설치합니다.
-- title_en: Unified Vulkan HAL & Big-Core Tuning
-  title_ko: 통합 Vulkan HAL 및 빅코어 최적화
-  desc_en: Deep integration with ameva-vulkan-runtime v1.1.0 supporting GPU shader
-    acceleration and automated octa-core big.LITTLE cluster thread pinning (-t 4).
-  desc_ko: 통합 ameva-vulkan-runtime v1.1.0과 연동하여 GPU 셰이더 가속을 지원하고, ARM 옥타코어 빅.리틀 토폴로지를
-    자동 감지하여 빅코어(-t 4)에 전담 스케줄링합니다.
-- title_en: Strict 3-Tier Execution Mode
-  title_ko: 엄격한 3단계 실행 모드
-  desc_en: Supports --device vulkan (Fail-Fast GPU compute), --device auto (transparent
-    CPU NEON recovery), and --device cpu (zero-overhead direct forward pass).
-  desc_ko: --device vulkan(GPU 엄격 가속 및 Fail-Fast), --device auto(상태 감지 및 투명한 CPU 복구),
-    --device cpu(0ms 오버헤드 순수 NEON 직결) 3단계 모드를 제공합니다.
+- title_en: Device Resource Optimization & Big-Core Tuning
+  title_ko: 디바이스 리소스 최적화 및 빅코어 스케줄링
+  desc_en: Optimizes device resources with automated octa-core big.LITTLE cluster thread
+    pinning (-t 4) and adaptive runtime routing.
+  desc_ko: 디바이스 리소스를 최적화하고 ARM 옥타코어 빅.리틀 토폴로지를 자동 감지하여 빅코어(-t 4)에 전담 스케줄링합니다.
+- title_en: Strict 2-Tier Execution Mode
+  title_ko: 디바이스 리소스 실행 모드
+  desc_en: Supports --device auto (SoC detection and deterministic routing) and --device cpu (zero-overhead direct forward pass).
+  desc_ko: --device auto(SoC 상태 감지 및 자동 리소스 분기), --device cpu(순수 NEON 직결) 모드를 제공합니다.
 - title_en: OpenAI REST & SSE Streaming Supervisor
   title_ko: OpenAI 호환 REST/SSE 수퍼바이저
   desc_en: Built-in reverse proxy supervisor exposing /health, /v1/models, and /v1/chat/completions
@@ -66,7 +59,7 @@ features:
     보안을 보장합니다.
 matrix_table:
 - category: Inference Engine
-  operations: llama.cpp (Vulkan GPU Acceleration & ARM64 NEON DotProd)
+  operations: llama.cpp (ARM64 NEON DotProd & Device Resource Optimization)
   status: Production
 - category: Architecture Support
   operations: Android aarch64 / arm64-v8a (Bionic libc, Qualcomm Adreno, ARM Mali,
@@ -182,7 +175,7 @@ changelog:
     SDK, Node.js npm, and background OpenAI REST server daemon.'
   - 'Supply-Chain Receipt Gatekeeper: Added verified build receipt support (llama-server.build-receipt.json)
     for local native binaries.'
-- version: v1.1.0
+- version: v1.1.1
   date: '2026-08-30'
   title: Supply-Chain Cryptographic Verification & Multi-Channel Crawler
   type: Stable Release
@@ -201,7 +194,7 @@ changelog:
   - 'Bionic Shared Library Bundling: Packaged libgomp and libstdc++ to prevent missing
     symbol errors on raw Termux.'
   - 'NPM Binary Wrapper: Added standalone ESM binary resolver for Node.js environments.'
-- version: v1.0.0
+- version: v1.0.1
   date: '2026-08-27'
   title: Initial Production GGUF LLM Runtime Release
   type: Initial Release

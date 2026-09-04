@@ -68,6 +68,7 @@ termux_llamacpp.egg-info/entry_points.txt
 termux_llamacpp.egg-info/requires.txt
 termux_llamacpp.egg-info/top_level.txt
 termux_llamacpp/__pycache__/__init__.cpython-312.pyc
+termux_llamacpp/__pycache__/adapter.cpython-312.pyc
 termux_llamacpp/__pycache__/cli.cpython-312.pyc
 termux_llamacpp/__pycache__/config.cpython-312.pyc
 termux_llamacpp/__pycache__/crawler.cpython-312.pyc

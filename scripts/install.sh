@@ -192,9 +192,6 @@ for cmd_name in termux-llama-cli termux-llama-server llama-cli llama-server; do
 set -euo pipefail
 ROOT="\${TERMUX_LLAMACPP_HOME:-\$HOME/.termux-llama}"
 export LD_LIBRARY_PATH="\$ROOT/current/lib\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}:\$PREFIX/lib"
-if [ "\$(uname -m)" = "aarch64" ] && [ -f "/system/lib64/libvulkan.so" ]; then
-    export LD_PRELOAD="/system/lib64/libvulkan.so\${LD_PRELOAD:+:\$LD_PRELOAD}"
-fi
 exec "\$ROOT/current/bin/$target_bin" "\$@"
 EOF
     chmod 0755 "$PREFIX/bin/$cmd_name"

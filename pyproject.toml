@@ -1,11 +1,11 @@
-[build-system]
+﻿[build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "termux-llamacpp"
-version = "1.2.1"
-description = "Supply-Chain Verified GGUF Runtime, Model Manager & OpenAI Supervisor for Android Termux & ARM64"
+version = "1.2.2"
+description = "GGUF runtime, model manager & OpenAI server utilizing device resources for Android Termux & ARM64"
 readme = "README.md"
 authors = [{ name = "uno-km", email = "dev@ameva.org" }]
 license = { text = "Apache-2.0" }
@@ -31,6 +31,7 @@ dependencies = [
     "requests>=2.31.0",
     "tqdm>=4.66.0",
     "ameva-vulkan-runtime>=1.1.0",
+    "ameva-component-sdk>=0.1.0,<2.0",
 ]
 
 [project.optional-dependencies]
