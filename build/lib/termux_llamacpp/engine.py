@@ -129,8 +129,12 @@ class LlamaRuntime:
         for b in self.bin_dir.glob("llama-*"):
             try:
                 b.chmod(0o755)
-            except Exception:
-                pass
+            except OSError as _chmod_err:
+                import logging
+                logging.getLogger(__name__).warning(
+                    "llamacpp: chmod 0o755 failed for %s: %s (non-fatal, file may still be executable)",
+                    b, _chmod_err,
+                )
 
     def get_binary_path(self, binary_name: str) -> Optional[Path]:
         """Find the absolute path of a llama.cpp binary across standard Termux locations."""
@@ -172,8 +176,12 @@ class LlamaRuntime:
                             real_p = Path(os.path.expanduser(os.path.expandvars(target_str)))
                             if real_p.is_file():
                                 return real_p.resolve()
-            except Exception:
-                pass
+            except (OSError, ValueError) as _parse_err:
+                import logging
+                logging.getLogger(__name__).debug(
+                    "llamacpp: wrapper script parse fallback for '%s': %s (using shutil.which result)",
+                    binary_name, _parse_err,
+                )
             return p
 
         return None

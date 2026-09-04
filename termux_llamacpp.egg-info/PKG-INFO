@@ -1,4 +1,4 @@
-Metadata-Version: 2.4
+Metadata-Version: 2.1
 Name: termux-llamacpp
 Version: 1.2.2
 Summary: GGUF runtime, model manager & OpenAI server utilizing device resources for Android Termux & ARM64
@@ -28,13 +28,13 @@ License-File: LICENSE
 Requires-Dist: requests>=2.31.0
 Requires-Dist: tqdm>=4.66.0
 Requires-Dist: ameva-vulkan-runtime>=1.1.0
+Requires-Dist: ameva-component-sdk<2.0,>=0.1.0
 Provides-Extra: security
 Requires-Dist: cryptography>=42.0.0; extra == "security"
 Provides-Extra: crawler
 Requires-Dist: termux-playwright>=1.70.0; extra == "crawler"
 Provides-Extra: test
 Requires-Dist: pytest>=7.0.0; extra == "test"
-Dynamic: license-file
 
 # Termux-LlamaCpp
 

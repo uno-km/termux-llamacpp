@@ -117,7 +117,9 @@ class LlamaCppControl(ComponentControl):
         stale = self._state_file.is_stale(threshold_ms=30_000)
 
         # PID 확인
-        pid, pid_alive = self._check_server_pid()
+        pid_info = self._check_server_pid()
+        pid = pid_info.get("pid")
+        pid_alive = pid_info.get("alive")
 
         # 활성 인스턴스
         instances = self._inst_reg.list_all()
@@ -137,8 +139,18 @@ class LlamaCppControl(ComponentControl):
 
         # ready/degraded 계산
         # - 측정 실패를 ready=true로 변환하지 않음
-        ready = pid_alive and not stale
-        degraded = pid_alive and stale
+        ready = (pid_alive is True) and not stale
+        degraded = stale or (pid_alive is not True)
+
+        proc_dict: dict[str, Any] = {
+            "running": pid_alive,
+            "pid": pid,
+            "verified": pid_info.get("verified", False),
+        }
+        if "inspection_error" in pid_info:
+            proc_dict["inspection_error"] = pid_info["inspection_error"]
+        if "reason" in pid_info:
+            proc_dict["reason"] = pid_info["reason"]
 
         result = {
             "protocol":       "ameva-component-status/1",
@@ -148,10 +160,7 @@ class LlamaCppControl(ComponentControl):
             "ready":          ready,
             "degraded":       degraded,
             **ts,
-            "process": {
-                "running": pid_alive,
-                "pid":     pid,
-            },
+            "process":        proc_dict,
             "capabilities":   list(self.CAPABILITIES),
             "active_models":  active_models,
             "instances": [
@@ -173,20 +182,55 @@ class LlamaCppControl(ComponentControl):
         }
         return result
 
-    def _check_server_pid(self) -> tuple[int | None, bool]:
+    def _check_server_pid(self) -> dict[str, Any]:
         """
-        PID 파일에서 서버 PID를 읽고 os.kill(pid, 0)으로 실제 생존을 확인합니다.
-        추론 수행 없음.
+        BLOCKER 1: PID 파일에서 서버 PID를 읽고 os.kill(pid, 0)으로 실제 생존을 확인합니다.
+        PermissionError/OSError 발생 시 alive=None, verified=False, inspection_error 반환.
         """
+        import logging
+        _log = logging.getLogger(__name__)
+
         # ServerManager PID 파일 위치 탐색
         for pid_pattern in ["server.pid", "llama-server.pid", "*.pid"]:
             for pid_file in self._run_dir.glob(pid_pattern):
                 try:
                     pid = int(pid_file.read_text().strip())
+                except (ValueError, OSError) as _parse_err:
+                    _log.warning("[llamacpp] PID file %s parse error: %s", pid_file, _parse_err)
+                    continue
+
+                try:
                     os.kill(pid, 0)
-                    return pid, True
-                except (ValueError, ProcessLookupError, PermissionError, OSError):
-                    pass
+                    return {"pid": pid, "alive": True, "verified": True}
+                except ProcessLookupError:
+                    return {
+                        "pid": pid,
+                        "alive": False,
+                        "verified": True,
+                        "reason": "process_lookup_failed",
+                    }
+                except PermissionError as perm_err:
+                    _log.warning("[llamacpp] PID %d alive check PermissionError: %s", pid, perm_err)
+                    return {
+                        "pid": pid,
+                        "alive": None,
+                        "verified": False,
+                        "inspection_error": {
+                            "code": "PROCESS_INSPECTION_PERMISSION_DENIED",
+                            "message": str(perm_err),
+                        },
+                    }
+                except OSError as os_err:
+                    _log.warning("[llamacpp] PID %d alive check OSError: %s", pid, os_err)
+                    return {
+                        "pid": pid,
+                        "alive": None,
+                        "verified": False,
+                        "inspection_error": {
+                            "code": "PROCESS_INSPECTION_OS_ERROR",
+                            "message": str(os_err),
+                        },
+                    }
 
         # 상태 파일에 PID가 기록되어 있으면 그것도 확인
         state_data = self._state_file.read()
@@ -196,11 +240,43 @@ class LlamaCppControl(ComponentControl):
             if pid:
                 try:
                     os.kill(pid, 0)
-                    return pid, True
-                except (ProcessLookupError, PermissionError, OSError):
-                    return pid, False
+                    return {"pid": pid, "alive": True, "verified": True}
+                except ProcessLookupError:
+                    return {
+                        "pid": pid,
+                        "alive": False,
+                        "verified": True,
+                        "reason": "process_lookup_failed",
+                    }
+                except PermissionError as perm_err:
+                    _log.warning("[llamacpp] State-file PID %d PermissionError: %s", pid, perm_err)
+                    return {
+                        "pid": pid,
+                        "alive": None,
+                        "verified": False,
+                        "inspection_error": {
+                            "code": "PROCESS_INSPECTION_PERMISSION_DENIED",
+                            "message": str(perm_err),
+                        },
+                    }
+                except OSError as os_err:
+                    _log.warning("[llamacpp] State-file PID %d OSError: %s", pid, os_err)
+                    return {
+                        "pid": pid,
+                        "alive": None,
+                        "verified": False,
+                        "inspection_error": {
+                            "code": "PROCESS_INSPECTION_OS_ERROR",
+                            "message": str(os_err),
+                        },
+                    }
 
-        return None, False
+        return {
+            "pid": None,
+            "alive": False,
+            "verified": True,
+            "reason": "pid_file_missing",
+        }
 
     # ------------------------------------------------------------------
     # 3. doctor_full — 상세 진단 (Vulkan Doctor 포함 가능)

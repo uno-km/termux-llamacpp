@@ -122,8 +122,8 @@ def cmd_serve(args):
             print("\n\n[termux-llama] Initialization cancelled by user. Terminating server...")
             try:
                 proc.terminate()
-            except Exception:
-                pass
+            except OSError as term_err:
+                logger.debug("Process termination failed during Ctrl+C: %s", term_err)
             cmd_stop(args)
             return
 

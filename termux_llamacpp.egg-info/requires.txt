@@ -1,6 +1,7 @@
 requests>=2.31.0
 tqdm>=4.66.0
 ameva-vulkan-runtime>=1.1.0
+ameva-component-sdk<2.0,>=0.1.0
 
 [crawler]
 termux-playwright>=1.70.0

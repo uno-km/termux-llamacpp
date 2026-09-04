@@ -210,19 +210,19 @@ class ProcessIdentityLock:
             try:
                 import fcntl
                 fcntl.flock(self._handle.fileno(), fcntl.LOCK_UN)
-            except Exception:
-                pass
+            except (ImportError, OSError) as _flock_err:
+                logger.debug("Lock release flock error: %s", _flock_err)
             try:
                 self._handle.close()
-            except Exception:
-                pass
+            except OSError as _close_err:
+                logger.debug("Lock handle close error: %s", _close_err)
             self._handle = None
         self.owns_lock = False
         if self.lock_file.is_file():
             try:
                 self.lock_file.unlink(missing_ok=True)
-            except Exception:
-                pass
+            except OSError as _unlink_err:
+                logger.debug("Lock file unlink error: %s", _unlink_err)
 
 
 class RuntimeState:
@@ -542,33 +542,34 @@ class ServerInstance:
             try:
                 self.process.terminate()
                 self.process.wait(timeout=5)
-            except Exception:
+            except (subprocess.TimeoutExpired, OSError) as _term_err:
+                logger.debug("Server termination wait failed (%s), killing process", _term_err)
                 try:
                     self.process.kill()
-                except Exception:
-                    pass
+                except OSError as _kill_err:
+                    logger.warning("Process kill failed: %s", _kill_err)
             self.process = None
 
         if self.log_handle:
             try:
                 self.log_handle.close()
-            except Exception:
-                pass
+            except OSError as _log_close_err:
+                logger.debug("Log handle close error: %s", _log_close_err)
             self.log_handle = None
 
         if self.proxy_httpd:
             try:
                 self.proxy_httpd.shutdown()
                 self.proxy_httpd.server_close()
-            except Exception:
-                pass
+            except (OSError, RuntimeError) as _httpd_err:
+                logger.debug("Proxy httpd shutdown error: %s", _httpd_err)
             self.proxy_httpd = None
 
         if self.proxy_thread and self.proxy_thread.is_alive():
             try:
                 self.proxy_thread.join(timeout=2)
-            except Exception:
-                pass
+            except (RuntimeError, TimeoutError) as _join_err:
+                logger.debug("Proxy thread join error: %s", _join_err)
             self.proxy_thread = None
 
         if self.lock_manager:
@@ -745,8 +746,8 @@ class ServerManager:
                                     is_owned=False,
                                     binary_verification=binary_verification,
                                 )
-                    except Exception:
-                        pass
+                    except Exception as _attach_err:
+                        logger.debug("Existing instance verification failed (%s: %s); treating as conflict", type(_attach_err).__name__, _attach_err)
 
             raise ServerConflictError(
                 f"Port or lockfile on {public_endpoint} is occupied by a conflicting instance. "
@@ -878,27 +879,28 @@ class ServerManager:
                 try:
                     process.terminate()
                     process.wait(timeout=2)
-                except Exception:
+                except (subprocess.TimeoutExpired, OSError) as _term_err:
+                    logger.debug("Rollback termination failed (%s), killing process", _term_err)
                     try:
                         process.kill()
-                    except Exception:
-                        pass
+                    except OSError as _kill_err:
+                        logger.warning("Rollback process kill failed: %s", _kill_err)
             if log_handle:
                 try:
                     log_handle.close()
-                except Exception:
-                    pass
+                except OSError as _log_err:
+                    logger.debug("Rollback log handle close error: %s", _log_err)
             if proxy_httpd:
                 try:
                     proxy_httpd.shutdown()
                     proxy_httpd.server_close()
-                except Exception:
-                    pass
+                except (OSError, RuntimeError) as _httpd_err:
+                    logger.debug("Rollback proxy httpd error: %s", _httpd_err)
             if proxy_thread and proxy_thread.is_alive():
                 try:
                     proxy_thread.join(timeout=1)
-                except Exception:
-                    pass
+                except (RuntimeError, TimeoutError) as _join_err:
+                    logger.debug("Rollback proxy thread join error: %s", _join_err)
             self.lock_mgr.release()
             if isinstance(exc, TermuxLlamaError):
                 raise exc
