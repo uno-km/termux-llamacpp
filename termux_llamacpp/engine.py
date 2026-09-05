@@ -38,16 +38,16 @@ def ensure_system_dependencies() -> None:
             except Exception as e:
                 print(f"[termux-llamacpp] Notice: Failed to auto-install python-cryptography via pkg: {e}")
 
-    # 2. Check ameva-vulkan-runtime
+    # 2. Check ameva-runtime
     try:
-        import ameva_vulkan_runtime
+        from ameva_runtime import vulkan as avr
     except ImportError:
         if shutil.which("pip"):
-            print("[termux-llamacpp] Auto-provisioning 'ameva-vulkan-runtime' via pip...")
+            print("[termux-llamacpp] Auto-provisioning 'ameva-runtime' via pip...")
             try:
-                subprocess.run([sys.executable, "-m", "pip", "install", "ameva-vulkan-runtime>=1.0.0"], check=False)
+                subprocess.run([sys.executable, "-m", "pip", "install", "ameva-runtime>=2.0.0"], check=False)
             except Exception as e:
-                print(f"[termux-llamacpp] Notice: Failed to auto-install ameva-vulkan-runtime: {e}")
+                print(f"[termux-llamacpp] Notice: Failed to auto-install ameva-runtime: {e}")
 
 
 class LlamaRuntime:
@@ -203,7 +203,7 @@ class LlamaRuntime:
             return env
 
         try:
-            import ameva_vulkan_runtime as avr
+            from ameva_runtime import vulkan as avr
 
             # 1. Acquire Vulkan HAL context
             if hasattr(avr, "create_context"):
@@ -224,14 +224,14 @@ class LlamaRuntime:
                         env["LD_LIBRARY_PATH"] = f"{vk_dir}:{existing_lp}".rstrip(":")
             elif dev_mode in ("vulkan", "gpu"):
                 raise TermuxLlamaError(
-                    f"Explicit Vulkan backend requested ('--device {device}'), but ameva-vulkan-runtime "
+                    f"Explicit Vulkan backend requested ('--device {device}'), but ameva-runtime "
                     f"initialized with non-GPU backend ('{ctx.backend_type}': {ctx.device_name})."
                 )
         except ImportError:
             if dev_mode in ("vulkan", "gpu"):
                 raise TermuxLlamaError(
-                    f"Explicit Vulkan acceleration requested ('--device {device}'), but 'ameva-vulkan-runtime' "
-                    f"is not installed. Please run 'pip install ameva-vulkan-runtime' or 'npm install ameva-vulkan-runtime'."
+                    f"Explicit Vulkan acceleration requested ('--device {device}'), but 'ameva-runtime' "
+                    f"is not installed. Please run 'pip install ameva-runtime' or 'npm install @ameva/runtime'."
                 )
             # Auto-mode graceful fallback to system Vulkan driver if present
             if os.path.exists("/system/lib64/libvulkan.so"):
@@ -373,7 +373,7 @@ class LlamaRuntime:
         elif dev_mode == "auto":
             use_vulkan = False
             try:
-                import ameva_vulkan_runtime as avr
+                from ameva_runtime import vulkan as avr
                 if hasattr(avr, "create_context"):
                     use_vulkan = avr.create_context("auto").backend_type == "vulkan"
                 elif hasattr(avr, "get_or_create_context"):

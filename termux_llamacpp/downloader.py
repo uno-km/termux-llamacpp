@@ -329,8 +329,9 @@ class ModelManager:
                     manifest.unlink()
                 print(f"[termux-llamacpp] Removed model and manifest: {model_path}")
                 return True
-        except ModelNotFoundError:
-            pass
+        except ModelNotFoundError as _err:
+            logger.debug("Cannot remove non-existent model %s: %s", model_identifier, _err)
+            return False
         return False
 
 

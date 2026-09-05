@@ -14,7 +14,7 @@ logger = logging.getLogger("termux_llamacpp.hardware")
 # [B방안] Platform SSOT: ameva-vulkan-runtime.platform 에서 공유 구현을 가져옵니다.
 # ameva-vulkan-runtime 미설치 환경(개발 호스트 등)에서는 인라인 fallback 을 사용합니다.
 try:
-    from ameva_vulkan_runtime.platform import (
+    from ameva_runtime.vulkan.platform import (
         is_termux as _ameva_is_termux,
         is_android as _ameva_is_android,
     )

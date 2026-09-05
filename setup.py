@@ -6,6 +6,6 @@ setup(
     install_requires=[
         "requests>=2.31.0",
         "tqdm>=4.66.0",
-        "ameva-vulkan-runtime>=1.1.0",
+        "ameva-runtime>=2.0.0",
     ]
 )
