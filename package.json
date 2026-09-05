@@ -1,6 +1,6 @@
 {
   "name": "termux-llamacpp",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "GGUF runtime, model manager & OpenAI server utilizing device resources for Android Termux & ARM64",
   "main": "js/esm/index.js",
   "module": "js/esm/index.js",

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.3] - 2026-09-05
+
+### Changed
+- Migrated hardware acceleration dependency to unified `ameva-runtime>=2.0.0` and `@ameva/runtime>=2.0.0`.
+- Enforced Fail-Fast error propagation on explicit Vulkan acceleration requests (`--device vulkan`).
+
+---
+
 ## [1.2.1] - 2026-09-02
 
 ### Added
