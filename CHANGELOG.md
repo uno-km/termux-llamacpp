@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.4] - 2026-09-05
+
+### Changed
+- Untracked build artifacts, sanitized environment diagnostics, and updated ecosystem bindings.
+- Fully synchronized install scripts to ameva-runtime (pip) and @ameva/runtime (npm).
+
+---
+
 ## [1.2.3] - 2026-09-05
 
 ### Changed
