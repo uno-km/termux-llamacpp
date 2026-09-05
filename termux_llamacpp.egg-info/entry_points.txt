@@ -1,6 +1,0 @@
-[ameva.components]
-termux-llamacpp = termux_llamacpp.adapter:create_adapter
-
-[console_scripts]
-termux-llama = termux_llamacpp.cli:main
-termux-llamacpp = termux_llamacpp.cli:main

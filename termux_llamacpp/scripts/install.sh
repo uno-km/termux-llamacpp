@@ -186,17 +186,17 @@ printf '  [termux-llamacpp] Synchronizing Python & Node.js ecosystem packages...
 if command -v python3 >/dev/null 2>&1 || command -v python >/dev/null 2>&1; then
     PY_CMD="python3"
     command -v python3 >/dev/null 2>&1 || PY_CMD="python"
-    printf '  [Python] Detected Python environment. Provisioning termux-llamacpp & ameva-vulkan-runtime via pip...\n'
-    $PY_CMD -m pip install --upgrade termux-llamacpp ameva-vulkan-runtime --no-cache-dir >/dev/null 2>&1 || {
-        $PY_CMD -m pip install termux-llamacpp ameva-vulkan-runtime >/dev/null 2>&1 || printf '  [Python] Notice: pip install skipped (managed environment or offline).\n'
+    printf '  [Python] Detected Python environment. Provisioning termux-llamacpp & ameva-runtime via pip...\n'
+    $PY_CMD -m pip install --upgrade termux-llamacpp ameva-runtime --no-cache-dir >/dev/null 2>&1 || {
+        $PY_CMD -m pip install termux-llamacpp ameva-runtime >/dev/null 2>&1 || printf '  [Python] Notice: pip install skipped (managed environment or offline).\n'
     }
 fi
 
 # 2. Node.js npm Package Auto-Install
 if command -v npm >/dev/null 2>&1; then
-    printf '  [Node.js] Detected Node.js environment. Provisioning termux-llamacpp & ameva-vulkan-runtime via npm...\n'
-    npm install -g termux-llamacpp@1.1.0 ameva-vulkan-runtime --force >/dev/null 2>&1 || {
-        npm install -g termux-llamacpp ameva-vulkan-runtime >/dev/null 2>&1 || printf '  [Node.js] Notice: npm install skipped (offline).\n'
+    printf '  [Node.js] Detected Node.js environment. Provisioning termux-llamacpp & @ameva/runtime via npm...\n'
+    npm install -g termux-llamacpp @ameva/runtime --force >/dev/null 2>&1 || {
+        npm install -g termux-llamacpp @ameva/runtime >/dev/null 2>&1 || printf '  [Node.js] Notice: npm install skipped (offline).\n'
     }
 fi
 

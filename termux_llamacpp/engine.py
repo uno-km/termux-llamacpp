@@ -26,7 +26,7 @@ from termux_llamacpp.exceptions import (
 
 
 def ensure_system_dependencies() -> None:
-    """Ensure ecosystem dependencies (python-cryptography, ameva-vulkan-runtime) are provisioned."""
+    """Ensure ecosystem dependencies (python-cryptography, ameva-runtime) are provisioned."""
     # 1. Check cryptography
     try:
         import cryptography
@@ -188,7 +188,7 @@ class LlamaRuntime:
 
     def _prepare_env(self, device: str = "auto") -> Dict[str, str]:
         """
-        Configure subprocess environment safely using the official ameva-vulkan-runtime HAL.
+        Configure subprocess environment safely using the official ameva-runtime HAL.
 
         Args:
             device: 'auto' (Vulkan priority with CPU fallback), 'vulkan' (strict GPU fail-fast), 'cpu' (pure NEON).

@@ -11,8 +11,8 @@ from typing import Dict, Any, Optional
 
 logger = logging.getLogger("termux_llamacpp.hardware")
 
-# [B방안] Platform SSOT: ameva-vulkan-runtime.platform 에서 공유 구현을 가져옵니다.
-# ameva-vulkan-runtime 미설치 환경(개발 호스트 등)에서는 인라인 fallback 을 사용합니다.
+# [B방안] Platform SSOT: ameva-runtime.platform 에서 공유 구현을 가져옵니다.
+# ameva-runtime 미설치 환경(개발 호스트 등)에서는 인라인 fallback 을 사용합니다.
 try:
     from ameva_runtime.vulkan.platform import (
         is_termux as _ameva_is_termux,
@@ -43,7 +43,7 @@ class HardwareProfile:
 def is_termux_environment() -> bool:
     """Check whether execution is running inside Android Termux.
 
-    [B방안] ameva-vulkan-runtime.platform.is_termux() 를 SSOT 로 사용합니다.
+    [B방안] ameva-runtime.platform.is_termux() 를 SSOT 로 사용합니다.
     미설치 환경에서는 인라인 구현으로 폴백합니다.
     """
     if _AMEVA_PLATFORM_AVAILABLE:
@@ -60,7 +60,7 @@ def is_termux_environment() -> bool:
 def is_android_environment() -> bool:
     """Check whether running on Android (via getprop, uname, or filesystem).
 
-    [B방안] ameva-vulkan-runtime.platform.is_android() 를 SSOT 로 사용합니다.
+    [B방안] ameva-runtime.platform.is_android() 를 SSOT 로 사용합니다.
     """
     if _AMEVA_PLATFORM_AVAILABLE:
         return _ameva_is_android()

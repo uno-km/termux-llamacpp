@@ -68,7 +68,7 @@ termux_llamacpp-1.0.0b1.dist-info/RECORD
 ## 4. Automated Unit Test Execution Evidence (34 Tests Passing)
 
 ```text
-PS C:\Users\GAME\Desktop\uno-km\dev\termux-llamacpp> py -3 -m unittest discover -s tests -p 'test_*.py'
+termux-llamacpp $ python3 -m unittest discover -s tests -p 'test_*.py'
 .................................127.0.0.1 - - [27/Aug/2026 00:53:06] "GET /health HTTP/1.1" 200 -
 127.0.0.1 - - [27/Aug/2026 00:53:06] "POST /v1/chat/completions HTTP/1.1" 400 -
 127.0.0.1 - - [27/Aug/2026 00:53:06] "GET /invalid_route HTTP/1.1" 404 -
