@@ -30,11 +30,16 @@ requires-python = ">=3.8"
 dependencies = [
     "requests>=2.31.0",
     "tqdm>=4.66.0",
-    "ameva-runtime>=2.0.0",
     "ameva-component-sdk>=0.1.0,<2.0",
 ]
 
 [project.optional-dependencies]
+gpu = [
+    "ameva-runtime>=2.0.0",
+]
+vulkan = [
+    "ameva-runtime>=2.0.0",
+]
 security = [
     "cryptography>=42.0.0",
 ]

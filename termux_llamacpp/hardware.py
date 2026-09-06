@@ -265,3 +265,84 @@ def print_hardware_summary(hw: Optional[HardwareProfile] = None):
     print(f"  Memory Footprint    : Available {hw.available_ram_mb:.1f} MB / Total {hw.total_ram_mb:.1f} MB")
     print(f"  Recommended Preset  : {hw.recommended_preset}")
     print("================================================================================")
+
+
+def _resolve_ameva_runtime() -> Optional[Any]:
+    """Check for ameva_runtime availability without top-level static dependency.
+    
+    Returns the ameva_runtime module if installed, otherwise None.
+    """
+    try:
+        import ameva_runtime
+        return ameva_runtime
+    except ImportError:
+        return None
+
+
+def resolve_device_backend(requested_device: str, requested_ngl: Optional[int] = None) -> tuple[str, int]:
+    """Resolve the user's device= argument to an actual backend and ngl count.
+
+    Adheres strictly to the AMEVA Decoupled Gateway Protocol:
+    1. 'cpu': Always routes to pure CPU NEON without external dependency.
+    2. 'auto': If ameva-runtime is absent, safely defaults to CPU NEON with explicit INFO log.
+               If ameva-runtime is present, queries SmartRouter for optimal device routing.
+    3. 'vulkan' / 'gpu': Requires ameva-runtime. Emits Fail-Fast error [AMEVA-LLAMA-E001] if absent.
+    """
+    import sys
+    from termux_llamacpp.exceptions import TermuxLlamaError
+
+    req = str(requested_device or "auto").lower().strip()
+    ameva_mod = _resolve_ameva_runtime()
+    ngl_target = 99 if requested_ngl is None else requested_ngl
+
+    if req == "cpu":
+        return "cpu", 0
+
+    if req == "auto":
+        if ameva_mod is None:
+            sys.stdout.write("[INFO] ameva-runtime is not installed. Defaulting to ARM64 NEON CPU backend.\n")
+            sys.stdout.flush()
+            return "cpu", 0
+
+        # ameva_runtime is available: evaluate via SmartRouter / Doctor
+        try:
+            from ameva_runtime.router import SmartRouter
+            plan = SmartRouter().route_for_llm(requested_backend=None)
+            logger.info("Auto-detected optimal backend via ameva-runtime: %s", plan.backend)
+            return plan.backend, plan.ngl
+        except Exception as e:
+            # 침묵 폴백 금지: 명확한 에러 코드 분출
+            raise RuntimeError(f"[ERROR: AMEVA-LLAMA-E002] Hardware evaluation failed: {e}") from e
+
+    if req in ("vulkan", "gpu"):
+        if ameva_mod is None:
+            raise TermuxLlamaError(
+                "[ERROR: AMEVA-LLAMA-E001] GPU acceleration requires 'ameva-runtime'.\n"
+                "Cause: Hardware abstraction provider 'ameva-runtime' is not installed.\n"
+                "Action Required: Install the hardware acceleration package via:\n"
+                "  - Python: pip install ameva-runtime\n"
+                "  - Node.js: npm install @unokm/ameva-runtime\n"
+                "Documentation: https://github.com/uno-km/termux-llamacpp"
+            )
+
+        # Check native Vulkan availability via ameva-runtime Doctor probe
+        try:
+            from ameva_runtime import vulkan as avr
+            is_vk = False
+            if hasattr(avr, "is_available"):
+                is_vk = avr.is_available()
+            elif hasattr(avr, "create_context"):
+                is_vk = avr.create_context("vulkan").backend_type == "vulkan"
+
+            if is_vk:
+                return "vulkan", ngl_target
+        except Exception as e:
+            logger.debug("Vulkan probe error: %s", e)
+
+        raise TermuxLlamaError(
+            "[ERROR: AMEVA-LLAMA-E002] Vulkan GPU acceleration was explicitly requested (device='vulkan' / 'gpu'), "
+            "but no accessible Vulkan driver (.so) was found or validated on this system.\n"
+            "Execution halted strictly without silent fallback to prevent unexpected CPU execution."
+        )
+
+    raise ValueError(f"Unsupported device '{requested_device}'. Must be one of ['auto', 'gpu', 'vulkan', 'cpu'].")

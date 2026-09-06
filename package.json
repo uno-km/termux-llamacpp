@@ -35,13 +35,15 @@
     "type": "git",
     "url": "https://github.com/uno-km/termux-llamacpp.git"
   },
-  "dependencies": {
-    "@ameva/runtime": ">=2.0.0"
-  },
+  "dependencies": {},
   "peerDependencies": {
+    "@ameva/runtime": ">=2.0.0",
     "termux-playwright": ">=1.70.0"
   },
   "peerDependenciesMeta": {
+    "@ameva/runtime": {
+      "optional": true
+    },
     "termux-playwright": {
       "optional": true
     }

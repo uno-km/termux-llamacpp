@@ -27,12 +27,16 @@ for arg in "$@"; do
         --from-source|--build-from-source)
             FROM_SOURCE=1
             ;;
+        --gpu|--with-gpu)
+            TERMUX_LLAMA_PRESET="android-arm64-vulkan"
+            ;;
         --help|-h)
-            echo "Usage: install.sh [--from-source] [--help]"
+            echo "Usage: install.sh [--from-source] [--gpu] [--help]"
             echo ""
             echo "Options:"
             echo "  (Default)       Download and verify prebuilt Android ARM64 release binaries (Zero-Compilation, <3s)"
             echo "  --from-source   Force local native compilation via Clang/CMake/Ninja"
+            echo "  --gpu           Enable GPU Vulkan acceleration and provision ameva-runtime"
             exit 0
             ;;
     esac
@@ -54,10 +58,19 @@ printf '========================================================================
 # Branch 1: Manual Source Compilation (--from-source)
 # ==============================================================================
 if [ "$FROM_SOURCE" = "1" ]; then
-    printf '  [termux-llamacpp] Installing build toolchain prerequisites...\n'
-    pkg install -y git clang cmake ninja pkg-config vulkan-headers shaderc glslang || true
+    PRESET="${TERMUX_LLAMA_PRESET:-android-arm64-baseline}"
+    printf '  [termux-llamacpp] Installing build toolchain prerequisites (Preset: %s)...\n' "$PRESET"
 
-    PRESET="${TERMUX_LLAMA_PRESET:-android-arm64-vulkan}"
+    # Base compiler toolchain
+    pkg install -y git clang cmake ninja pkg-config || true
+
+    VULKAN_FLAG="OFF"
+    if [[ "$PRESET" == *"vulkan"* ]]; then
+        printf '  [termux-llamacpp] Vulkan preset detected; installing shaderc/glslang...\n'
+        pkg install -y vulkan-headers shaderc glslang || true
+        VULKAN_FLAG="ON"
+    fi
+
     PINNED_COMMIT="5e6a37cb115dc1074e274ac004373f5661909695"
     UPSTREAM_URL="https://github.com/ggerganov/llama.cpp.git"
     BUILD_DIR="$(mktemp -d "${TMPDIR:-/tmp}/termux-llamacpp-src.XXXXXXXX")"
@@ -73,17 +86,25 @@ if [ "$FROM_SOURCE" = "1" ]; then
     git fetch --depth=1 origin "$PINNED_COMMIT"
     git checkout -q FETCH_HEAD
 
-    cmake -B build -G Ninja \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DGGML_VULKAN=ON \
-        -DGGML_VULKAN_CHECK_RESULTS=OFF \
-        -DVulkan_LIBRARY=/system/lib64/libvulkan.so \
-        -DVulkan_INCLUDE_DIR="$PREFIX/include" \
-        -DCMAKE_INSTALL_RPATH="\$ORIGIN/../lib:\$ORIGIN" \
-        -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
-        -DGGML_BUILD_TESTS=OFF \
-        -DGGML_BUILD_EXAMPLES=OFF \
+    CMAKE_ARGS=(
+        -B build -G Ninja
+        -DCMAKE_BUILD_TYPE=Release
+        -DGGML_VULKAN="$VULKAN_FLAG"
+        -DCMAKE_INSTALL_RPATH="\$ORIGIN/../lib:\$ORIGIN"
+        -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON
+        -DGGML_BUILD_TESTS=OFF
+        -DGGML_BUILD_EXAMPLES=OFF
         -DLLAMA_BUILD_SERVER=ON
+    )
+    if [ "$VULKAN_FLAG" = "ON" ]; then
+        CMAKE_ARGS+=(
+            -DGGML_VULKAN_CHECK_RESULTS=OFF
+            -DVulkan_LIBRARY=/system/lib64/libvulkan.so
+            -DVulkan_INCLUDE_DIR="$PREFIX/include"
+        )
+    fi
+
+    cmake "${CMAKE_ARGS[@]}"
 
     cmake --build build --target llama-server llama-cli -j4
     find build -name "*.so*" -type f -exec cp -a {} "$TARGET_DIR/lib/" \; 2>/dev/null || true

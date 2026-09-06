@@ -21,6 +21,28 @@ class TestHardwareDetection(unittest.TestCase):
         # Ensure printer runs without throwing exceptions
         print_hardware_summary()
 
+    def test_resolve_device_backend_cpu(self):
+        from termux_llamacpp.hardware import resolve_device_backend
+        backend, ngl = resolve_device_backend("cpu")
+        self.assertEqual(backend, "cpu")
+        self.assertEqual(ngl, 0)
+
+    def test_resolve_device_backend_auto(self):
+        from termux_llamacpp.hardware import resolve_device_backend
+        backend, ngl = resolve_device_backend("auto")
+        self.assertIn(backend, ("cpu", "vulkan", "cpu_neon"))
+        self.assertIsInstance(ngl, int)
+
+    def test_resolve_device_backend_vulkan_fail_fast_without_runtime(self):
+        from unittest.mock import patch
+        from termux_llamacpp.hardware import resolve_device_backend
+        from termux_llamacpp.exceptions import TermuxLlamaError
+
+        with patch("termux_llamacpp.hardware._resolve_ameva_runtime", return_value=None):
+            with self.assertRaises(TermuxLlamaError) as ctx:
+                resolve_device_backend("vulkan")
+            self.assertIn("AMEVA-LLAMA-E001", str(ctx.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

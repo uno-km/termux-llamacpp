@@ -26,8 +26,19 @@ from termux_llamacpp.exceptions import (
 
 
 def cmd_install(args):
-    """Execute native runtime toolchain compilation."""
+    """Execute native runtime toolchain compilation and full package setup."""
     print(f"[termux-llama] Installing runtime with preset '{args.preset}' (Pinned Commit: {LLAMA_CPP_PINNED_COMMIT})...")
+
+    # Ensure full package installation (termux-llamacpp + ameva-runtime) on install command
+    from termux_llamacpp.hardware import _resolve_ameva_runtime
+    if _resolve_ameva_runtime() is None:
+        print("[termux-llama] Provisioning hardware acceleration runtime (ameva-runtime)...")
+        py_bin = sys.executable or "python3"
+        try:
+            subprocess.run([py_bin, "-m", "pip", "install", "ameva-runtime>=2.0.0"], check=False)
+        except Exception as e:
+            logger.debug("Automatic ameva-runtime provisioning note: %s", e)
+
     try:
         runtime = LlamaRuntime.install(preset=args.preset, force_rebuild=args.force)
         print(f"[termux-llama] Runtime installation completed.")
@@ -350,6 +361,7 @@ def main():
     # install
     p_install = subparsers.add_parser("install", help="Build/install pinned-commit llama.cpp runtime")
     p_install.add_argument("--preset", default="android-arm64-baseline", choices=list(BUILD_PRESETS.keys()), help="Target hardware preset")
+    p_install.add_argument("--gpu", action="store_true", help="Install GPU acceleration via ameva-runtime")
     p_install.add_argument("--force", action="store_true", help="Force rebuild binaries")
 
     # download
@@ -367,7 +379,9 @@ def main():
     p_serve.add_argument("--port", type=int, default=8080, help="Port (default: 8080)")
     p_serve.add_argument("--ctx", type=int, default=2048, help="Context length in tokens")
     p_serve.add_argument("--threads", type=int, default=None, help="CPU threads")
-    p_serve.add_argument("--device", default="auto", choices=["auto", "vulkan", "cpu", "gpu"], help="Compute device: auto (Vulkan priority with CPU fallback), vulkan/gpu (strict GPU fail-fast), cpu")
+    p_serve.add_argument("--device", "-b", "--backend", dest="device", default="auto", choices=["auto", "vulkan", "cpu", "gpu"], help="Compute device: auto (Vulkan priority with CPU fallback), vulkan/gpu (strict GPU fail-fast), cpu")
+    p_serve.add_argument("--gpu", action="store_const", const="gpu", dest="device", help="Force GPU acceleration (requires ameva-runtime)")
+    p_serve.add_argument("--cpu", action="store_const", const="cpu", dest="device", help="Force ARM64 CPU NEON execution")
     p_serve.add_argument("-d", "--daemon", action="store_true", help="Run server in the background as a daemon")
 
     # run (direct one-shot inference)
@@ -375,7 +389,9 @@ def main():
     p_run.add_argument("model", nargs="?", default=None, help="Model filename, alias, or direct path (default: first cached model)")
     p_run.add_argument("prompt", nargs="?", default=None, help="Input text prompt (positional)")
     p_run.add_argument("-p", "--prompt", dest="prompt_flag", default=None, help="Input text prompt (flag)")
-    p_run.add_argument("--device", default="auto", choices=["auto", "vulkan", "cpu", "gpu"], help="Compute device: auto (Vulkan priority with CPU fallback), vulkan/gpu (strict GPU fail-fast), cpu")
+    p_run.add_argument("--device", "-b", "--backend", dest="device", default="auto", choices=["auto", "vulkan", "cpu", "gpu"], help="Compute device: auto (Vulkan priority with CPU fallback), vulkan/gpu (strict GPU fail-fast), cpu")
+    p_run.add_argument("--gpu", action="store_const", const="gpu", dest="device", help="Force GPU acceleration (requires ameva-runtime)")
+    p_run.add_argument("--cpu", action="store_const", const="cpu", dest="device", help="Force ARM64 CPU NEON execution")
     p_run.add_argument("-n", "--max-tokens", type=int, default=256, help="Max tokens to generate")
     p_run.add_argument("-t", "--threads", type=int, default=None, help="CPU threads")
     p_run.add_argument("--temp", type=float, default=0.7, help="Sampling temperature")

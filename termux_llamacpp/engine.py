@@ -18,7 +18,7 @@ from termux_llamacpp.config import (
 )
 from termux_llamacpp.downloader import ModelManager
 from termux_llamacpp.crawler import HuggingFaceCrawler
-from termux_llamacpp.hardware import detect_hardware, HardwareProfile
+from termux_llamacpp.hardware import detect_hardware, HardwareProfile, resolve_device_backend
 from termux_llamacpp.exceptions import (
     RuntimeBuildError,
     TermuxLlamaError,
@@ -38,16 +38,8 @@ def ensure_system_dependencies() -> None:
             except Exception as e:
                 print(f"[termux-llamacpp] Notice: Failed to auto-install python-cryptography via pkg: {e}")
 
-    # 2. Check ameva-runtime
-    try:
-        from ameva_runtime import vulkan as avr
-    except ImportError:
-        if shutil.which("pip"):
-            print("[termux-llamacpp] Auto-provisioning 'ameva-runtime' via pip...")
-            try:
-                subprocess.run([sys.executable, "-m", "pip", "install", "ameva-runtime>=2.0.0"], check=False)
-            except Exception as e:
-                print(f"[termux-llamacpp] Notice: Failed to auto-install ameva-runtime: {e}")
+    # ameva-runtime is an optional hardware HAL, not auto-installed at runtime
+    pass
 
 
 class LlamaRuntime:
@@ -230,8 +222,12 @@ class LlamaRuntime:
         except ImportError:
             if dev_mode in ("vulkan", "gpu"):
                 raise TermuxLlamaError(
-                    f"Explicit Vulkan acceleration requested ('--device {device}'), but 'ameva-runtime' "
-                    f"is not installed. Please run 'pip install ameva-runtime' or 'npm install @ameva/runtime'."
+                    "[ERROR: AMEVA-LLAMA-E001] GPU acceleration requires 'ameva-runtime'.\n"
+                    "Cause: Hardware abstraction provider 'ameva-runtime' is not installed.\n"
+                    "Action Required: Install the hardware acceleration package via:\n"
+                    "  - Python: pip install ameva-runtime\n"
+                    "  - Node.js: npm install @unokm/ameva-runtime\n"
+                    "Documentation: https://github.com/uno-km/termux-llamacpp"
                 )
             # Auto-mode graceful fallback to system Vulkan driver if present
             if os.path.exists("/system/lib64/libvulkan.so"):
@@ -338,7 +334,6 @@ class LlamaRuntime:
                 "-n", str(max_tokens),
                 "--temp", str(temperature),
                 "-t", t_count,
-                "--single-turn",
                 "--simple-io",
                 "--no-display-prompt",
             ]
@@ -354,60 +349,34 @@ class LlamaRuntime:
 
             return subprocess.run(cmd, capture_output=True, text=True, env=env)
 
-        dev_mode = str(device or "auto").lower()
+        backend, target_ngl = resolve_device_backend(device, n_gpu_layers)
 
-        # 1. Strict GPU/Vulkan Mode (Fail-Fast: no fallback, return clear error on failure)
-        if dev_mode in ("vulkan", "gpu"):
-            res = _run_cmd("vulkan", ngl_target)
+        # 1. Vulkan GPU Route
+        if backend == "vulkan":
+            res = _run_cmd("vulkan", target_ngl)
             err_lower = (res.stderr or "").lower()
             if "no usable gpu found" in err_lower or "no devices found" in err_lower or res.returncode != 0:
-                raise TermuxLlamaError(
-                    f"[ERROR] Vulkan GPU device initialization failed or unavailable on this device.\n"
-                    f"Fallback suppressed in strict '--device {dev_mode}' mode.\n"
-                    f"Please run in CPU mode using '--device cpu' or auto mode with '--device auto'.\n"
-                    f"Details: {res.stderr.strip()}"
-                )
-            return res.stdout.strip()
-
-        # 2. Auto Mode (Check Vulkan capability first to prevent double-load overhead)
-        elif dev_mode == "auto":
-            use_vulkan = False
-            try:
-                from ameva_runtime import vulkan as avr
-                if hasattr(avr, "create_context"):
-                    use_vulkan = avr.create_context("auto").backend_type == "vulkan"
-                elif hasattr(avr, "get_or_create_context"):
-                    use_vulkan = avr.get_or_create_context("auto").backend_type == "vulkan"
-                else:
-                    use_vulkan = avr.VulkanContext("auto").backend_type == "vulkan"
-                logger.debug("Auto device probe: use_vulkan=%s", use_vulkan)
-            except Exception as e:
-                logger.debug("Vulkan runtime probe unavailable (%s); using CPU mode.", e)
-
-            if use_vulkan:
-                res = _run_cmd("vulkan", ngl_target)
-                err_lower = (res.stderr or "").lower()
-                if "no usable gpu found" in err_lower or "no devices found" in err_lower or res.returncode != 0:
-                    logger.warning("[termux-llamacpp] Vulkan GPU execution failed; falling back to CPU NEON engine.")
-                    sys.stderr.write("[WARN] Vulkan GPU execution failed. Falling back to ARM64 CPU NEON engine...\n")
-                    sys.stderr.flush()
-                    cpu_res = _run_cmd("cpu", 0)
-                    if cpu_res.returncode != 0:
-                        raise TermuxLlamaError(f"CPU NEON inference fallback failed: {cpu_res.stderr}")
-                    return cpu_res.stdout.strip()
-                return res.stdout.strip()
-            else:
+                dev_mode = str(device or "auto").lower()
+                if dev_mode in ("vulkan", "gpu"):
+                    raise TermuxLlamaError(
+                        f"[ERROR: AMEVA-LLAMA-E002] Vulkan GPU device initialization failed or unavailable on this device.\n"
+                        f"Fallback suppressed in strict '--device {dev_mode}' mode.\n"
+                        f"Please run in CPU mode using '--device cpu' or auto mode with '--device auto'.\n"
+                        f"Details: {res.stderr.strip()}"
+                    )
+                # Auto mode graceful fallback to CPU
+                logger.warning("[termux-llamacpp] Vulkan GPU execution failed; falling back to CPU NEON engine.")
+                sys.stderr.write("[WARN] Vulkan GPU execution failed. Falling back to ARM64 CPU NEON engine...\n")
+                sys.stderr.flush()
                 cpu_res = _run_cmd("cpu", 0)
                 if cpu_res.returncode != 0:
-                    raise TermuxLlamaError(f"CPU NEON inference failed: {cpu_res.stderr}")
+                    raise TermuxLlamaError(f"CPU NEON inference fallback failed: {cpu_res.stderr}")
                 return cpu_res.stdout.strip()
-
-        # 3. CPU Mode (Direct ARM64 NEON execution)
-        elif dev_mode == "cpu":
-            res = _run_cmd("cpu", 0)
-            if res.returncode != 0:
-                raise TermuxLlamaError(f"CPU NEON inference failed: {res.stderr}")
             return res.stdout.strip()
 
+        # 2. CPU NEON Route
         else:
-            raise ValueError(f"Unsupported device '{device}'. Must be one of ['auto', 'gpu', 'vulkan', 'cpu'].")
+            cpu_res = _run_cmd("cpu", 0)
+            if cpu_res.returncode != 0:
+                raise TermuxLlamaError(f"CPU NEON inference failed: {cpu_res.stderr}")
+            return cpu_res.stdout.strip()

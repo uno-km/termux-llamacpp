@@ -21,6 +21,11 @@ Ships verified Android ARM64 native binaries with bundled shared libraries and d
 
 ## 🚀 Installation & Quickstart
 
+### Quick One-Line Full Setup (CLI & Native Binaries)
+```bash
+pip install termux-llamacpp && termux-llama install
+```
+
 ### Python (PyPI)
 ```bash
 pip install termux-llamacpp
