@@ -1,9 +1,18 @@
-﻿# Changelog
+# Changelog
 
 All notable changes to 	ermux-llamacpp will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [1.3.0] - 2026-09-07
+
+### Added
+- Integrated unified `LlamaCppAdapter` directly from `ameva_runtime.adapters` SSOT.
+- Enforced strict E002 Fail-Fast when GPU acceleration is requested but Vulkan/CL environment is missing.
+- Sanitized legacy `--single-turn` CLI flag in favor of canonical options.
 
 ---
 
