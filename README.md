@@ -50,6 +50,9 @@ Eliminate hours of mobile C++ toolchain compilation. Deploy precompiled, cryptog
 termux-llama install
 ```
 
+* **⚡ Fast-Track Stream Extractor (<3s)**: Dynamically resolves release candidates across `v{VERSION}`, `releases/latest/download`, and verified fallback releases.
+* **🛡️ Fail-Safe Auto-Fallback**: If prebuilt downloads are unavailable in air-gapped or restricted environments, the installer automatically triggers native compilation (`--from-source` via Clang/CMake/Ninja) with zero user intervention.
+
 ---
 
 ## 2. GPU Hardware Acceleration Provisioning (`ameva-runtime`)

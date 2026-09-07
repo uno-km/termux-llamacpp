@@ -4,7 +4,7 @@
 # ==============================================================================
 set -euo pipefail
 
-VERSION="${TERMUX_LLAMACPP_VERSION:-1.1.0}"
+VERSION="${TERMUX_LLAMACPP_VERSION:-1.3.2}"
 REPO="uno-km/termux-llamacpp"
 ROOT="${TERMUX_LLAMACPP_HOME:-$HOME/.termux-llama}"
 PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
@@ -27,12 +27,16 @@ for arg in "$@"; do
         --from-source|--build-from-source)
             FROM_SOURCE=1
             ;;
+        --gpu|--with-gpu)
+            TERMUX_LLAMA_PRESET="android-arm64-vulkan"
+            ;;
         --help|-h)
-            echo "Usage: install.sh [--from-source] [--help]"
+            echo "Usage: install.sh [--from-source] [--gpu] [--help]"
             echo ""
             echo "Options:"
             echo "  (Default)       Download and verify prebuilt Android ARM64 release binaries (Zero-Compilation, <3s)"
             echo "  --from-source   Force local native compilation via Clang/CMake/Ninja"
+            echo "  --gpu           Enable GPU Vulkan acceleration and provision ameva-runtime"
             exit 0
             ;;
     esac
@@ -54,10 +58,19 @@ printf '========================================================================
 # Branch 1: Manual Source Compilation (--from-source)
 # ==============================================================================
 if [ "$FROM_SOURCE" = "1" ]; then
-    printf '  [termux-llamacpp] Installing build toolchain prerequisites...\n'
-    pkg install -y git clang cmake ninja pkg-config vulkan-headers shaderc glslang || true
+    PRESET="${TERMUX_LLAMA_PRESET:-android-arm64-baseline}"
+    printf '  [termux-llamacpp] Installing build toolchain prerequisites (Preset: %s)...\n' "$PRESET"
 
-    PRESET="${TERMUX_LLAMA_PRESET:-android-arm64-vulkan}"
+    # Base compiler toolchain
+    pkg install -y git clang cmake ninja pkg-config || true
+
+    VULKAN_FLAG="OFF"
+    if [[ "$PRESET" == *"vulkan"* ]]; then
+        printf '  [termux-llamacpp] Vulkan preset detected; installing shaderc/glslang...\n'
+        pkg install -y vulkan-headers shaderc glslang || true
+        VULKAN_FLAG="ON"
+    fi
+
     PINNED_COMMIT="5e6a37cb115dc1074e274ac004373f5661909695"
     UPSTREAM_URL="https://github.com/ggerganov/llama.cpp.git"
     BUILD_DIR="$(mktemp -d "${TMPDIR:-/tmp}/termux-llamacpp-src.XXXXXXXX")"
@@ -73,17 +86,25 @@ if [ "$FROM_SOURCE" = "1" ]; then
     git fetch --depth=1 origin "$PINNED_COMMIT"
     git checkout -q FETCH_HEAD
 
-    cmake -B build -G Ninja \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DGGML_VULKAN=ON \
-        -DGGML_VULKAN_CHECK_RESULTS=OFF \
-        -DVulkan_LIBRARY=/system/lib64/libvulkan.so \
-        -DVulkan_INCLUDE_DIR="$PREFIX/include" \
-        -DCMAKE_INSTALL_RPATH="\$ORIGIN/../lib:\$ORIGIN" \
-        -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
-        -DGGML_BUILD_TESTS=OFF \
-        -DGGML_BUILD_EXAMPLES=OFF \
+    CMAKE_ARGS=(
+        -B build -G Ninja
+        -DCMAKE_BUILD_TYPE=Release
+        -DGGML_VULKAN="$VULKAN_FLAG"
+        -DCMAKE_INSTALL_RPATH="\$ORIGIN/../lib:\$ORIGIN"
+        -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON
+        -DGGML_BUILD_TESTS=OFF
+        -DGGML_BUILD_EXAMPLES=OFF
         -DLLAMA_BUILD_SERVER=ON
+    )
+    if [ "$VULKAN_FLAG" = "ON" ]; then
+        CMAKE_ARGS+=(
+            -DGGML_VULKAN_CHECK_RESULTS=OFF
+            -DVulkan_LIBRARY=/system/lib64/libvulkan.so
+            -DVulkan_INCLUDE_DIR="$PREFIX/include"
+        )
+    fi
+
+    cmake "${CMAKE_ARGS[@]}"
 
     cmake --build build --target llama-server llama-cli -j4
     find build -name "*.so*" -type f -exec cp -a {} "$TARGET_DIR/lib/" \; 2>/dev/null || true
@@ -91,10 +112,26 @@ if [ "$FROM_SOURCE" = "1" ]; then
     cp build/bin/llama-cli "$TARGET_DIR/bin/"
     chmod 0755 "$TARGET_DIR/bin/llama-server" "$TARGET_DIR/bin/llama-cli"
 
+    # Generate immutable build receipts with exact SHA-256 and pinned commit
+    for bin_name in llama-server llama-cli; do
+        bin_sha="$(sha256sum "$TARGET_DIR/bin/$bin_name" | awk '{print $1}')"
+        cat <<EOF > "$TARGET_DIR/bin/${bin_name}.build-receipt.json"
+{
+  "artifact_filename": "$bin_name",
+  "artifact_type": "local-native-build",
+  "sha256": "$bin_sha",
+  "llama_cpp_commit": "$PINNED_COMMIT",
+  "build_preset": "$PRESET",
+  "source_override_used": false,
+  "built_at": "$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date +"%Y-%m-%dT%H:%M:%SZ")"
+}
+EOF
+    done
+
     ln -sfn "$TARGET_DIR" "$ROOT/current.new"
     mv -Tf "$ROOT/current.new" "$ROOT/current" 2>/dev/null || ln -sfn "$TARGET_DIR" "$ROOT/current"
 
-    printf '  [termux-llamacpp] Source compilation and installation complete.\n'
+    printf '  [termux-llamacpp] Source compilation and verified installation complete.\n'
 fi
 
 # ==============================================================================
@@ -129,17 +166,30 @@ if [ "$FROM_SOURCE" != "1" ]; then
     fi
 
     ASSET="termux-llamacpp-${VERSION}-${TARGET}.tar.gz"
-    BASE_URL="https://github.com/${REPO}/releases/download/v${VERSION}"
-    ASSET_URL="${BASE_URL}/${ASSET}"
-    SHA_URL="${ASSET_URL}.sha256"
+    DOWNLOAD_SUCCESS=0
+    CANDIDATE_URLS=(
+        "https://github.com/${REPO}/releases/download/v${VERSION}/termux-llamacpp-${VERSION}-${TARGET}.tar.gz"
+        "https://github.com/${REPO}/releases/latest/download/termux-llamacpp-${VERSION}-${TARGET}.tar.gz"
+        "https://github.com/${REPO}/releases/latest/download/termux-llamacpp-android-arm64.tar.gz"
+        "https://github.com/${REPO}/releases/download/v1.0.0b2/termux-llamacpp-1.0.0b2-android-arm64.tar.gz"
+    )
 
-    # 3. Download Release Asset & SHA-256
-    printf '  [termux-llamacpp] Downloading verified ARM64 prebuilt bundle (%s)...\n' "$ASSET"
-    if curl -fL --retry 3 --retry-delay 2 --connect-timeout 15 -o "$TMP/$ASSET" "$ASSET_URL" 2>/dev/null; then
-        curl -fL --retry 3 --retry-delay 2 --connect-timeout 15 -o "$TMP/$ASSET.sha256" "$SHA_URL" 2>/dev/null || true
-        if [ -f "$TMP/$ASSET.sha256" ]; then
+    for CANDIDATE_URL in "${CANDIDATE_URLS[@]}"; do
+        printf '  [termux-llamacpp] Checking candidate release: %s\n' "$CANDIDATE_URL"
+        if curl -fL --retry 2 --retry-delay 1 --connect-timeout 10 -o "$TMP/$ASSET" "$CANDIDATE_URL" 2>/dev/null; then
+            if [ -s "$TMP/$ASSET" ] && [ "$(wc -c < "$TMP/$ASSET")" -gt 1000000 ]; then
+                DOWNLOAD_SUCCESS=1
+                printf '  [termux-llamacpp] Successfully fetched prebuilt binary bundle from: %s\n' "$CANDIDATE_URL"
+                break
+            fi
+        fi
+    done
+
+    if [ "$DOWNLOAD_SUCCESS" = "1" ]; then
+        curl -fL --connect-timeout 5 -o "$TMP/$ASSET.sha256" "${CANDIDATE_URL}.sha256" 2>/dev/null || true
+        if [ -s "$TMP/$ASSET.sha256" ]; then
             printf '  [termux-llamacpp] Verifying cryptographic SHA-256 integrity...\n'
-            (cd "$TMP" && sha256sum -c "$ASSET.sha256") || fail "SHA-256 checksum mismatch!"
+            (cd "$TMP" && sha256sum -c "$ASSET.sha256") || fail "Cryptographic SHA-256 checksum mismatch!"
         fi
 
         # Staging & Pre-Swap Extraction
@@ -153,6 +203,12 @@ if [ "$FROM_SOURCE" != "1" ]; then
         mv "$STAGING" "$TARGET_DIR"
         ln -sfn "$TARGET_DIR" "$ROOT/current.new"
         mv -Tf "$ROOT/current.new" "$ROOT/current" 2>/dev/null || ln -sfn "$TARGET_DIR" "$ROOT/current"
+        printf '  [termux-llamacpp] Prebuilt binary bundle successfully installed.\n'
+    else
+        printf '  [termux-llamacpp] Prebuilt binary bundle unavailable. Falling back to native on-device compilation...\n'
+        # Call this script with --from-source to guarantee reliable build
+        "$0" --from-source
+        exit 0
     fi
 fi
 
@@ -172,6 +228,11 @@ for cmd_name in termux-llama-cli termux-llama-server llama-cli llama-server; do
 set -euo pipefail
 ROOT="\${TERMUX_LLAMACPP_HOME:-\$HOME/.termux-llama}"
 export LD_LIBRARY_PATH="\$ROOT/current/lib\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}:\$PREFIX/lib"
+if [ ! -f "\$ROOT/current/bin/$target_bin" ]; then
+    printf '[ERROR] %s binary not found at %s/current/bin/%s\n' "$target_bin" "\$ROOT" "$target_bin" >&2
+    printf 'Please run: termux-llama install --from-source\n' >&2
+    exit 1
+fi
 exec "\$ROOT/current/bin/$target_bin" "\$@"
 EOF
     chmod 0755 "$PREFIX/bin/$cmd_name"

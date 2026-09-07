@@ -1,3 +1,12 @@
+## [1.3.2] - 2026-09-07
+
+### Added
+- **Dynamic Candidate Resolution & Automatic Source Build Fallback**: Replaced hardcoded legacy version string in `scripts/install.sh` with dynamic candidates (`v{VERSION}`, `releases/latest/download`, `v1.0.0b2` fallback). Added automated fallback to native C++ compilation (`--from-source`) if prebuilt binary download fails, eliminating 404 aborts.
+- **Fail-Safe Executable Wrappers**: Unified wrappers in `$PREFIX/bin/` now verify physical existence of target binaries before invocation, preventing misleading `No such file or directory` shell errors.
+- **Synchronized Installer SSOT**: Reconciled split-brain drift between repository root `scripts/install.sh` and packaged `termux_llamacpp/scripts/install.sh`.
+
+---
+
 ## [1.3.1] - 2026-09-07
 
 ### Added
