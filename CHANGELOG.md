@@ -1,3 +1,16 @@
+## [1.3.1] - 2026-09-07
+
+### Added
+- Complete 12-tier enterprise English documentation overhaul for PyPI and GitHub/NPM.
+- Detailed empirical mobile hardware benchmarks (Snapdragon 8 Elite / Adreno 830, Snapdragon 865, Exynos 1380 / Mali-G68 MP5).
+- Full GPU interconnect architecture documentation with SPIR-V compute shader details.
+- Comprehensive CPU vs. GPU thermal dissipation, latency, and power efficiency analysis.
+- 3-stage 24/7 unattended background execution guide (Termux wake-lock, battery optimization, ADB phantom process killer).
+- Expanded technical SEO metadata keywords (50 keywords connecting to AMEVA ecosystem).
+- Archived comprehensive engineering breakthroughs and legacy reports to ameva-foundation.
+
+---
+
 # Changelog
 
 All notable changes to 	ermux-llamacpp will be documented in this file.
