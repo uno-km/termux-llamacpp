@@ -1,0 +1,66 @@
+﻿name: Release and Publish Packages
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - '*-v*.*.*'
+
+jobs:
+  release:
+    name: Create GitHub Release & Publish Packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # ── 1. Node.js (npm) 배포 ──
+      - name: Setup Node.js
+        if: hashFiles('package.json') != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Build & Publish npm Package
+        if: hashFiles('package.json') != ''
+        run: |
+          npm ci || npm install
+          npm run build --if-present
+          npm publish --provenance --access public || echo "npm publish skipped if version exists"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # ── 2. Python (PyPI) 배포 ──
+      - name: Setup Python
+        if: hashFiles('pyproject.toml') != ''
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build & Publish PyPI Package
+        if: hashFiles('pyproject.toml') != ''
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build
+          twine upload dist/* --skip-existing
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+
+      # ── 3. GitHub Release 자동 생성 및 자산 업로드 ──
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+          files: |
+            dist/*
+            release_assets/*

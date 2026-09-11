@@ -1,0 +1,9 @@
+include LICENSE
+include README.md
+include pyproject.toml
+include setup.py
+include CMakeLists.txt
+recursive-include scripts *.sh *.py *.js
+recursive-include docs *
+recursive-include js *
+recursive-include termux_llamacpp *

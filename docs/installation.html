@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installation Guide | termux-llamacpp</title>
+    <meta name="description" content="Install termux-llamacpp and compile native llama.cpp">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="style.css">
+    <script src="i18n-translations.js"></script>
+    <script src="i18n.js"></script>
+</head>
+<body>
+    <header>
+        <a href="index.html" class="header-brand">
+            <img src="favicon.svg" alt="termux-llamacpp Logo">
+            <h1 data-i18n="common.brand">termux-llamacpp</h1>
+        </a>
+        <div class="header-controls">
+            <span class="release-tag">v1.0.0 (GGUF Runtime)</span>
+            <div class="lang-selector-wrapper">
+                <select class="lang-select" onchange="if(window.i18nManager) window.i18nManager.setLanguage(this.value); else if(window.I18n) window.I18n.setLanguage(this.value)">
+                    <option value="en">🇺🇸 English</option>
+                    <option value="ko">🇰🇷 한국어</option>
+                    <option value="ja">🇯🇵 日本語</option>
+                    <option value="zh">🇨🇳 简体中文</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="de">🇩🇪 Deutsch</option>
+                </select>
+            </div>
+            <a href="https://pypi.org/project/termux-llamacpp/" target="_blank" class="header-btn">PyPI (pip)</a>
+            <a href="https://github.com/uno-km/termux-llamacpp" target="_blank" class="header-btn primary">GitHub</a>
+        </div>
+    </header>
+    <div class="container">
+        <nav class="sidebar">
+            <h3>Overview</h3>
+            <ul>
+                <li><a href="index.html">Home / Architecture</a></li>
+                <li><a href="installation.html" class="active">Installation Guide</a></li>
+                <li><a href="quickstart.html">Quickstart & Recipes</a></li>
+            </ul>
+            <h3>Official Reference</h3>
+            <ul>
+                <li><a href="models.html">Curated Model Registry</a></li>
+                <li><a href="api-reference.html">Full API Reference</a></li>
+                <li><a href="benchmarks.html">Hardware & Benchmarks</a></li>
+                <li><a href="versions.html">Version Archive</a></li>
+            </ul>
+            <h3>AI Agent Protocol &amp; Feeds</h3>
+            <ul>
+                <li><a href="llms.txt" target="_blank">llms.txt (AI Agent Context)</a></li>
+                <li><a href="robots.txt" target="_blank">robots.txt</a></li>
+                <li><a href="sitemap.xml" target="_blank">sitemap.xml</a></li>
+            </ul>
+        </nav>
+        <main class="content">
+            <h2>Installation Guide</h2>
+            <p class="subtitle">Quick setup across Python, Node.js, and Android Termux.</p>
+
+            <h3>1. Install SDK &amp; CLI via pip</h3>
+            <pre><code class="language-bash">pip install termux-llamacpp</code></pre>
+
+            <h3>2. Compile Native ARM64 llama.cpp Runtime</h3>
+            <pre><code class="language-bash"># Standard safe baseline (armv8-a)
+termux-llama install --preset android-arm64-baseline
+
+# Hardware accelerated (if device supports DotProd)
+termux-llama install --preset android-arm64-dotprod</code></pre>
+
+            <h3>3. Diagnostics</h3>
+            <pre><code class="language-bash">termux-llama doctor</code></pre>
+        </main>
+    </div>
+    <footer>
+        <div style="margin-bottom: 8px;">
+            <strong>Disclaimer:</strong> termux-llamacpp is an independent open-source project and is not affiliated with or endorsed by Meta Platforms, Inc. or the Termux project.
+        </div>
+        <span>&copy; 2026 termux-llamacpp Project (uno-km). Released under Apache License 2.0.</span>
+    </footer>
+</body>
+</html>

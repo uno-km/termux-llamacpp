@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "termux_llamacpp_source_repository": "https://github.com/uno-km/termux-llamacpp",
+  "termux_llamacpp_source_commit": "f9ae9e34ac629e10ab266445e3f0751bda79f30b",
+  "termux_llamacpp_source_tree": "b1851005566d4f23eb01f97d26a803653cf06afd",
+  "working_tree_state": "clean",
+  "llama_cpp_upstream_repository": "https://github.com/ggerganov/llama.cpp.git",
+  "llama_cpp_upstream_commit_pinned": "5e6a37cb115dc1074e274ac004373f5661909695",
+  "package_version": "1.0.0b1",
+  "status": "Development Status :: 4 - Beta",
+  "pyproject_toml_sha256": "6B0D35CC752C65C5133F468BD308A7FD0785644603C07362C4F2251A0DFDF7A7",
+  "wheel_sha256": "0C0754C6F7CA0D77633746BA387D662F31A12B5378E12E73D3ACE3B386F7C8A5",
+  "sdist_sha256": "7BE0CA45593E58A9D9CF1670862881A75D7B888CFE2785A2B2221655C610A39F",
+  "tests": {
+    "total": 34,
+    "passed": 34,
+    "failed": 0,
+    "errors": 0
+  },
+  "execution_target_validation": "Internal Packaging Beta Verified / Native Android Termux ARM64 hardware testing pending"
+}

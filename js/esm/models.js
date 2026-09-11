@@ -1,0 +1,135 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ModelManager = exports.CURATED_MODELS = void 0;
+const node_fs_1 = __importDefault(require("node:fs"));
+const node_path_1 = __importDefault(require("node:path"));
+const node_os_1 = __importDefault(require("node:os"));
+const exceptions_js_1 = require("./exceptions.js");
+exports.CURATED_MODELS = {
+    "qwen2.5-0.5b-instruct": {
+        name: "qwen2.5-0.5b-instruct",
+        repoId: "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+        filename: "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+        sizeMb: 398.0,
+        quantType: "Q4_K_M",
+        description: "Ultra-lightweight Qwen 2.5 0.5B model for mobile devices."
+    },
+    "qwen2.5-1.5b-instruct": {
+        name: "qwen2.5-1.5b-instruct",
+        repoId: "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+        filename: "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+        sizeMb: 986.0,
+        quantType: "Q4_K_M",
+        description: "Balanced Qwen 2.5 1.5B model for ARM64 edge inference."
+    },
+    "qwen2.5-3b-instruct": {
+        name: "qwen2.5-3b-instruct",
+        repoId: "Qwen/Qwen2.5-3B-Instruct-GGUF",
+        filename: "qwen2.5-3b-instruct-q4_k_m.gguf",
+        sizeMb: 1930.0,
+        quantType: "Q4_K_M",
+        description: "High-capability Qwen 2.5 3B model."
+    },
+    "llama-3.2-1b-instruct": {
+        name: "llama-3.2-1b-instruct",
+        repoId: "bartowski/Llama-3.2-1B-Instruct-GGUF",
+        filename: "Llama-3.2-1B-Instruct-Q4_K_M.gguf",
+        sizeMb: 881.0,
+        quantType: "Q4_K_M",
+        description: "Meta Llama 3.2 1B Instruct model."
+    },
+    "llama-3.2-3b-instruct": {
+        name: "llama-3.2-3b-instruct",
+        repoId: "bartowski/Llama-3.2-3B-Instruct-GGUF",
+        filename: "Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+        sizeMb: 2020.0,
+        quantType: "Q4_K_M",
+        description: "Meta Llama 3.2 3B Instruct model."
+    }
+};
+class ModelManager {
+    modelsDir;
+    constructor(modelsDir) {
+        const baseDir = process.env.TERMUX_LLAMA_HOME || node_path_1.default.join(node_os_1.default.homedir(), ".termux-llama");
+        this.modelsDir = modelsDir || process.env.TERMUX_LLAMA_MODELS_DIR || node_path_1.default.join(baseDir, "models");
+        if (!node_fs_1.default.existsSync(this.modelsDir)) {
+            node_fs_1.default.mkdirSync(this.modelsDir, { recursive: true });
+        }
+    }
+    resolveModelPath(modelIdentifier) {
+        // 1. Direct path check
+        if (node_fs_1.default.existsSync(modelIdentifier) && modelIdentifier.endsWith(".gguf")) {
+            return node_path_1.default.resolve(modelIdentifier);
+        }
+        // 2. Direct filename in modelsDir
+        const candidatePath = node_path_1.default.join(this.modelsDir, modelIdentifier);
+        if (node_fs_1.default.existsSync(candidatePath)) {
+            return candidatePath;
+        }
+        const candidateWithExt = node_path_1.default.join(this.modelsDir, `${modelIdentifier}.gguf`);
+        if (node_fs_1.default.existsSync(candidateWithExt)) {
+            return candidateWithExt;
+        }
+        // 3. Alias check
+        const alias = modelIdentifier.trim().toLowerCase();
+        if (exports.CURATED_MODELS[alias]) {
+            const target = node_path_1.default.join(this.modelsDir, exports.CURATED_MODELS[alias].filename);
+            if (node_fs_1.default.existsSync(target)) {
+                return target;
+            }
+        }
+        // 4. Model missing: interrupt with exception
+        throw new exceptions_js_1.ModelNotFoundError(modelIdentifier, this.modelsDir);
+    }
+    get(modelIdentifier) {
+        return this.resolveModelPath(modelIdentifier);
+    }
+    async download(options) {
+        let repoId = options.repoId || "";
+        let filename = options.filename || "";
+        if (options.alias && exports.CURATED_MODELS[options.alias.toLowerCase()]) {
+            const item = exports.CURATED_MODELS[options.alias.toLowerCase()];
+            repoId = item.repoId;
+            filename = item.filename;
+        }
+        if (!repoId || !filename) {
+            throw new Error("Both repoId and filename (or a valid alias) are required.");
+        }
+        const destination = node_path_1.default.join(this.modelsDir, filename);
+        if (node_fs_1.default.existsSync(destination)) {
+            console.log(`[termux-llamacpp] Model '${filename}' is already downloaded at ${destination}`);
+            return destination;
+        }
+        const downloadUrl = `https://huggingface.co/${repoId}/resolve/main/${filename}`;
+        console.log(`[termux-llamacpp] Downloading ${filename} from ${downloadUrl}...`);
+        const response = await fetch(downloadUrl);
+        if (!response.ok) {
+            throw new Error(`Failed to download model from ${downloadUrl}: ${response.statusText}`);
+        }
+        const buffer = Buffer.from(await response.arrayBuffer());
+        node_fs_1.default.writeFileSync(destination, buffer);
+        console.log(`[termux-llamacpp] Model saved to ${destination}`);
+        return destination;
+    }
+    listLocalModels() {
+        if (!node_fs_1.default.existsSync(this.modelsDir))
+            return [];
+        return node_fs_1.default
+            .readdirSync(this.modelsDir)
+            .filter((file) => file.endsWith(".gguf"))
+            .map((file) => {
+            const full = node_path_1.default.join(this.modelsDir, file);
+            const stat = node_fs_1.default.statSync(full);
+            return {
+                filename: file,
+                path: full,
+                sizeMb: Number((stat.size / (1024 * 1024)).toFixed(2))
+            };
+        });
+    }
+}
+exports.ModelManager = ModelManager;
+//# sourceMappingURL=models.js.map

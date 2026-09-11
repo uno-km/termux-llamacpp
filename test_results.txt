@@ -1,0 +1,123 @@
+======================================================================
+  TEST 1: CLI Native Mode (termux-llama run --device vulkan)
+======================================================================
+[*] Input Prompt 1 : 한국의 사계절 중 가을의 매력을 시적으로 한 문장으로 표현해주세요.
+[*] START TIMESTAMP: 2026-09-01 17:13:19
+[*] END TIMESTAMP  : 2026-09-01 17:15:44 (Elapsed: 144.65s)
+--- [CLI STDOUT] ---
+Loading model... 
+
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b8472-81bc4d3dd
+model      : qwen2.5-0.5b-instruct-q8_0.gguf
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read               add a text file
+
+
+> 한국의 사계절 중 가을의 매력을 시적으로 한 문장으로 표현해주세요.
+
+"한국의 사계절은 가을이 특징적인 시대입니다. 시상도를 향한 빛과 황금빛의 암석들이 시상도의 자연을 더욱 명료
+
+[ Prompt: 9.4 t/s | Generation: 5.0 t/s ]
+
+Exiting...
+
+[*] Exit Code: 0
+
+======================================================================
+  TEST 2: Python SDK Mode (termux_llamacpp LlamaRuntime)
+======================================================================
+[*] Input Prompt 2 : 인공지능 기술이 모바일 엣지 디바이스에 가져올 미래 변화를 한 문장으로 요약해주세요.
+[*] START TIMESTAMP: 2026-09-01 17:15:44
+[*] LlamaRuntime instance created successfully.
+[*] END TIMESTAMP  : 2026-09-01 17:16:30 (Elapsed: 45.92s)
+--- [Python SDK Result] ---
+Generated Text: Loading model... 
+
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b8472-81bc4d3dd
+model      : qwen2.5-0.5b-instruct-q8_0.gguf
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read               add a text file
+
+
+> 인공지능 기술이 모바일 엣지 디바이스에 가져올 미래 변화를 한 문장으로 요약해주세요.
+
+人工智能技术将彻底改变移动设备的未来。首先，通过大数据和人工智能技术，我们可以更好地理解用户需求，提供个性化服务。其次，AI在医疗、金融、教育等领域的应用将大大提高效率和准确性。最后，
+
+[ Prompt: 13.9 t/s | Generation: 8.5 t/s ]
+
+Exiting...
+
+
+======================================================================
+  TEST 3: Node.js / npm Mode (Node.js ESM Bridge Execution)
+======================================================================
+[*] Input Prompt 3 : 우주 탐사가 인류에게 주는 가장 큰 교훈은 무엇인가요? 한 문장으로 답해주세요.
+[*] START TIMESTAMP: 2026-09-01 17:16:30
+[*] END TIMESTAMP  : 2026-09-01 17:16:58 (Elapsed: 27.83s)
+--- [Node.js STDOUT] ---
+[Node.js] Spawning termux-llama binary via Node runtime...
+[Node.js Generation Output]:
+Loading model... 
+
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b8472-81bc4d3dd
+model      : qwen2.5-0.5b-instruct-q8_0.gguf
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read               add a text file
+
+
+> 우주 탐사가 인류에게 주는 가장 큰 교훈은 무엇인가요? 한 문장으로 답해주세요.
+
+宇宙 탐사로 인류가 가장 큰 교훈은 세계를 이해하고 지지하는 데의 노력입니다.
+
+[ Prompt: 12.5 t/s | Generation: 6.4 t/s ]
+
+Exiting...
+
+
+[*] Exit Code: 0
+
+======================================================================
+  ALL 3 INTERFACE TESTS COMPLETED ON GALAXY A35
+======================================================================

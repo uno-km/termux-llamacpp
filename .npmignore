@@ -1,0 +1,18 @@
+# .npmignore
+build/
+dist/
+*.egg-info/
+__pycache__/
+*.pyc
+*.py
+termux_llamacpp/
+tests/
+artifacts/
+.git/
+.github/
+scripts/
+MANIFEST.in
+setup.py
+pyproject.toml
+CMakeLists.txt
+termux-llamacpp-full-source-and-report.md
