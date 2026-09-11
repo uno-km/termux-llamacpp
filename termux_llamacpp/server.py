@@ -156,6 +156,21 @@ class BoundedRingLogger:
         return "\n".join(self.recent_lines[-max_count:])
 
 
+def is_pid_alive(pid: Optional[int]) -> bool:
+    """Return True if a process with given PID exists in the OS process table."""
+    if not pid or pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except OSError:
+        return False
+
+
 class ProcessIdentityLock:
     """Race-free OS file lock using fcntl.flock and separated supervisor & native PID validation."""
 
@@ -166,6 +181,48 @@ class ProcessIdentityLock:
         self._handle = None
         self.owns_lock = False
         self.allow_mock_lock = allow_mock_lock
+
+    def is_stale(self) -> bool:
+        """Check whether existing lock file is abandoned by a terminated process."""
+        if not self.lock_file.is_file():
+            return False
+        meta = self.read_metadata()
+        if not meta:
+            try:
+                mtime = self.lock_file.stat().st_mtime
+                if (time.time() - mtime) > 3.0:
+                    return True
+            except OSError:
+                pass
+            return False
+
+        owner_pid = meta.get("lock_owner_pid")
+        native_pid = meta.get("native_pid")
+
+        owner_alive = is_pid_alive(owner_pid) if owner_pid else False
+        native_alive = is_pid_alive(native_pid) if native_pid else False
+
+        # If neither supervisor nor native process is alive, lock is orphaned
+        return not owner_alive and not native_alive
+
+    def reclaim_stale_lock(self) -> bool:
+        """Atomically reclaim and purge an orphaned stale lock file."""
+        if self._handle:
+            try:
+                self._handle.close()
+            except OSError:
+                pass
+            self._handle = None
+        self.owns_lock = False
+
+        try:
+            if self.lock_file.is_file():
+                self.lock_file.unlink(missing_ok=True)
+                logger.warning("[termux-llamacpp] Purged orphaned stale lock file: %s", self.lock_file)
+            return self.try_acquire()
+        except OSError as e:
+            logger.error("[termux-llamacpp] Failed to purge stale lock file '%s': %s", self.lock_file, e)
+            return False
 
     def try_acquire(self) -> bool:
         """Attempt to acquire exclusive, non-blocking OS file lock."""
@@ -686,7 +743,11 @@ class ServerManager:
 
         if not self.lock_mgr.try_acquire():
             existing_meta = self.lock_mgr.read_metadata()
-            if existing_meta:
+            if self.lock_mgr.is_stale():
+                print(f"[termux-llamacpp] Detected orphaned stale lock on {public_endpoint}. Auto-reclaiming lock...")
+                if not self.lock_mgr.reclaim_stale_lock():
+                    raise ServerStartupError(f"Failed to reclaim stale lock file on {public_endpoint}.")
+            elif existing_meta:
                 required_lock_fields = {
                     "schema_version",
                     "lock_owner_pid",
