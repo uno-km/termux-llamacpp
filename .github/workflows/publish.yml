@@ -1,4 +1,4 @@
-﻿name: Release and Publish Packages
+name: Release and Publish Packages
 
 on:
   push:
@@ -57,7 +57,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ github.ref_name }}
-          body_path: RELEASE_NOTES.md
+          body_path: CHANGELOG.md
           draft: false
           prerelease: false
           generate_release_notes: false
