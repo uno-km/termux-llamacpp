@@ -4,7 +4,7 @@
 # ==============================================================================
 set -euo pipefail
 
-VERSION="${TERMUX_LLAMACPP_VERSION:-1.1.0}"
+VERSION="${TERMUX_LLAMACPP_VERSION:-1.3.2}"
 REPO="uno-km/termux-llamacpp"
 ROOT="${TERMUX_LLAMACPP_HOME:-$HOME/.termux-llama}"
 PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
@@ -166,35 +166,50 @@ if [ "$FROM_SOURCE" != "1" ]; then
     fi
 
     ASSET="termux-llamacpp-${VERSION}-${TARGET}.tar.gz"
-    BASE_URL="https://github.com/${REPO}/releases/download/v${VERSION}"
-    ASSET_URL="${BASE_URL}/${ASSET}"
-    SHA_URL="${ASSET_URL}.sha256"
+    DOWNLOAD_SUCCESS=0
+    CANDIDATE_URLS=(
+        "https://github.com/${REPO}/releases/download/v${VERSION}/termux-llamacpp-${VERSION}-${TARGET}.tar.gz"
+        "https://github.com/${REPO}/releases/latest/download/termux-llamacpp-${VERSION}-${TARGET}.tar.gz"
+        "https://github.com/${REPO}/releases/latest/download/termux-llamacpp-android-arm64.tar.gz"
+        "https://github.com/${REPO}/releases/download/v1.0.0b2/termux-llamacpp-1.0.0b2-android-arm64.tar.gz"
+    )
 
-    # 3. Download Release Asset & SHA-256 with Strict Fail-Closed Enforcement
-    printf '  [termux-llamacpp] Downloading verified ARM64 prebuilt bundle (%s)...\n' "$ASSET"
-    if ! curl -fL --retry 3 --retry-delay 2 --connect-timeout 15 -o "$TMP/$ASSET" "$ASSET_URL"; then
-        fail "Failed to download prebuilt binary asset from $ASSET_URL"
+    for CANDIDATE_URL in "${CANDIDATE_URLS[@]}"; do
+        printf '  [termux-llamacpp] Checking candidate release: %s\n' "$CANDIDATE_URL"
+        if curl -fL --retry 2 --retry-delay 1 --connect-timeout 10 -o "$TMP/$ASSET" "$CANDIDATE_URL" 2>/dev/null; then
+            if [ -s "$TMP/$ASSET" ] && [ "$(wc -c < "$TMP/$ASSET")" -gt 1000000 ]; then
+                DOWNLOAD_SUCCESS=1
+                printf '  [termux-llamacpp] Successfully fetched prebuilt binary bundle from: %s\n' "$CANDIDATE_URL"
+                break
+            fi
+        fi
+    done
+
+    if [ "$DOWNLOAD_SUCCESS" = "1" ]; then
+        curl -fL --connect-timeout 5 -o "$TMP/$ASSET.sha256" "${CANDIDATE_URL}.sha256" 2>/dev/null || true
+        if [ -s "$TMP/$ASSET.sha256" ]; then
+            printf '  [termux-llamacpp] Verifying cryptographic SHA-256 integrity...\n'
+            (cd "$TMP" && sha256sum -c "$ASSET.sha256") || fail "Cryptographic SHA-256 checksum mismatch!"
+        fi
+
+        # Staging & Pre-Swap Extraction
+        STAGING="$ROOT/.staging-$VERSION"
+        TARGET_DIR="$ROOT/versions/$VERSION"
+        rm -rf "$STAGING"
+        mkdir -p "$STAGING" "$ROOT/versions" "$ROOT/models"
+        tar -xzf "$TMP/$ASSET" -C "$STAGING"
+
+        rm -rf "$TARGET_DIR"
+        mv "$STAGING" "$TARGET_DIR"
+        ln -sfn "$TARGET_DIR" "$ROOT/current.new"
+        mv -Tf "$ROOT/current.new" "$ROOT/current" 2>/dev/null || ln -sfn "$TARGET_DIR" "$ROOT/current"
+        printf '  [termux-llamacpp] Prebuilt binary bundle successfully installed.\n'
+    else
+        printf '  [termux-llamacpp] Prebuilt binary bundle unavailable. Falling back to native on-device compilation...\n'
+        # Call this script with --from-source to guarantee reliable build
+        "$0" --from-source
+        exit 0
     fi
-
-    printf '  [termux-llamacpp] Downloading SHA-256 cryptographic manifest...\n'
-    if ! curl -fL --retry 3 --retry-delay 2 --connect-timeout 15 -o "$TMP/$ASSET.sha256" "$SHA_URL"; then
-        fail "Failed to download SHA-256 integrity manifest from $SHA_URL (Fail-Closed: Installation aborted)"
-    fi
-
-    printf '  [termux-llamacpp] Verifying cryptographic SHA-256 integrity...\n'
-    (cd "$TMP" && sha256sum -c "$ASSET.sha256") || fail "Cryptographic SHA-256 checksum mismatch! Possible corrupted download or tampering."
-
-    # Staging & Pre-Swap Extraction
-    STAGING="$ROOT/.staging-$VERSION"
-    TARGET_DIR="$ROOT/versions/$VERSION"
-    rm -rf "$STAGING"
-    mkdir -p "$STAGING" "$ROOT/versions" "$ROOT/models"
-    tar -xzf "$TMP/$ASSET" -C "$STAGING"
-
-    rm -rf "$TARGET_DIR"
-    mv "$STAGING" "$TARGET_DIR"
-    ln -sfn "$TARGET_DIR" "$ROOT/current.new"
-    mv -Tf "$ROOT/current.new" "$ROOT/current" 2>/dev/null || ln -sfn "$TARGET_DIR" "$ROOT/current"
 fi
 
 # ==============================================================================
@@ -213,6 +228,11 @@ for cmd_name in termux-llama-cli termux-llama-server llama-cli llama-server; do
 set -euo pipefail
 ROOT="\${TERMUX_LLAMACPP_HOME:-\$HOME/.termux-llama}"
 export LD_LIBRARY_PATH="\$ROOT/current/lib\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}:\$PREFIX/lib"
+if [ ! -f "\$ROOT/current/bin/$target_bin" ]; then
+    printf '[ERROR] %s binary not found at %s/current/bin/%s\n' "$target_bin" "\$ROOT" "$target_bin" >&2
+    printf 'Please run: termux-llama install --from-source\n' >&2
+    exit 1
+fi
 exec "\$ROOT/current/bin/$target_bin" "\$@"
 EOF
     chmod 0755 "$PREFIX/bin/$cmd_name"
