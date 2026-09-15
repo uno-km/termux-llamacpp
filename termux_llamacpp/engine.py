@@ -191,6 +191,24 @@ class LlamaRuntime:
         env = os.environ.copy()
         dev_mode = str(device or "auto").strip().lower()
 
+        # 0. Always include native llama runtime library search paths
+        native_lib_dirs = [
+            str(self.bin_dir.parent / "lib"),
+            str(self.bin_dir.parent / "current" / "lib"),
+            str(Path.home() / ".termux-llama" / "current" / "lib"),
+            str(Path.home() / ".termux-llama" / "lib"),
+            str(Path.home() / ".termux-llamacpp" / "current" / "lib"),
+            str(Path.home() / ".termux-llamacpp" / "lib"),
+            "/data/data/com.termux/files/usr/lib",
+        ]
+        existing_lp = env.get("LD_LIBRARY_PATH", "")
+        lp_parts = [p for p in existing_lp.split(":") if p]
+        for lib_d in native_lib_dirs:
+            if os.path.isdir(lib_d) and lib_d not in lp_parts:
+                lp_parts.insert(0, lib_d)
+        if lp_parts:
+            env["LD_LIBRARY_PATH"] = ":".join(lp_parts)
+
         if dev_mode == "cpu" or sys.platform == "win32":
             return env
 
@@ -351,27 +369,17 @@ class LlamaRuntime:
 
         backend, target_ngl = resolve_device_backend(device, n_gpu_layers)
 
-        # 1. Vulkan GPU Route
+        # 1. Vulkan GPU Route (Strict Zero-Silent-Fallback)
         if backend == "vulkan":
             res = _run_cmd("vulkan", target_ngl)
             err_lower = (res.stderr or "").lower()
             if "no usable gpu found" in err_lower or "no devices found" in err_lower or res.returncode != 0:
-                dev_mode = str(device or "auto").lower()
-                if dev_mode in ("vulkan", "gpu"):
-                    raise TermuxLlamaError(
-                        f"[ERROR: AMEVA-LLAMA-E002] Vulkan GPU device initialization failed or unavailable on this device.\n"
-                        f"Fallback suppressed in strict '--device {dev_mode}' mode.\n"
-                        f"Please run in CPU mode using '--device cpu' or auto mode with '--device auto'.\n"
-                        f"Details: {res.stderr.strip()}"
-                    )
-                # Auto mode graceful fallback to CPU
-                logger.warning("[termux-llamacpp] Vulkan GPU execution failed; falling back to CPU NEON engine.")
-                sys.stderr.write("[WARN] Vulkan GPU execution failed. Falling back to ARM64 CPU NEON engine...\n")
-                sys.stderr.flush()
-                cpu_res = _run_cmd("cpu", 0)
-                if cpu_res.returncode != 0:
-                    raise TermuxLlamaError(f"CPU NEON inference fallback failed: {cpu_res.stderr}")
-                return cpu_res.stdout.strip()
+                raise TermuxLlamaError(
+                    f"[ERROR: AMEVA-LLAMA-E003] Vulkan GPU execution failed or GPU device unavailable.\n"
+                    f"Automatic CPU fallback is strictly disabled under Zero-Silent-Fallback policy.\n"
+                    f"Remediation: To execute inference on pure CPU NEON, re-run with '--device cpu' (CLI) or device='cpu' (SDK).\n"
+                    f"Details:\n{res.stderr.strip() or res.stdout.strip()}"
+                )
             return res.stdout.strip()
 
         # 2. CPU NEON Route

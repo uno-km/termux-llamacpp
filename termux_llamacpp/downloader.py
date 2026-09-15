@@ -20,7 +20,7 @@ from termux_llamacpp.config import (
     CURATED_MODELS,
     ModelInfo,
 )
-from termux_llamacpp.exceptions import ModelNotFoundError, TermuxLlamaError
+from termux_llamacpp.exceptions import ModelNotFoundError, ModelNotSpecifiedError, TermuxLlamaError
 from termux_llamacpp.security import (
     compute_sha256,
     atomic_write_and_verify,
@@ -68,12 +68,7 @@ class ModelManager:
             ModelNotFoundError: If the model file is missing from local storage.
         """
         if model_identifier is None or str(model_identifier).strip() == "":
-            # Check cached models first
-            cached = list(self.models_dir.glob("*.gguf"))
-            if cached:
-                return cached[0].resolve()
-            # Default fallback alias
-            model_identifier = "qwen2.5-0.5b-instruct"
+            raise ModelNotSpecifiedError(str(self.models_dir))
 
         path = Path(model_identifier)
         if path.is_file() and path.suffix.lower() == ".gguf":

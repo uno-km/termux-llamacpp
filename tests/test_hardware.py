@@ -43,6 +43,15 @@ class TestHardwareDetection(unittest.TestCase):
                 resolve_device_backend("vulkan")
             self.assertIn("AMEVA-LLAMA-E001", str(ctx.exception))
 
+    def test_resolve_device_backend_enforces_requested_ngl(self):
+        from termux_llamacpp.hardware import resolve_device_backend
+        backend, ngl = resolve_device_backend("cpu", requested_ngl=50)
+        self.assertEqual(backend, "cpu")
+        self.assertEqual(ngl, 0)  # CPU NEON strictly forces ngl=0
+
+        backend, ngl = resolve_device_backend("auto", requested_ngl=77)
+        self.assertEqual(ngl, 77)
+
 
 if __name__ == "__main__":
     unittest.main()

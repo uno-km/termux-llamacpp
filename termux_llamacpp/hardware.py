@@ -154,10 +154,10 @@ def _read_cpu_features() -> Dict[str, bool]:
     return features
 
 
-def _get_memory_info() -> tuple:
-    """Get total and available RAM in megabytes."""
-    total_mb = 4096.0
-    avail_mb = 2048.0
+def _get_memory_info() -> tuple[Optional[float], Optional[float]]:
+    """Get total and available RAM in megabytes without synthetic metric stubs."""
+    total_mb: Optional[float] = None
+    avail_mb: Optional[float] = None
 
     # 1. Linux / Android /proc/meminfo
     if os.path.exists("/proc/meminfo"):
@@ -170,7 +170,8 @@ def _get_memory_info() -> tuple:
                             total_mb = float(parts[1]) / 1024.0
                         elif parts[0] in ("MemAvailable:", "MemFree:"):
                             avail_mb = float(parts[1]) / 1024.0
-            return total_mb, avail_mb
+            if total_mb is not None and avail_mb is not None:
+                return total_mb, avail_mb
         except Exception as e:
             logger.debug("[termux-llamacpp] /proc/meminfo read failed: %s", e)
 
@@ -208,6 +209,7 @@ def _get_memory_info() -> tuple:
         except (ValueError, OSError) as e:
             logger.debug("[termux-llamacpp] POSIX sysconf memory detection failed: %s", e)
 
+    # No fake fallback metrics: return actual None if undetectable
     return total_mb, avail_mb
 
 
@@ -244,8 +246,8 @@ def detect_hardware() -> HardwareProfile:
         has_neon=cpu_features["neon"],
         has_fp16=cpu_features["fp16"],
         has_dotprod=cpu_features["dotprod"],
-        total_ram_mb=round(total_ram, 1),
-        available_ram_mb=round(avail_ram, 1),
+        total_ram_mb=round(total_ram, 1) if total_ram is not None else 0.0,
+        available_ram_mb=round(avail_ram, 1) if avail_ram is not None else 0.0,
         recommended_preset=recommended_preset,
     )
 
@@ -283,9 +285,10 @@ def resolve_device_backend(requested_device: str, requested_ngl: Optional[int] =
     """Resolve the user's device= argument to an actual backend and ngl count.
 
     Adheres strictly to the AMEVA Decoupled Gateway Protocol:
-    1. 'cpu': Always routes to pure CPU NEON without external dependency.
+    1. 'cpu': Always routes to pure CPU NEON without external dependency (ngl=0).
     2. 'auto': If ameva-runtime is absent, safely defaults to CPU NEON with explicit INFO log.
                If ameva-runtime is present, queries SmartRouter for optimal device routing.
+               User requested_ngl is strictly enforced if provided.
     3. 'vulkan' / 'gpu': Requires ameva-runtime. Emits Fail-Fast error [AMEVA-LLAMA-E001] if absent.
     """
     import sys
@@ -293,7 +296,8 @@ def resolve_device_backend(requested_device: str, requested_ngl: Optional[int] =
 
     req = str(requested_device or "auto").lower().strip()
     ameva_mod = _resolve_ameva_runtime()
-    ngl_target = 99 if requested_ngl is None else requested_ngl
+    # If user explicitly specified requested_ngl, enforce it unconditionally; otherwise default upstream full offload (999)
+    ngl_target = requested_ngl if requested_ngl is not None else 999
 
     if req == "cpu":
         return "cpu", 0
@@ -307,9 +311,10 @@ def resolve_device_backend(requested_device: str, requested_ngl: Optional[int] =
         # ameva_runtime is available: evaluate via SmartRouter / Doctor
         try:
             from ameva_runtime.router import SmartRouter
-            plan = SmartRouter().route_for_llm(requested_backend=None)
+            plan = SmartRouter().route_for_llm(requested_backend=None, requested_ngl=requested_ngl)
             logger.info("Auto-detected optimal backend via ameva-runtime: %s", plan.backend)
-            return plan.backend, plan.ngl
+            effective_ngl = requested_ngl if requested_ngl is not None else plan.ngl
+            return plan.backend, effective_ngl
         except Exception as e:
             # 침묵 폴백 금지: 명확한 에러 코드 분출
             raise RuntimeError(f"[ERROR: AMEVA-LLAMA-E002] Hardware evaluation failed: {e}") from e

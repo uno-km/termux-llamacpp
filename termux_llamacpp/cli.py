@@ -20,6 +20,8 @@ from termux_llamacpp.hardware import detect_hardware, print_hardware_summary
 from termux_llamacpp.config import CURATED_MODELS, BUILD_PRESETS, LLAMA_CPP_PINNED_COMMIT
 from termux_llamacpp.exceptions import (
     ModelNotFoundError,
+    ModelNotSpecifiedError,
+    InvalidModelIdentifierError,
     DependencyMissingError,
     TermuxLlamaError,
 )
@@ -173,15 +175,27 @@ def cmd_run(args):
     prompt_val = getattr(args, "prompt_flag", None) or getattr(args, "prompt", None) or getattr(args, "prompt_pos", "")
     model_val = args.model
 
-    # If only one positional argument was provided and prompt is empty, check if model is prompt
-    if model_val and not prompt_val:
-        # Check if model_val looks like prompt
-        if not (model_val.endswith(".gguf") or model_val in CURATED_MODELS):
-            prompt_val = model_val
-            model_val = None
+    if not model_val:
+        raise ModelNotSpecifiedError(str(runtime.models.models_dir))
+
+    # Verify model_val is recognized alias, valid .gguf file, or present in models directory
+    is_valid_model = (
+        model_val.endswith(".gguf")
+        or model_val in CURATED_MODELS
+        or (runtime.models.models_dir / model_val).is_file()
+        or (runtime.models.models_dir / f"{model_val}.gguf").is_file()
+        or Path(model_val).is_file()
+    )
+
+    if not is_valid_model:
+        raise InvalidModelIdentifierError(model_val, list(CURATED_MODELS.keys()))
 
     if not prompt_val:
-        print("[Error] Input prompt is required. Use 'termux-llama run [model] <prompt>' or 'termux-llama run -p \"<prompt>\"'", file=sys.stderr)
+        print(
+            f"[Error] Input prompt is required.\n"
+            f"Usage: termux-llama run {model_val} \"<prompt>\" or termux-llama run {model_val} -p \"<prompt>\"",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     try:
@@ -447,17 +461,21 @@ def main():
         "hardware": cmd_doctor,
     }
 
-    fn = dispatch.get(args.command)
-    if fn:
-        fn(args)
-    elif args.command in ("component", "model", "instance") and _protocol_available:
-        # AMEVA Component Protocol v1 명령 처리
-        from ameva_component.cli_support import dispatch_protocol
-        from termux_llamacpp.control import LlamaCppControl
-        control = LlamaCppControl()
-        dispatch_protocol(args, control)
-    elif args.command in ("component", "model", "instance"):
-        print("[ERROR] ameva-component-sdk not installed. Run: pip install ameva-component-sdk", file=sys.stderr)
+    try:
+        fn = dispatch.get(args.command)
+        if fn:
+            fn(args)
+        elif args.command in ("component", "model", "instance") and _protocol_available:
+            # AMEVA Component Protocol v1 명령 처리
+            from ameva_component.cli_support import dispatch_protocol
+            from termux_llamacpp.control import LlamaCppControl
+            control = LlamaCppControl()
+            dispatch_protocol(args, control)
+        elif args.command in ("component", "model", "instance"):
+            print("[ERROR] ameva-component-sdk not installed. Run: pip install ameva-component-sdk", file=sys.stderr)
+            sys.exit(1)
+    except TermuxLlamaError as e:
+        print(str(e), file=sys.stderr)
         sys.exit(1)
 
 

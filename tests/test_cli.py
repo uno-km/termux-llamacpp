@@ -33,6 +33,20 @@ class TestCLIExecution(unittest.TestCase):
             output = out.getvalue()
             self.assertIn("Architecture", output)
 
+    def test_cli_run_without_model_fails_fast(self):
+        with patch("sys.argv", ["termux-llama", "run"]), patch("sys.stderr", new_callable=io.StringIO) as err:
+            with self.assertRaises(SystemExit) as ctx:
+                main()
+            self.assertEqual(ctx.exception.code, 1)
+            self.assertIn("MODEL NOT SPECIFIED", err.getvalue())
+
+    def test_cli_run_with_invalid_model_fails_fast(self):
+        with patch("sys.argv", ["termux-llama", "run", "invalid-model-name-xyz", "hello"]), patch("sys.stderr", new_callable=io.StringIO) as err:
+            with self.assertRaises(SystemExit) as ctx:
+                main()
+            self.assertEqual(ctx.exception.code, 1)
+            self.assertIn("INVALID MODEL IDENTIFIER", err.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()

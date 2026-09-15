@@ -29,6 +29,14 @@ class TestModelManager(unittest.TestCase):
         self.assertIn("MODEL NOT FOUND", err_msg)
         self.assertIn("termux-llama download", err_msg)
 
+    def test_unspecified_model_raises_model_not_specified_error(self):
+        """Test that empty or None model identifier raises ModelNotSpecifiedError (Zero-Silent-Fallback)."""
+        from termux_llamacpp.exceptions import ModelNotSpecifiedError
+        with self.assertRaises(ModelNotSpecifiedError):
+            self.manager.resolve_model_path(None)
+        with self.assertRaises(ModelNotSpecifiedError):
+            self.manager.resolve_model_path("")
+
     def test_existing_file_resolution(self):
         """Test resolving an existing GGUF model file."""
         fake_model = self.models_dir / "custom-model.gguf"

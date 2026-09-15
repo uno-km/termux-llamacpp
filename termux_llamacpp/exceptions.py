@@ -65,3 +65,51 @@ class RuntimeBuildError(TermuxLlamaError):
 class ServerStartupError(TermuxLlamaError):
     """Raised when llama-server process fails to start or healthcheck fails."""
     pass
+
+
+class ModelNotSpecifiedError(TermuxLlamaError):
+    """Raised when no model identifier was specified by caller."""
+
+    def __init__(self, search_path: str = ""):
+        self.search_path = search_path
+        msg = (
+            f"\n"
+            f"================================================================================\n"
+            f"[termux-llamacpp] MODEL NOT SPECIFIED (Zero-Silent-Fallback)\n"
+            f"================================================================================\n"
+            f"실행할 GGUF 모델 식별자가 지정되지 않았습니다.\n"
+            f"임의의 캐시 파일 무단 할당(Silent Fallback)은 엄격히 금지되어 있습니다.\n\n"
+            f"해결 방법:\n"
+            f"  1. 큐레이션 모델 다운로드 후 지정:\n"
+            f"     termux-llama download qwen2.5-0.5b-instruct\n"
+            f"     termux-llama run qwen2.5-0.5b-instruct \"Hello\"\n\n"
+            f"  2. Hugging Face 레포지토리 직접 다운로드:\n"
+            f"     termux-llama download Qwen/Qwen2.5-0.5B-Instruct-GGUF qwen2.5-0.5b-instruct-q4_k_m.gguf\n\n"
+            f"  3. 로컬 캐시된 모델 확인:\n"
+            f"     termux-llama list\n"
+            f"================================================================================"
+        )
+        super().__init__(msg)
+
+
+class InvalidModelIdentifierError(TermuxLlamaError):
+    """Raised when an unrecognized model identifier was provided."""
+
+    def __init__(self, model_identifier: str, available_models: list = None):
+        self.model_identifier = model_identifier
+        avail = available_models or []
+        avail_str = "\n".join(f"    - {m}" for m in avail) if avail else "    (termux-llama models 명령으로 확인 가능)"
+        msg = (
+            f"\n"
+            f"================================================================================\n"
+            f"[termux-llamacpp] INVALID MODEL IDENTIFIER: '{model_identifier}'\n"
+            f"================================================================================\n"
+            f"'{model_identifier}' 은(는) 등록된 모델 별칭이나 유효한 로컬 .gguf 파일이 아닙니다.\n"
+            f"미등록 모델 입력을 임의로 프롬프트로 변조하거나 조용히 넘기는 행위는 금지되어 있습니다.\n\n"
+            f"추천 큐레이션 모델 목록:\n{avail_str}\n\n"
+            f"다운로드 예시:\n"
+            f"  termux-llama download {avail[0] if avail else 'qwen2.5-0.5b-instruct'}\n"
+            f"================================================================================"
+        )
+        super().__init__(msg)
+
