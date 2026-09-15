@@ -321,28 +321,53 @@ def resolve_device_backend(requested_device: str, requested_ngl: Optional[int] =
 
     if req in ("vulkan", "gpu"):
         if ameva_mod is None:
-            raise TermuxLlamaError(
-                "[ERROR: AMEVA-LLAMA-E001] GPU acceleration requires 'ameva-runtime'.\n"
-                "Cause: Hardware abstraction provider 'ameva-runtime' is not installed.\n"
-                "Action Required: Install the hardware acceleration package via:\n"
-                "  - Python: pip install ameva-runtime\n"
+            sys.stderr.write(
+                "\n"
+                "================================================================================\n"
+                "[WARNING: AMEVA-LLAMA-W001] GPU acceleration requires 'ameva-runtime'!\n"
+                "================================================================================\n"
+                "Hardware acceleration provider 'ameva-runtime' is not installed on this system.\n"
+                "Forced fallback: Operating in pure ARM64 NEON CPU mode.\n\n"
+                "To unlock native GPU (Vulkan) hardware acceleration on your mobile SoC:\n"
+                "  - Python:  pip install ameva-runtime\n"
                 "  - Node.js: npm install @unokm/ameva-runtime\n"
-                "Documentation: https://github.com/uno-km/termux-llamacpp"
+                "For full documentation and hardware setup, visit:\n"
+                "  https://github.com/uno-km/termux-llamacpp\n"
+                "================================================================================\n\n"
             )
+            sys.stderr.flush()
+            return "cpu", 0
 
-        # Check native Vulkan availability via ameva-runtime Doctor probe
+        # Check native Vulkan availability via ameva-runtime Adapter or Vulkan probe
         try:
+            try:
+                from ameva_runtime.adapters.llamacpp import LlamaCppAdapter
+                binding = LlamaCppAdapter.bind(requested_backend="vulkan", requested_ngl=ngl_target)
+                if binding and getattr(binding, "is_vulkan", False):
+                    effective_ngl = binding.config.get("ngl", ngl_target) if hasattr(binding, "config") else ngl_target
+                    return "vulkan", effective_ngl
+            except ImportError:
+                pass
+
             from ameva_runtime import vulkan as avr
             is_vk = False
             if hasattr(avr, "is_available"):
                 is_vk = avr.is_available()
             elif hasattr(avr, "create_context"):
-                is_vk = avr.create_context("vulkan").backend_type == "vulkan"
+                ctx = avr.create_context("vulkan")
+                is_vk = ctx.backend_type == "vulkan" or getattr(ctx, "is_gpu", False)
+            elif hasattr(avr, "get_or_create_context"):
+                ctx = avr.get_or_create_context("vulkan")
+                is_vk = ctx.backend_type == "vulkan" or getattr(ctx, "is_gpu", False)
 
             if is_vk:
                 return "vulkan", ngl_target
-        except Exception as e:
-            logger.debug("Vulkan probe error: %s", e)
+        except Exception as ctx_err:
+            # Transparently expose exact error from ameva-runtime without swallowing or masking
+            raise TermuxLlamaError(
+                f"[ERROR: AMEVA-LLAMA-E002] Vulkan GPU acceleration failed in ameva-runtime:\n{type(ctx_err).__name__}: {ctx_err}\n"
+                f"Execution halted strictly under Zero-Silent-Fallback policy."
+            ) from ctx_err
 
         raise TermuxLlamaError(
             "[ERROR: AMEVA-LLAMA-E002] Vulkan GPU acceleration was explicitly requested (device='vulkan' / 'gpu'), "
@@ -351,3 +376,66 @@ def resolve_device_backend(requested_device: str, requested_ngl: Optional[int] =
         )
 
     raise ValueError(f"Unsupported device '{requested_device}'. Must be one of ['auto', 'gpu', 'vulkan', 'cpu'].")
+
+
+def bind_llamacpp_hardware(engine: Any = None, requested_device: str = "auto", requested_ngl: Optional[int] = None) -> Optional[Any]:
+    """Safely invoke AMEVA-Runtime LlamaCppAdapter if present to configure engine instance."""
+    ameva_mod = _resolve_ameva_runtime()
+    if ameva_mod is None:
+        return None
+
+    try:
+        from ameva_runtime.adapters.llamacpp import LlamaCppAdapter
+        binding = LlamaCppAdapter.bind(
+            engine=engine,
+            requested_backend=requested_device,
+            requested_ngl=requested_ngl,
+        )
+        return binding
+    except Exception as e:
+        logger.debug("Hardware adapter binding skipped: %s", e)
+        return None
+
+
+def get_unified_model_search_dirs(submodule: str = "llama") -> list:
+    """
+    Returns unified model search paths adhering to AMEVA Ecosystem Shared Storage Specification.
+    Enables zero-redundancy model sharing across STT, TTS, LLaMA, Vision, and Diffusion.
+    """
+    from pathlib import Path
+
+    home = Path.home()
+    dirs = []
+
+    env_dir = os.environ.get("AMEVA_MODELS_DIR")
+    if env_dir:
+        p = Path(env_dir)
+        dirs.extend([p / submodule, p])
+
+    prefixes = [home]
+    prefix_env = os.environ.get("PREFIX")
+    if prefix_env:
+        prefixes.append(Path(prefix_env).parent / "home")
+
+    for base in prefixes:
+        dirs.extend([
+            base / "models" / submodule,
+            base / "models",
+            base / "ameva-models" / submodule,
+            base / "ameva-models",
+            base / ".cache" / "ameva" / "models" / submodule,
+            base / ".cache" / "ameva" / "models",
+            base / ".cache" / f"termux-{submodule}" / "models",
+            base / ".termux-llama" / "models",
+        ])
+
+    # Deduplicate while preserving order
+    seen = set()
+    unique_dirs = []
+    for d in dirs:
+        resolved = str(d)
+        if resolved not in seen:
+            seen.add(resolved)
+            unique_dirs.append(d)
+
+    return unique_dirs

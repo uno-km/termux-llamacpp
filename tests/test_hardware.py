@@ -33,15 +33,37 @@ class TestHardwareDetection(unittest.TestCase):
         self.assertIn(backend, ("cpu", "vulkan", "cpu_neon"))
         self.assertIsInstance(ngl, int)
 
-    def test_resolve_device_backend_vulkan_fail_fast_without_runtime(self):
+    def test_resolve_device_backend_vulkan_fallback_without_runtime(self):
         from unittest.mock import patch
+        import io
+        from termux_llamacpp.hardware import resolve_device_backend
+
+        with patch("termux_llamacpp.hardware._resolve_ameva_runtime", return_value=None):
+            with patch("sys.stderr", new_callable=io.StringIO) as mock_err:
+                backend, ngl = resolve_device_backend("vulkan")
+                self.assertEqual(backend, "cpu")
+                self.assertEqual(ngl, 0)
+                err_text = mock_err.getvalue()
+                self.assertIn("AMEVA-LLAMA-W001", err_text)
+                self.assertIn("pip install ameva-runtime", err_text)
+
+    def test_resolve_device_backend_vulkan_transparent_error_propagation(self):
+        from unittest.mock import patch, MagicMock
         from termux_llamacpp.hardware import resolve_device_backend
         from termux_llamacpp.exceptions import TermuxLlamaError
 
-        with patch("termux_llamacpp.hardware._resolve_ameva_runtime", return_value=None):
+        mock_avr = MagicMock()
+        mock_adapter = MagicMock()
+        mock_adapter.bind.side_effect = RuntimeError("Vulkan shader pipeline compilation failed: out of memory")
+        mock_avr.adapters.llamacpp.LlamaCppAdapter = mock_adapter
+
+        with patch("termux_llamacpp.hardware._resolve_ameva_runtime", return_value=mock_avr), \
+             patch.dict("sys.modules", {"ameva_runtime.adapters.llamacpp": mock_avr.adapters.llamacpp}):
             with self.assertRaises(TermuxLlamaError) as ctx:
                 resolve_device_backend("vulkan")
-            self.assertIn("AMEVA-LLAMA-E001", str(ctx.exception))
+            self.assertIn("AMEVA-LLAMA-E002", str(ctx.exception))
+            self.assertIn("Vulkan shader pipeline compilation failed", str(ctx.exception))
+            self.assertIsInstance(ctx.exception.__cause__, RuntimeError)
 
     def test_resolve_device_backend_enforces_requested_ngl(self):
         from termux_llamacpp.hardware import resolve_device_backend
@@ -51,6 +73,12 @@ class TestHardwareDetection(unittest.TestCase):
 
         backend, ngl = resolve_device_backend("auto", requested_ngl=77)
         self.assertEqual(ngl, 77)
+
+    def test_unified_model_search_dirs(self):
+        from termux_llamacpp.hardware import get_unified_model_search_dirs
+        dirs = get_unified_model_search_dirs()
+        self.assertIsInstance(dirs, list)
+        self.assertGreater(len(dirs), 0)
 
 
 if __name__ == "__main__":

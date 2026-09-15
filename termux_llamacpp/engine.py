@@ -239,14 +239,22 @@ class LlamaRuntime:
                 )
         except ImportError:
             if dev_mode in ("vulkan", "gpu"):
-                raise TermuxLlamaError(
-                    "[ERROR: AMEVA-LLAMA-E001] GPU acceleration requires 'ameva-runtime'.\n"
-                    "Cause: Hardware abstraction provider 'ameva-runtime' is not installed.\n"
-                    "Action Required: Install the hardware acceleration package via:\n"
-                    "  - Python: pip install ameva-runtime\n"
+                sys.stderr.write(
+                    "\n"
+                    "================================================================================\n"
+                    "[WARNING: AMEVA-LLAMA-W001] GPU acceleration requires 'ameva-runtime'!\n"
+                    "================================================================================\n"
+                    "Hardware acceleration provider 'ameva-runtime' is not installed on this system.\n"
+                    "Forced fallback: Operating in pure ARM64 NEON CPU mode.\n\n"
+                    "To unlock native GPU (Vulkan) hardware acceleration on your mobile SoC:\n"
+                    "  - Python:  pip install ameva-runtime\n"
                     "  - Node.js: npm install @unokm/ameva-runtime\n"
-                    "Documentation: https://github.com/uno-km/termux-llamacpp"
+                    "For full documentation and hardware setup, visit:\n"
+                    "  https://github.com/uno-km/termux-llamacpp\n"
+                    "================================================================================\n\n"
                 )
+                sys.stderr.flush()
+                return env
             # Auto-mode graceful fallback to system Vulkan driver if present
             if os.path.exists("/system/lib64/libvulkan.so"):
                 existing_lp = env.get("LD_LIBRARY_PATH", "")
@@ -281,15 +289,15 @@ class LlamaRuntime:
 
         resolved_model_path = self.models.get(model)
         server_mgr = ServerManager(runtime=self)
-        dev_mode = "vulkan" if str(device).lower() == "gpu" else device
+        backend, target_ngl = resolve_device_backend(device, n_gpu_layers)
         return server_mgr.serve(
             model_path=resolved_model_path,
             host=host,
             port=port,
             ctx_size=ctx_size,
             threads=threads or self.hw.recommended_threads,
-            n_gpu_layers=n_gpu_layers if dev_mode != "cpu" else 0,
-            device=dev_mode,
+            n_gpu_layers=target_ngl if backend != "cpu" else 0,
+            device=backend,
             daemon=daemon,
         )
 

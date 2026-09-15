@@ -149,6 +149,13 @@ def cmd_serve(args):
         return
 
     runtime = LlamaRuntime()
+    runtime_mode = getattr(args, "runtime", "auto")
+    effective_device = getattr(args, "device", "auto")
+    if runtime_mode == "ameva" and effective_device == "auto":
+        effective_device = "gpu"
+    elif runtime_mode == "native" and effective_device == "auto":
+        effective_device = "cpu"
+
     try:
         server = runtime.serve(
             model=args.model,
@@ -156,7 +163,8 @@ def cmd_serve(args):
             port=args.port,
             ctx_size=args.ctx,
             threads=args.threads,
-            device=getattr(args, "device", "auto"),
+            device=effective_device,
+            n_gpu_layers=getattr(args, "ngl", 0) or 0,
         )
         print(f"\n[termux-llama] Server running at {server.endpoint} (Ctrl+C to stop)")
         while True:
@@ -165,6 +173,13 @@ def cmd_serve(args):
         print("\n[termux-llama] Stopping server...")
     except TermuxLlamaError as e:
         print(f"\n[Error] {e}", file=sys.stderr)
+        if e.__cause__:
+            print(f"\n[Underlying Cause] {type(e.__cause__).__name__}: {e.__cause__}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"\n[Error: Server Exception] {type(e).__name__}: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc(file=sys.stderr)
         sys.exit(1)
 
 
@@ -198,6 +213,13 @@ def cmd_run(args):
         )
         sys.exit(1)
 
+    runtime_mode = getattr(args, "runtime", "auto")
+    effective_device = getattr(args, "device", "auto")
+    if runtime_mode == "ameva" and effective_device == "auto":
+        effective_device = "gpu"
+    elif runtime_mode == "native" and effective_device == "auto":
+        effective_device = "cpu"
+
     try:
         output = runtime.generate(
             model=model_val,
@@ -205,11 +227,19 @@ def cmd_run(args):
             max_tokens=args.max_tokens,
             temperature=args.temp,
             threads=args.threads,
-            device=args.device,
+            device=effective_device,
+            n_gpu_layers=getattr(args, "ngl", None),
         )
         print(output)
     except TermuxLlamaError as e:
         print(f"\n[Error] {e}", file=sys.stderr)
+        if e.__cause__:
+            print(f"\n[Underlying Cause] {type(e.__cause__).__name__}: {e.__cause__}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"\n[Error: Runtime Exception] {type(e).__name__}: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc(file=sys.stderr)
         sys.exit(1)
 
 
@@ -364,6 +394,15 @@ def cmd_doctor(args):
 
 
 def main():
+    KNOWN_COMMANDS = {
+        "install", "download", "serve", "run", "stop", "find",
+        "list", "models", "presets", "doctor", "hardware",
+        "component", "model", "instance"
+    }
+    raw_args = sys.argv[1:]
+    if raw_args and raw_args[0] not in KNOWN_COMMANDS and raw_args[0] not in ("-h", "--help", "-v", "--version"):
+        sys.argv.insert(1, "run")
+
     parser = argparse.ArgumentParser(
         prog="termux-llama",
         description="Universal GGUF Runtime, Model Manager & OpenAI Server for Android Termux & ARM64",
@@ -396,6 +435,8 @@ def main():
     p_serve.add_argument("--device", "-b", "--backend", dest="device", default="auto", choices=["auto", "vulkan", "cpu", "gpu"], help="Compute device: auto (Vulkan priority with CPU fallback), vulkan/gpu (strict GPU fail-fast), cpu")
     p_serve.add_argument("--gpu", action="store_const", const="gpu", dest="device", help="Force GPU acceleration (requires ameva-runtime)")
     p_serve.add_argument("--cpu", action="store_const", const="cpu", dest="device", help="Force ARM64 CPU NEON execution")
+    p_serve.add_argument("-ngl", "--ngl", "--gpu-layers", dest="ngl", type=int, default=None, help="Number of layers to offload to GPU VRAM")
+    p_serve.add_argument("--runtime", default="auto", choices=["auto", "ameva", "native"], help="Execution runtime provider (auto, ameva, native)")
     p_serve.add_argument("-d", "--daemon", action="store_true", help="Run server in the background as a daemon")
 
     # run (direct one-shot inference)
@@ -406,6 +447,8 @@ def main():
     p_run.add_argument("--device", "-b", "--backend", dest="device", default="auto", choices=["auto", "vulkan", "cpu", "gpu"], help="Compute device: auto (Vulkan priority with CPU fallback), vulkan/gpu (strict GPU fail-fast), cpu")
     p_run.add_argument("--gpu", action="store_const", const="gpu", dest="device", help="Force GPU acceleration (requires ameva-runtime)")
     p_run.add_argument("--cpu", action="store_const", const="cpu", dest="device", help="Force ARM64 CPU NEON execution")
+    p_run.add_argument("-ngl", "--ngl", "--gpu-layers", dest="ngl", type=int, default=None, help="Number of layers to offload to GPU VRAM")
+    p_run.add_argument("--runtime", default="auto", choices=["auto", "ameva", "native"], help="Execution runtime provider (auto, ameva, native)")
     p_run.add_argument("-n", "--max-tokens", type=int, default=256, help="Max tokens to generate")
     p_run.add_argument("-t", "--threads", type=int, default=None, help="CPU threads")
     p_run.add_argument("--temp", type=float, default=0.7, help="Sampling temperature")
@@ -476,6 +519,8 @@ def main():
             sys.exit(1)
     except TermuxLlamaError as e:
         print(str(e), file=sys.stderr)
+        if e.__cause__:
+            print(f"\n[Underlying Cause] {type(e.__cause__).__name__}: {e.__cause__}", file=sys.stderr)
         sys.exit(1)
 
 

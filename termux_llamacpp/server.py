@@ -677,6 +677,7 @@ class ServerManager:
         threads: int = 4,
         n_gpu_layers: int = 0,
         daemon: bool = False,
+        device: str = "auto",
         **kwargs,
     ) -> ServerInstance:
         if "host" in kwargs:
@@ -877,11 +878,18 @@ class ServerManager:
             ]
 
             log_handle = open(self.logger.log_file, "a", encoding="utf-8")
+            env = self.runtime._prepare_env(device=device) if self.runtime and hasattr(self.runtime, "_prepare_env") else None
+            popen_kwargs = {
+                "stdout": log_handle,
+                "stderr": subprocess.STDOUT,
+                "text": True,
+            }
+            if env is not None:
+                popen_kwargs["env"] = env
+
             process = self.process_factory(
                 cmd,
-                stdout=log_handle,
-                stderr=subprocess.STDOUT,
-                text=True,
+                **popen_kwargs,
             )
 
             lock_meta["native_pid"] = process.pid
