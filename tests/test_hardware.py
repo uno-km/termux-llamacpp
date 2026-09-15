@@ -33,19 +33,17 @@ class TestHardwareDetection(unittest.TestCase):
         self.assertIn(backend, ("cpu", "vulkan", "cpu_neon"))
         self.assertIsInstance(ngl, int)
 
-    def test_resolve_device_backend_vulkan_fallback_without_runtime(self):
+    def test_resolve_device_backend_vulkan_fail_fast_without_runtime(self):
         from unittest.mock import patch
-        import io
         from termux_llamacpp.hardware import resolve_device_backend
+        from termux_llamacpp.exceptions import TermuxLlamaError
 
         with patch("termux_llamacpp.hardware._resolve_ameva_runtime", return_value=None):
-            with patch("sys.stderr", new_callable=io.StringIO) as mock_err:
-                backend, ngl = resolve_device_backend("vulkan")
-                self.assertEqual(backend, "cpu")
-                self.assertEqual(ngl, 0)
-                err_text = mock_err.getvalue()
-                self.assertIn("AMEVA-LLAMA-W001", err_text)
-                self.assertIn("pip install ameva-runtime", err_text)
+            with self.assertRaises(TermuxLlamaError) as ctx:
+                resolve_device_backend("vulkan")
+            err_text = str(ctx.exception)
+            self.assertIn("AMEVA-LLAMA-E001", err_text)
+            self.assertIn("pip install ameva-runtime", err_text)
 
     def test_resolve_device_backend_vulkan_transparent_error_propagation(self):
         from unittest.mock import patch, MagicMock

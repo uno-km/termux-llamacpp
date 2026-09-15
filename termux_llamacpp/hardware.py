@@ -321,22 +321,23 @@ def resolve_device_backend(requested_device: str, requested_ngl: Optional[int] =
 
     if req in ("vulkan", "gpu"):
         if ameva_mod is None:
-            sys.stderr.write(
+            raise TermuxLlamaError(
                 "\n"
                 "================================================================================\n"
-                "[WARNING: AMEVA-LLAMA-W001] GPU acceleration requires 'ameva-runtime'!\n"
+                "[FAIL-FAST] [ERROR: AMEVA-LLAMA-E001] GPU acceleration requires 'ameva-runtime'!\n"
                 "================================================================================\n"
                 "Hardware acceleration provider 'ameva-runtime' is not installed on this system.\n"
-                "Forced fallback: Operating in pure ARM64 NEON CPU mode.\n\n"
+                "Explicit GPU execution ('--gpu' / '--device vulkan') cannot proceed.\n"
+                "Forced CPU fallback is strictly disabled under Zero-Silent-Fallback policy.\n\n"
                 "To unlock native GPU (Vulkan) hardware acceleration on your mobile SoC:\n"
                 "  - Python:  pip install ameva-runtime\n"
                 "  - Node.js: npm install @unokm/ameva-runtime\n"
+                "Or explicitly execute in ARM64 CPU NEON mode via:\n"
+                "  --device cpu\n\n"
                 "For full documentation and hardware setup, visit:\n"
                 "  https://github.com/uno-km/termux-llamacpp\n"
-                "================================================================================\n\n"
+                "================================================================================\n"
             )
-            sys.stderr.flush()
-            return "cpu", 0
 
         # Check native Vulkan availability via ameva-runtime Adapter or Vulkan probe
         try:
