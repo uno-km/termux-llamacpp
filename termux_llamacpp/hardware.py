@@ -440,3 +440,17 @@ def get_unified_model_search_dirs(submodule: str = "llama") -> list:
             unique_dirs.append(d)
 
     return unique_dirs
+
+
+# Standard Unified Hardware Interface Aliases
+is_termux = is_termux_environment
+is_android = is_android_environment
+resolve_device = resolve_device_backend
+
+
+def get_optimal_threads() -> int:
+    return detect_hardware().recommended_threads
+
+
+def bind_hardware(engine: Any = None, requested_device: str = "auto", **kwargs) -> Optional[Any]:
+    return bind_llamacpp_hardware(engine, requested_device, **kwargs)

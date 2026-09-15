@@ -1,34 +1,39 @@
 #!/usr/bin/env node
-
 /**
- * termux-llamacpp CLI Entrypoint for Node.js / npm
- * Bridges command line arguments to Python termux_llamacpp or native runtime.
+ * AMEVA Standard Node.js CLI Runner for termux_llamacpp.
+ * Automatically resolves Python 3 environment and dispatches to python -m termux_llamacpp.
  */
+const { spawn } = require('child_process');
 
-import { spawn } from 'child_process';
+function findPython() {
+  const candidates = [
+    process.env.PYTHON,
+    '/data/data/com.termux/files/usr/bin/python3',
+    '/data/data/com.termux/files/usr/bin/python',
+    'python3',
+    'python'
+  ].filter(Boolean);
 
-const args = process.argv.slice(2);
-
-function runPythonCLI() {
-  const pyCmd = process.env.PYTHON || 'python3';
-  const child = spawn(pyCmd, ['-m', 'termux_llamacpp', ...args], {
-    stdio: 'inherit',
-    env: process.env,
-  });
-
-  child.on('error', (err) => {
-    if (err.code === 'ENOENT') {
-      console.error('[termux-llama error] python3 is required to run the termux-llama runtime.');
-      console.error('Please install python in Termux: pkg install python');
-    } else {
-      console.error(`[termux-llama error] Execution failed: ${err.message}`);
-    }
-    process.exit(1);
-  });
-
-  child.on('exit', (code) => {
-    process.exit(code || 0);
-  });
+  return candidates[0] || 'python3';
 }
 
-runPythonCLI();
+const pythonBin = findPython();
+const args = ['-m', 'termux_llamacpp', ...process.argv.slice(2)];
+
+const child = spawn(pythonBin, args, {
+  stdio: 'inherit',
+  env: process.env
+});
+
+child.on('error', (err) => {
+  console.error(`[${'termux_llamacpp'}] Failed to spawn python process (${pythonBin}):`, err.message);
+  process.exit(1);
+});
+
+child.on('exit', (code, signal) => {
+  if (signal) {
+    process.kill(process.pid, signal);
+  } else {
+    process.exit(code || 0);
+  }
+});

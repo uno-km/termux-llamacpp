@@ -75,3 +75,12 @@ __all__ = [
     "ServerStartupError",
     "SecurityVerificationError",
 ]
+
+
+# Standard Unified Engine & Factory
+LlamaEngine = LlamaRuntime
+
+def load(model: str = "default", device: str = "auto", **kwargs) -> LlamaEngine:
+    """Standard Unified Engine Factory for termux-llamacpp."""
+    config = RuntimeConfig(preset=kwargs.get("preset", "balanced"))
+    return LlamaEngine(config=config)
