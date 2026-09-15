@@ -101,6 +101,15 @@ class LlamaRuntime:
         if not script_path.is_file():
             script_path = Path(__file__).parent.parent / "scripts" / "install.sh"
 
+        # Delegate to AMEVA Runtime installer when available
+        try:
+            py_bin = sys.executable or "python3"
+            res = subprocess.run([py_bin, "-m", "ameva_runtime.installer", "--asset", "llamacpp"], capture_output=True, text=True)
+            if res.returncode == 0 and self.get_binary_path("llama-cli"):
+                return
+        except Exception as _inst_err:
+            logger.debug("AMEVA Runtime installer delegation skipped: %s", _inst_err)
+
         if script_path.is_file() and (self.hw.is_termux or self.hw.is_android or self.hw.is_arm64):
             env = os.environ.copy()
             env["TERMUX_LLAMA_PRESET"] = self.config.preset
@@ -129,52 +138,25 @@ class LlamaRuntime:
                 )
 
     def get_binary_path(self, binary_name: str) -> Optional[Path]:
-        """Find the absolute path of a llama.cpp binary across standard Termux locations."""
-        import re
+        """Find the authoritative absolute path of a llama.cpp binary in canonical location.
+        Under Zero-Silent-Fallback policy, arbitrary PATH or heuristic search is prohibited.
+        """
         ext = ".exe" if sys.platform == "win32" else ""
-        candidates = [
-            Path.home() / ".termux-llama" / "current" / "bin" / binary_name,
-            self.bin_dir / f"{binary_name}{ext}",
-            self.bin_dir / binary_name,
-            self.bin_dir.parent / "current" / "bin" / binary_name,
-            Path.home() / ".termux-llama" / "bin" / binary_name,
-            Path.home() / ".termux-llamacpp" / "current" / "bin" / binary_name,
-            Path.home() / ".termux-llamacpp" / "bin" / binary_name,
-        ]
 
-        for cand in candidates:
-            if cand.is_file():
-                return cand.resolve()
+        # 1. Authoritative canonical release location
+        canonical_target = Path.home() / ".termux-llama" / "current" / "bin" / f"{binary_name}{ext}"
+        if not canonical_target.is_file():
+            canonical_target = Path.home() / ".termux-llama" / "current" / "bin" / binary_name
 
-        # Search in versions directory
-        for base in [Path.home() / ".termux-llama", Path.home() / ".termux-llamacpp"]:
-            versions_dir = base / "versions"
-            if versions_dir.is_dir():
-                for v in versions_dir.iterdir():
-                    cand = v / "bin" / binary_name
-                    if cand.is_file():
-                        return cand.resolve()
+        if canonical_target.is_file():
+            return canonical_target.resolve()
 
-        sys_path = shutil.which(binary_name)
-        if sys_path:
-            p = Path(sys_path).resolve()
-            try:
-                content = p.read_text(encoding="utf-8", errors="ignore")
-                for line in content.splitlines():
-                    if "exec " in line and binary_name in line:
-                        match = re.search(r'exec\s+"?([^"\s]+)"?', line)
-                        if match:
-                            target_str = match.group(1).replace("$ROOT", str(Path.home() / ".termux-llamacpp"))
-                            real_p = Path(os.path.expanduser(os.path.expandvars(target_str)))
-                            if real_p.is_file():
-                                return real_p.resolve()
-            except (OSError, ValueError) as _parse_err:
-                import logging
-                logging.getLogger(__name__).debug(
-                    "llamacpp: wrapper script parse fallback for '%s': %s (using shutil.which result)",
-                    binary_name, _parse_err,
-                )
-            return p
+        # 2. Configured custom bin directory check
+        custom_target = self.bin_dir / f"{binary_name}{ext}"
+        if not custom_target.is_file():
+            custom_target = self.bin_dir / binary_name
+        if custom_target.is_file():
+            return custom_target.resolve()
 
         return None
 
