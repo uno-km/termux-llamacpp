@@ -352,6 +352,7 @@ class LlamaRuntime:
                 "-n", str(max_tokens),
                 "--temp", str(temperature),
                 "-t", t_count,
+                "--single-turn",
                 "--simple-io",
                 "--no-display-prompt",
             ]
@@ -365,7 +366,13 @@ class LlamaRuntime:
             else:
                 cmd.extend(["-ngl", "0"])
 
-            return subprocess.run(cmd, capture_output=True, text=True, env=env)
+            return subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                env=env,
+                stdin=subprocess.DEVNULL,
+            )
 
         backend, target_ngl = resolve_device_backend(device, n_gpu_layers)
 
