@@ -38,6 +38,27 @@ class HardwareProfile:
     total_ram_mb: float
     available_ram_mb: float
     recommended_preset: str
+    soc_model: Optional[str] = None
+
+    @property
+    def soc_name(self) -> str:
+        return self.soc_model or "Unknown SoC"
+
+    @property
+    def cpu_cores(self) -> int:
+        return self.cpu_count
+
+    @property
+    def threads(self) -> int:
+        return self.recommended_threads
+
+    @property
+    def ram_total_mb(self) -> float:
+        return self.total_ram_mb
+
+    @property
+    def ram_available_mb(self) -> float:
+        return self.available_ram_mb
 
 
 def is_termux_environment() -> bool:
