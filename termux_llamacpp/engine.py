@@ -138,25 +138,18 @@ class LlamaRuntime:
                 )
 
     def get_binary_path(self, binary_name: str) -> Optional[Path]:
-        """Find the authoritative absolute path of a llama.cpp binary in canonical location.
+        """Find the authoritative absolute path of a llama.cpp binary in canonical location ($PREFIX/bin).
         Under Zero-Silent-Fallback policy, arbitrary PATH or heuristic search is prohibited.
         """
         ext = ".exe" if sys.platform == "win32" else ""
 
-        # 1. Authoritative canonical release location
-        canonical_target = Path.home() / ".termux-llama" / "current" / "bin" / f"{binary_name}{ext}"
-        if not canonical_target.is_file():
-            canonical_target = Path.home() / ".termux-llama" / "current" / "bin" / binary_name
+        # Authoritative canonical release location ($PREFIX/bin)
+        target = self.bin_dir / f"{binary_name}{ext}"
+        if not target.is_file():
+            target = self.bin_dir / binary_name
 
-        if canonical_target.is_file():
-            return canonical_target.resolve()
-
-        # 2. Configured custom bin directory check
-        custom_target = self.bin_dir / f"{binary_name}{ext}"
-        if not custom_target.is_file():
-            custom_target = self.bin_dir / binary_name
-        if custom_target.is_file():
-            return custom_target.resolve()
+        if target.is_file():
+            return target.resolve()
 
         return None
 
@@ -173,14 +166,10 @@ class LlamaRuntime:
         env = os.environ.copy()
         dev_mode = str(device or "auto").strip().lower()
 
-        # 0. Always prioritize authoritative native llama runtime library paths
+        # 0. Always prioritize authoritative native llama runtime library paths ($PREFIX/lib)
+        prefix_lib = Path(os.environ.get("PREFIX", "/data/data/com.termux/files/usr")) / "lib"
         canonical_dirs = [
-            str(self.bin_dir.parent / "lib"),
-            str(self.bin_dir.parent / "current" / "lib"),
-            str(Path.home() / ".termux-llama" / "current" / "lib"),
-            str(Path.home() / ".termux-llama" / "lib"),
-            str(Path.home() / ".termux-llamacpp" / "current" / "lib"),
-            str(Path.home() / ".termux-llamacpp" / "lib"),
+            str(prefix_lib),
         ]
         system_dirs = [
             "/data/data/com.termux/files/usr/lib",

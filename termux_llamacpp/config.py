@@ -17,32 +17,20 @@ PROTOCOL_VERSION = "1.0"
 DEFAULT_PUBLIC_PORT = 8080
 DEFAULT_NATIVE_PORT = 18080
 
-# Base filesystem directories
-_env_home = os.environ.get("TERMUX_LLAMA_HOME") or os.environ.get("TERMUX_LLAMACPP_HOME")
-if _env_home:
-    DEFAULT_BASE_DIR = Path(_env_home)
-elif (Path.home() / ".termux-llamacpp").exists() and not (Path.home() / ".termux-llama").exists():
-    DEFAULT_BASE_DIR = Path.home() / ".termux-llamacpp"
-else:
-    DEFAULT_BASE_DIR = Path.home() / ".termux-llama"
+# Base filesystem directories & Single SSOT
+PREFIX = Path(os.environ.get("PREFIX", "/data/data/com.termux/files/usr"))
+DEFAULT_BASE_DIR = PREFIX
 
-# XDG Standard Cache Base Directory
+# XDG Standard Cache Base Directory (Single SSOT)
 XDG_CACHE_HOME = Path(os.environ.get("XDG_CACHE_HOME") or (Path.home() / ".cache"))
 DEFAULT_XDG_MODELS_DIR = XDG_CACHE_HOME / "termux-llamacpp" / "models"
-LEGACY_MODELS_DIR = DEFAULT_BASE_DIR / "models"
 
-# Custom ENV override takes precedence; fallback to legacy if populated, otherwise XDG SSOT
 _custom_models = os.environ.get("TERMUX_LLAMA_MODELS_DIR") or os.environ.get("TERMUX_LLAMACPP_MODELS_DIR")
-if _custom_models:
-    DEFAULT_MODELS_DIR = Path(_custom_models)
-elif LEGACY_MODELS_DIR.is_dir() and any(LEGACY_MODELS_DIR.glob("*.gguf")):
-    DEFAULT_MODELS_DIR = LEGACY_MODELS_DIR
-else:
-    DEFAULT_MODELS_DIR = DEFAULT_XDG_MODELS_DIR
+DEFAULT_MODELS_DIR = Path(_custom_models) if _custom_models else DEFAULT_XDG_MODELS_DIR
 
-DEFAULT_BIN_DIR = Path(os.environ.get("TERMUX_LLAMA_BIN_DIR", DEFAULT_BASE_DIR / "bin"))
-DEFAULT_RUN_DIR = Path(os.environ.get("TERMUX_LLAMA_RUN_DIR", DEFAULT_BASE_DIR / "run"))
-DEFAULT_LOG_DIR = Path(os.environ.get("TERMUX_LLAMA_LOG_DIR", DEFAULT_BASE_DIR / "logs"))
+DEFAULT_BIN_DIR = Path(os.environ.get("TERMUX_LLAMA_BIN_DIR", PREFIX / "bin"))
+DEFAULT_RUN_DIR = Path(os.environ.get("TERMUX_LLAMA_RUN_DIR", Path.home() / ".local" / "run"))
+DEFAULT_LOG_DIR = Path(os.environ.get("TERMUX_LLAMA_LOG_DIR", Path.home() / ".local" / "state" / "termux-llamacpp"))
 TRUST_DIR = Path(__file__).parent / "trust"
 
 

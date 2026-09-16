@@ -421,22 +421,12 @@ def get_unified_model_search_dirs(submodule: str = "llama") -> list:
         p = Path(env_dir)
         dirs.extend([p / submodule, p])
 
-    prefixes = [home]
-    prefix_env = os.environ.get("PREFIX")
-    if prefix_env:
-        prefixes.append(Path(prefix_env).parent / "home")
-
-    for base in prefixes:
-        dirs.extend([
-            base / "models" / submodule,
-            base / "models",
-            base / "ameva-models" / submodule,
-            base / "ameva-models",
-            base / ".cache" / "ameva" / "models" / submodule,
-            base / ".cache" / "ameva" / "models",
-            base / ".cache" / f"termux-{submodule}" / "models",
-            base / ".termux-llama" / "models",
-        ])
+    xdg_cache = Path(os.environ.get("XDG_CACHE_HOME") or (home / ".cache"))
+    dirs.extend([
+        xdg_cache / f"termux-{submodule}" / "models",
+        xdg_cache / "ameva" / "models" / submodule,
+        xdg_cache / "ameva" / "models",
+    ])
 
     # Deduplicate while preserving order
     seen = set()

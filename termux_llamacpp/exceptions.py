@@ -75,7 +75,7 @@ class ModelNotFoundError(TermuxLlamaError):
                 f"[termux-llamacpp] MODEL NOT FOUND: '{model_identifier}'\n"
                 f"================================================================================\n"
                 f"지정된 GGUF 모델을 로컬 디렉터리에서 찾을 수 없습니다.\n"
-                f"검색 경로: {search_path or '기본 모델 저장소 (~/.termux-llama/models/)'}\n\n"
+                f"검색 경로: {search_path or '기본 모델 저장소 (~/.cache/termux-llamacpp/models/)'}\n\n"
                 f"해결 방법:\n"
                 f"  1. 사전 큐레이션 모델 다운로드:\n"
                 f"     termux-llama download qwen2.5-1.5b-instruct\n\n"
