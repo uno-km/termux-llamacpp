@@ -8,7 +8,8 @@ import os
 import shutil
 import sys
 from pathlib import Path
-from typing import Optional, List, Dict, Union
+from typing import Optional, List, Dict, Union, Any
+
 
 import requests
 from tqdm import tqdm
@@ -23,6 +24,7 @@ from termux_llamacpp.config import (
 from termux_llamacpp.exceptions import ModelNotFoundError, ModelNotSpecifiedError, TermuxLlamaError
 from termux_llamacpp.security import (
     compute_sha256,
+    verify_file_sha256,
     atomic_write_and_verify,
     build_model_manifest_payload,
     save_signed_model_manifest,
@@ -92,6 +94,24 @@ class ModelManager:
         for f in self.models_dir.glob("*.gguf"):
             if f.stem.lower() == alias.lower() or f.name.lower() == alias.lower():
                 return f.resolve()
+
+        # Fallback to AMEVA Unified Model Search Paths across ecosystem
+        try:
+            from termux_llamacpp.hardware import get_unified_model_search_dirs
+            for alt_dir in get_unified_model_search_dirs("llama"):
+                if alt_dir != self.models_dir and alt_dir.is_dir():
+                    for cand in [alt_dir / str(model_identifier), alt_dir / f"{model_identifier}.gguf"]:
+                        if cand.is_file():
+                            return cand.resolve()
+                    if alias in CURATED_MODELS:
+                        c_cand = alt_dir / CURATED_MODELS[alias].artifact_filename
+                        if c_cand.is_file():
+                            return c_cand.resolve()
+                    for f in alt_dir.glob("*.gguf"):
+                        if f.stem.lower() == alias.lower() or f.name.lower() == alias.lower():
+                            return f.resolve()
+        except Exception:
+            pass
 
         raise ModelNotFoundError(str(model_identifier), str(self.models_dir))
 
@@ -346,3 +366,27 @@ def download_model(
         sha256=sha256,
         accept_license=accept_license,
     )
+
+
+def resolve_model_path(
+    model_identifier: str,
+    models_dir: Optional[Union[str, Path]] = None,
+) -> Path:
+    """Standard Unified Model Path Resolver for termux-llamacpp."""
+    manager = ModelManager(models_dir)
+    return manager.resolve_model_path(model_identifier)
+
+
+def list_models(models_dir: Optional[Union[str, Path]] = None) -> List[Dict[str, Any]]:
+    """List curated and locally downloaded models."""
+    results: List[Dict[str, Any]] = []
+    for k, v in CURATED_MODELS.items():
+        results.append({
+            "id": k,
+            "repo_id": v.repo_id,
+            "filename": v.filename,
+            "size_mb": v.size_mb,
+            "desc": v.description,
+        })
+    return results
+

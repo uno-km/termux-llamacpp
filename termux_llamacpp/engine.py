@@ -173,23 +173,34 @@ class LlamaRuntime:
         env = os.environ.copy()
         dev_mode = str(device or "auto").strip().lower()
 
-        # 0. Always include native llama runtime library search paths
-        native_lib_dirs = [
+        # 0. Always prioritize authoritative native llama runtime library paths
+        canonical_dirs = [
             str(self.bin_dir.parent / "lib"),
             str(self.bin_dir.parent / "current" / "lib"),
             str(Path.home() / ".termux-llama" / "current" / "lib"),
             str(Path.home() / ".termux-llama" / "lib"),
             str(Path.home() / ".termux-llamacpp" / "current" / "lib"),
             str(Path.home() / ".termux-llamacpp" / "lib"),
+        ]
+        system_dirs = [
             "/data/data/com.termux/files/usr/lib",
         ]
         existing_lp = env.get("LD_LIBRARY_PATH", "")
-        lp_parts = [p for p in existing_lp.split(":") if p]
-        for lib_d in native_lib_dirs:
-            if os.path.isdir(lib_d) and lib_d not in lp_parts:
-                lp_parts.insert(0, lib_d)
-        if lp_parts:
-            env["LD_LIBRARY_PATH"] = ":".join(lp_parts)
+        existing_parts = [p.strip() for p in existing_lp.split(":") if p.strip()]
+
+        ordered_parts = []
+        for d in canonical_dirs:
+            if os.path.isdir(d) and d not in ordered_parts:
+                ordered_parts.append(d)
+        for d in existing_parts:
+            if d not in ordered_parts:
+                ordered_parts.append(d)
+        for d in system_dirs:
+            if os.path.isdir(d) and d not in ordered_parts:
+                ordered_parts.append(d)
+
+        if ordered_parts:
+            env["LD_LIBRARY_PATH"] = ":".join(ordered_parts)
 
         if dev_mode == "cpu" or sys.platform == "win32":
             return env

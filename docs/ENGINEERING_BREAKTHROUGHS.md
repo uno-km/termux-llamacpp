@@ -1,4 +1,4 @@
-﻿# 🏆 termux-llamacpp: Android Termux 온디바이스 LLM 런타임 기술 혁신 및 난제 해결 백서 (Engineering Breakthroughs Report)
+# 🏆 termux-llamacpp: Android Termux 온디바이스 LLM 런타임 기술 혁신 및 난제 해결 백서 (Engineering Breakthroughs Report)
 
 ## 📌 개요 및 배경
 
@@ -43,7 +43,14 @@
   1. `start_new_session=True`로 터미널 세션과 완벽히 격리된 독립 데몬 프로세스를 스폰.
   2. 모델이 완전히 적재되어 `/health` 응답이 `200 OK`가 될 때까지 터미널에 실시간 프로그레스 애니메이션(`[*] Warmup in progress (Elapsed: Xs) ...`)을 출력하며, `Ctrl+C` 입력 시 즉시 안전하게 회수.
   3. 프록시 업스트림 타임아웃을 **300초**로 확장하고, `termux-llama stop` 공식 CLI 명령어 제공.
-  4. **결과**: 서버 실행과 동시에 터미널 프롬프트가 안전하게 반환되며, 즉시 cURL 및 SDK 요청 완벽 처리.
+### 5. Qualcomm Adreno Vulkan 가속 결함 및 포렌식 (Adreno 830 수치 파괴 & Adreno 650 크래시)
+* **문제점 (문제 현상)**:
+  1. **Galaxy S25 (Adreno 830)**: Vulkan 추론 시 프롬프트 20.6 t/s, 생성 22.5~45.5 t/s로 극히 빠르나, Qwen 모델은 `@` 무한 반복, Llama 모델은 `uşуры表...` 외계어 토큰으로 Logits가 일괄 붕괴(Collapse)되어 수치 오염 발생. (CPU 구동 시에는 정상 출력되어 GPU 커널 문제로 규명)
+  2. **Galaxy S20+ (Adreno 650)**: 하드웨어 Shared Memory 한계(32KB)를 초과하는 Flash Attention 셰이더 및 양자화 벡터 리덕션 컴파일 실패로 드라이버 컴파일러가 `VK_ERROR_UNKNOWN (-13)` 크래시 방출.
+* **혁신 조치 (해결 진행 중)**:
+  1. Adreno 830: Qualcomm 타깃 FP32 Accumulator(`f32acc`) 강제를 통한 IEEE-754 오버플로우 원천 차단.
+  2. Adreno 650: Flash Attention 32KB Native Tile Fitting 및 대형 GEMM(`mul_mat_l`) 파이프라인 일원화.
+* **결과**: *(실기기 C++ 패치 검증 후 기재 예정)*
 
 ---
 

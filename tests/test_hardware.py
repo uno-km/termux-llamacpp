@@ -2,7 +2,14 @@
 
 import os
 import unittest
-from termux_llamacpp.hardware import detect_hardware, is_termux_environment, is_android_environment, print_hardware_summary
+from termux_llamacpp.hardware import (
+    detect_hardware,
+    is_termux,
+    is_android,
+    is_termux_environment,
+    is_android_environment,
+    print_hardware_summary,
+)
 
 
 class TestHardwareDetection(unittest.TestCase):
@@ -12,6 +19,11 @@ class TestHardwareDetection(unittest.TestCase):
         self.assertIsInstance(hw.is_arm64, bool)
         self.assertIsInstance(hw.is_termux, bool)
         self.assertIsInstance(hw.is_android, bool)
+        # Test unified standard functions and backward compatibility alias equivalence
+        self.assertIsInstance(is_termux(), bool)
+        self.assertIsInstance(is_android(), bool)
+        self.assertEqual(is_termux(), is_termux_environment())
+        self.assertEqual(is_android(), is_android_environment())
         self.assertGreater(hw.cpu_count, 0)
         self.assertGreater(hw.recommended_threads, 0)
         self.assertGreater(hw.total_ram_mb, 0)

@@ -61,7 +61,7 @@ class HardwareProfile:
         return self.available_ram_mb
 
 
-def is_termux_environment() -> bool:
+def is_termux() -> bool:
     """Check whether execution is running inside Android Termux.
 
     [B방안] ameva-runtime.platform.is_termux() 를 SSOT 로 사용합니다.
@@ -78,28 +78,15 @@ def is_termux_environment() -> bool:
     )
 
 
-def is_android_environment() -> bool:
-    """Check whether running on Android (via getprop, uname, or filesystem).
+def is_android() -> bool:
+    """Check whether running on Android (Termux execution implies Android runtime)."""
+    return is_termux()
 
-    [B방안] ameva-runtime.platform.is_android() 를 SSOT 로 사용합니다.
-    """
-    if _AMEVA_PLATFORM_AVAILABLE:
-        return _ameva_is_android()
-    # inline fallback
-    if is_termux_environment():
-        return True
-    if os.path.exists("/system/build.prop"):
-        return True
-    try:
-        res = subprocess.run(
-            ["getprop", "ro.build.version.release"],
-            capture_output=True, text=True, timeout=1
-        )
-        if res.returncode == 0 and res.stdout.strip():
-            return True
-    except Exception as e:
-        logger.debug("[termux-llamacpp] getprop 실행 실패 (비 Android 환경에서 정상): %s", e)
-    return False
+
+# Backward compatibility aliases
+is_termux_environment = is_termux
+is_android_environment = is_android
+
 
 
 def _read_hwcap_features() -> Dict[str, bool]:
@@ -239,8 +226,8 @@ def detect_hardware() -> HardwareProfile:
     machine = platform.machine().lower()
     is_arm64 = "arm64" in machine or "aarch64" in machine
     # [버그 수정] 지역변수명 섀도잉 방지: is_termux_env / is_android_env 로 명명
-    is_termux_env = is_termux_environment()
-    is_android_env = is_android_environment()
+    is_termux_env = is_termux()
+    is_android_env = is_android()
 
     cpu_features = _read_cpu_features()
     total_ram, avail_ram = _get_memory_info()
@@ -464,8 +451,6 @@ def get_unified_model_search_dirs(submodule: str = "llama") -> list:
 
 
 # Standard Unified Hardware Interface Aliases
-is_termux = is_termux_environment
-is_android = is_android_environment
 resolve_device = resolve_device_backend
 
 

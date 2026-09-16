@@ -622,11 +622,23 @@ def normalize_loopback_origin(origin: str) -> Optional[str]:
         return None
 
 
+def verify_file_sha256(file_path: Union[str, Path], expected_sha256: str, chunk_size: int = 1024 * 1024) -> bool:
+    """Standard Unified SHA-256 Checksum Verifier for termux-llamacpp."""
+    p = Path(file_path)
+    if not p.is_file() or not expected_sha256:
+        return False
+    try:
+        actual = compute_sha256(p, chunk_size=chunk_size)
+        return hmac.compare_digest(actual.lower(), expected_sha256.strip().lower())
+    except Exception as e:
+        logger.debug("Failed to verify SHA-256 for '%s': %s", p, e)
+        return False
+
+
 def verify_binary_integrity(binary_path: Path, expected_sha256: str) -> bool:
     """Validate binary SHA-256 integrity."""
-    if not binary_path.is_file():
-        return False
-    return hmac.compare_digest(compute_sha256(binary_path).lower(), expected_sha256.lower())
+    return verify_file_sha256(binary_path, expected_sha256)
+
 
 
 def atomic_write_and_verify(

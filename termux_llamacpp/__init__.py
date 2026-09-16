@@ -13,12 +13,13 @@ from termux_llamacpp.config import (
     PROTOCOL_VERSION,
 )
 from termux_llamacpp.engine import LlamaRuntime
-from termux_llamacpp.downloader import ModelManager, download_model
+from termux_llamacpp.downloader import ModelManager, download_model, list_models, resolve_model_path
 from termux_llamacpp.crawler import HuggingFaceCrawler, discover_hf_models
-from termux_llamacpp.hardware import detect_hardware, print_hardware_summary
+from termux_llamacpp.hardware import detect_hardware, print_hardware_summary, HardwareProfile, resolve_device, is_termux, is_android, bind_hardware
 from termux_llamacpp.server import ServerManager, ServerInstance, ProcessIdentityLock
 from termux_llamacpp.security import (
     compute_sha256,
+    verify_file_sha256,
     verify_binary_integrity,
     atomic_replace_verified,
     build_model_manifest_payload,
@@ -28,6 +29,7 @@ from termux_llamacpp.security import (
     TrustStore,
 )
 from termux_llamacpp.exceptions import (
+    AmevaTermuxError,
     TermuxLlamaError,
     ModelNotFoundError,
     DependencyMissingError,
@@ -35,6 +37,7 @@ from termux_llamacpp.exceptions import (
     ServerStartupError,
     SecurityVerificationError,
 )
+
 
 __version__ = "1.3.2"
 __author__ = "uno-km"
@@ -49,8 +52,12 @@ __all__ = [
     "discover_hf_models",
     "download_model",
     "detect_hardware",
+    "is_termux",
+    "is_android",
+    "bind_hardware",
     "print_hardware_summary",
     "compute_sha256",
+    "verify_file_sha256",
     "verify_binary_integrity",
     "atomic_replace_verified",
     "build_model_manifest_payload",
@@ -68,6 +75,11 @@ __all__ = [
     "BUILD_PRESETS",
     "LLAMA_CPP_PINNED_COMMIT",
     "PROTOCOL_VERSION",
+    "HardwareProfile",
+    "resolve_device",
+    "list_models",
+    "resolve_model_path",
+    "AmevaTermuxError",
     "TermuxLlamaError",
     "ModelNotFoundError",
     "DependencyMissingError",
@@ -75,6 +87,7 @@ __all__ = [
     "ServerStartupError",
     "SecurityVerificationError",
 ]
+
 
 
 # Standard Unified Engine & Factory
