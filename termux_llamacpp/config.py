@@ -36,18 +36,17 @@ TRUST_DIR = Path(__file__).parent / "trust"
 
 @dataclass
 class BuildPreset:
-    """Strict compiler and optimization settings for a hardware build preset."""
+    """Strict compiler and optimization settings for a pure CPU hardware build preset."""
     name: str
     march: str
     cflags: str
     cxxflags: str
     openmp: bool
-    vulkan: bool
     description: str
     requires: List[str] = field(default_factory=list)
 
 
-# Strict Hardware Build Presets
+# Strict CPU Hardware Build Presets
 BUILD_PRESETS: Dict[str, BuildPreset] = {
     "android-arm64-baseline": BuildPreset(
         name="android-arm64-baseline",
@@ -55,8 +54,7 @@ BUILD_PRESETS: Dict[str, BuildPreset] = {
         cflags="-O3 -march=armv8-a",
         cxxflags="-O3 -march=armv8-a",
         openmp=False,
-        vulkan=False,
-        description="Safe universal baseline for all ARM64 Android devices (guaranteed SIGILL-free).",
+        description="Safe universal CPU baseline for all ARM64 Android devices (guaranteed SIGILL-free).",
         requires=[],
     ),
     "android-arm64-dotprod": BuildPreset(
@@ -65,19 +63,8 @@ BUILD_PRESETS: Dict[str, BuildPreset] = {
         cflags="-O3 -march=armv8.2-a+fp16+dotprod",
         cxxflags="-O3 -march=armv8.2-a+fp16+dotprod",
         openmp=False,
-        vulkan=False,
-        description="SIMD-accelerated preset with DotProd and FP16 (requires runtime verification).",
+        description="SIMD-accelerated CPU preset with DotProd and FP16 (requires runtime verification).",
         requires=["dotprod", "fp16"],
-    ),
-    "android-arm64-vulkan": BuildPreset(
-        name="android-arm64-vulkan",
-        march="armv8-a",
-        cflags="-O3 -march=armv8-a",
-        cxxflags="-O3 -march=armv8-a",
-        openmp=False,
-        vulkan=True,
-        description="Vulkan GPU-accelerated preset with system Bionic ICD binding (Adreno & Mali).",
-        requires=["vulkan"],
     ),
     "android-arm64-native": BuildPreset(
         name="android-arm64-native",
@@ -85,18 +72,7 @@ BUILD_PRESETS: Dict[str, BuildPreset] = {
         cflags="-O3 -mcpu=native",
         cxxflags="-O3 -mcpu=native",
         openmp=False,
-        vulkan=False,
-        description="Direct native optimization compiled locally on the target device.",
-        requires=[],
-    ),
-    "host-native": BuildPreset(
-        name="host-native",
-        march="native",
-        cflags="-O3 -march=native",
-        cxxflags="-O3 -march=native",
-        openmp=False,
-        vulkan=False,
-        description="Generic host compilation for development and unit testing.",
+        description="Direct native CPU optimization compiled locally on the target device.",
         requires=[],
     ),
 }

@@ -28,16 +28,12 @@ for arg in "$@"; do
         --from-source|--build-from-source)
             FROM_SOURCE=1
             ;;
-        --gpu|--with-gpu)
-            TERMUX_LLAMA_PRESET="android-arm64-vulkan"
-            ;;
         --help|-h)
-            echo "Usage: install.sh [--from-source] [--gpu] [--help]"
+            echo "Usage: install.sh [--from-source] [--help]"
             echo ""
             echo "Options:"
-            echo "  (Default)       Download and verify prebuilt Android ARM64 release binaries (Zero-Compilation, <3s)"
-            echo "  --from-source   Force local native compilation via Clang/CMake/Ninja"
-            echo "  --gpu           Enable GPU Vulkan acceleration and provision ameva-runtime"
+            echo "  (Default)       Download and verify prebuilt Android ARM64 CPU release binaries (Zero-Compilation, <3s)"
+            echo "  --from-source   Force local native CPU compilation via Clang/CMake/Ninja"
             exit 0
             ;;
     esac
@@ -69,13 +65,6 @@ if [ "$FROM_SOURCE" = "1" ]; then
     # Base compiler toolchain
     pkg install -y git clang cmake ninja pkg-config || true
 
-    VULKAN_FLAG="OFF"
-    if [[ "$PRESET" == *"vulkan"* ]]; then
-        printf '  [termux-llamacpp] Vulkan preset detected; installing shaderc/glslang...\n'
-        pkg install -y vulkan-headers shaderc glslang || true
-        VULKAN_FLAG="ON"
-    fi
-
     PINNED_COMMIT="5e6a37cb115dc1074e274ac004373f5661909695"
     UPSTREAM_URL="https://github.com/ggerganov/llama.cpp.git"
     BUILD_DIR="$(mktemp -d "${TMPDIR:-/tmp}/termux-llamacpp-src.XXXXXXXX")"
@@ -91,20 +80,13 @@ if [ "$FROM_SOURCE" = "1" ]; then
     CMAKE_ARGS=(
         -B build -G Ninja
         -DCMAKE_BUILD_TYPE=Release
-        -DGGML_VULKAN="$VULKAN_FLAG"
+        -DGGML_VULKAN=OFF
         -DCMAKE_INSTALL_RPATH="\$ORIGIN/../lib:\$ORIGIN"
         -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON
         -DGGML_BUILD_TESTS=OFF
         -DGGML_BUILD_EXAMPLES=OFF
         -DLLAMA_BUILD_SERVER=ON
     )
-    if [ "$VULKAN_FLAG" = "ON" ]; then
-        CMAKE_ARGS+=(
-            -DGGML_VULKAN_CHECK_RESULTS=OFF
-            -DVulkan_LIBRARY=/system/lib64/libvulkan.so
-            -DVulkan_INCLUDE_DIR="$PREFIX/include"
-        )
-    fi
 
     cmake "${CMAKE_ARGS[@]}"
     cmake --build build --target llama-server llama-cli -j4
@@ -170,13 +152,11 @@ if [ "$FROM_SOURCE" != "1" ]; then
         pkg install -y $MISSING_PKGS
     fi
 
-    ASSET="termux-llamacpp-${VERSION}-${TARGET}.tar.gz"
+    ASSET="termux-llamacpp-${TARGET}.tar.gz"
     DOWNLOAD_SUCCESS=0
     CANDIDATE_URLS=(
-        "https://github.com/${REPO}/releases/download/v${VERSION}/termux-llamacpp-${VERSION}-${TARGET}.tar.gz"
-        "https://github.com/${REPO}/releases/latest/download/termux-llamacpp-${VERSION}-${TARGET}.tar.gz"
-        "https://github.com/${REPO}/releases/latest/download/termux-llamacpp-android-arm64.tar.gz"
-        "https://github.com/${REPO}/releases/download/v1.0.0b2/termux-llamacpp-1.0.0b2-android-arm64.tar.gz"
+        "https://github.com/${REPO}/releases/latest/download/termux-llamacpp-${TARGET}.tar.gz"
+        "https://github.com/${REPO}/releases/download/v${VERSION}/termux-llamacpp-${TARGET}.tar.gz"
     )
 
     for CANDIDATE_URL in "${CANDIDATE_URLS[@]}"; do
@@ -235,17 +215,17 @@ printf '  [termux-llamacpp] Synchronizing Python & Node.js ecosystem packages...
 if command -v python3 >/dev/null 2>&1 || command -v python >/dev/null 2>&1; then
     PY_CMD="python3"
     command -v python3 >/dev/null 2>&1 || PY_CMD="python"
-    printf '  [Python] Detected Python environment. Provisioning termux-llamacpp & ameva-runtime via pip...\n'
-    $PY_CMD -m pip install termux-llamacpp ameva-runtime --no-cache-dir >/dev/null 2>&1 || {
-        $PY_CMD -m pip install termux-llamacpp ameva-runtime >/dev/null 2>&1 || printf '  [Python] Notice: pip install skipped (managed environment or offline).\n'
+    printf '  [Python] Detected Python environment. Provisioning termux-llamacpp via pip...\n'
+    $PY_CMD -m pip install termux-llamacpp --no-cache-dir >/dev/null 2>&1 || {
+        $PY_CMD -m pip install termux-llamacpp >/dev/null 2>&1 || printf '  [Python] Notice: pip install skipped (managed environment or offline).\n'
     }
 fi
 
 # 2. Node.js npm Package Auto-Install
 if command -v npm >/dev/null 2>&1; then
-    printf '  [Node.js] Detected Node.js environment. Provisioning termux-llamacpp & @ameva/runtime via npm...\n'
-    npm install -g termux-llamacpp @ameva/runtime --force >/dev/null 2>&1 || {
-        npm install -g termux-llamacpp @ameva/runtime >/dev/null 2>&1 || printf '  [Node.js] Notice: npm install skipped (offline).\n'
+    printf '  [Node.js] Detected Node.js environment. Provisioning termux-llamacpp via npm...\n'
+    npm install -g termux-llamacpp --force >/dev/null 2>&1 || {
+        npm install -g termux-llamacpp >/dev/null 2>&1 || printf '  [Node.js] Notice: npm install skipped (offline).\n'
     }
 fi
 
@@ -255,5 +235,5 @@ printf '  Version       : %s\n' "$VERSION"
 printf '  CLI Binaries  : %s/bin/llama-cli, %s/bin/llama-server, %s/bin/termux-llama\n' "$PREFIX" "$PREFIX" "$PREFIX"
 printf '  Libraries     : %s/lib/*.so\n' "$PREFIX"
 printf '  Models Root   : %s\n' "$MODELS_DIR"
-printf '  Ecosystem     : Python SDK (pip) + Node.js CLI (npm) + Vulkan Bionic HAL\n'
+printf '  Ecosystem     : Python SDK (pip) + Node.js CLI (npm) + Pure CPU ARM64 Engine\n'
 printf '================================================================================\n'

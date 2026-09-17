@@ -101,14 +101,7 @@ class LlamaRuntime:
         if not script_path.is_file():
             script_path = Path(__file__).parent.parent / "scripts" / "install.sh"
 
-        # Delegate to AMEVA Runtime installer when available
-        try:
-            py_bin = sys.executable or "python3"
-            res = subprocess.run([py_bin, "-m", "ameva_runtime.installer", "--asset", "llamacpp"], capture_output=True, text=True)
-            if res.returncode == 0 and self.get_binary_path("llama-cli"):
-                return
-        except Exception as _inst_err:
-            logger.debug("AMEVA Runtime installer delegation skipped: %s", _inst_err)
+
 
         if script_path.is_file() and (self.hw.is_termux or self.hw.is_android or self.hw.is_arm64):
             env = os.environ.copy()
