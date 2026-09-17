@@ -44,34 +44,38 @@ npm install -g termux-llamacpp
 npm install termux-llamacpp
 ```
 
-### 1.4 Zero-Compilation 1-Click Native Binary Setup
-Eliminate hours of mobile C++ toolchain compilation. Deploy precompiled, cryptographically signed Android Bionic native binaries (`llama-cli`, `llama-server`) in under 3 seconds:
+### 1.4 Ultra-Lightweight Zero-Compilation Pure CPU Binary Setup (<3s)
+Deploy precompiled, cryptographically verified Android Bionic native binaries (`llama-cli`, `llama-server`) in under 3 seconds without toolchain overhead:
 ```bash
 termux-llama install
 ```
 
-* **⚡ Fast-Track Stream Extractor (<3s)**: Dynamically resolves release candidates across `v{VERSION}`, `releases/latest/download`, and verified fallback releases.
-* **🛡️ Fail-Safe Auto-Fallback**: If prebuilt downloads are unavailable in air-gapped or restricted environments, the installer automatically triggers native compilation (`--from-source` via Clang/CMake/Ninja) with zero user intervention.
+* **⚡ Ultra-Compact Canonical Asset (<13MB)**: Fetches `termux-llamacpp-android-arm64.tar.gz` directly from GitHub Releases, guaranteeing 100% SIGILL-free pure CPU execution across all ARM64 Android devices.
+* **🛡️ Fail-Safe CPU Compilation Fallback**: If prebuilt downloads are unavailable in restricted environments, the installer automatically triggers native pure CPU compilation (`--from-source` via Clang/CMake/Ninja with `-DGGML_VULKAN=OFF`) with zero user intervention.
+* **🎯 CPU Optimization Presets**: Supports `--preset android-arm64-baseline` (universal safe baseline), `--preset android-arm64-dotprod` (ARMv8.2-A FP16 + DotProd vector acceleration), and `--preset android-arm64-native`.
 
 ---
 
-## 2. GPU Hardware Acceleration Provisioning (`ameva-runtime`)
+## 2. Two-Tier Runtime Architecture & GPU Acceleration
 
-To unlock mobile GPU acceleration via Vulkan SPIR-V compute shaders on Qualcomm Adreno or ARM Mali silicon, pair `termux-llamacpp` with the unified `@ameva/runtime` hardware acceleration layer.
+Termux-LlamaCpp strictly enforces a decoupled **2-Tier Architecture**:
+* **Tier 1 (Base Compatibility Layer - `termux-llamacpp`)**: Lightweight, self-contained pure CPU engine (<13MB) that guarantees 100% stability on any Android device regardless of GPU driver state.
+* **Tier 2 (High-Performance Acceleration Layer - `ameva-runtime`)**: Seamlessly upgrades the runtime to full Vulkan GPU compute (`-ngl 999`, Zero-NaN Adreno 650/830 cross-device execution) on supported silicon.
 
-### 2.1 Unified Installation Command
-Install both the LLM runtime and the hardware acceleration HAL simultaneously:
+### 2.1 GPU Acceleration Provisioning
+To unlock mobile GPU acceleration via Vulkan SPIR-V compute shaders on Qualcomm Adreno or ARM Mali silicon, provision the unified `@ameva/runtime` layer:
 
 ```bash
 # Python Environment
-pip install termux-llamacpp ameva-runtime
+pip install ameva-runtime
+python -m ameva_runtime.installer --asset llamacpp
 
 # Node.js / JavaScript Environment
-npm install -g termux-llamacpp @ameva/runtime
+npm install -g @ameva/runtime
 ```
 
 ### 2.2 Hardware Diagnostics & Zero-Silent-Fallback Guarantee
-Verify Vulkan driver detection and SIMD feature availability:
+Verify hardware topology and compute engine state:
 ```bash
 termux-llama doctor
 ```

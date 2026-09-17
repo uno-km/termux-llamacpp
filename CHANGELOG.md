@@ -1,3 +1,19 @@
+## [1.3.3] - 2026-09-18
+
+### Changed & Enhanced
+- **Installation Environment Lightweighting**:
+  - Completely purged heavy Vulkan/GPU build dependencies, `--gpu / --with-gpu` flags, and intrusive external runtime auto-provisioning (`pip install ameva-runtime`, `npm install @ameva/runtime`) from the base package installer.
+  - Enforced strict 2-tier architectural decoupling: `termux-llamacpp` now acts as an ultra-compact, independent pure CPU baseline engine (<13MB), delegating GPU hardware acceleration strictly to the upper `@ameva/runtime` orchestration layer.
+- **Pure CPU Mode Optimization**:
+  - Streamlined build presets exclusively to verified pure CPU targets: `android-arm64-baseline` (universal ARMv8-A SIGILL-free baseline), `android-arm64-dotprod` (ARMv8.2-A FP16 + DotProd SIMD vector acceleration), and `android-arm64-native` (on-device Clang autotuning).
+  - Eliminated redundant `android-arm64-vulkan` and `host-native` presets.
+- **Canonical Release Asset Standardization**:
+  - Unified binary distribution under single canonical asset `termux-llamacpp-android-arm64.tar.gz`, eliminating version-pinned filename fragmentation and duplicate uploads.
+- **Multi-Directory Model Discovery**:
+  - Upgraded `termux-llama list` to automatically discover and deduplicate GGUF models across both XDG standard paths (`~/.cache/termux-llamacpp/models/`) and ecosystem legacy paths (`~/.termux-llama/models/`).
+
+---
+
 ## [1.3.2] - 2026-09-07
 
 ### Added

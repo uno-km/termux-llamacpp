@@ -322,16 +322,33 @@ class ModelManager:
 
     def list_local_models(self) -> List[Dict[str, Union[str, float, int]]]:
         results = []
-        for file_path in self.models_dir.glob("*.gguf"):
-            stat = file_path.stat()
-            size_mb = round(stat.st_size / (1024 * 1024), 2)
-            results.append({
-                "filename": file_path.name,
-                "path": str(file_path.resolve()),
-                "size_mb": size_mb,
-                "size_bytes": stat.st_size,
-                "modified": stat.st_mtime,
-            })
+        seen_filenames = set()
+
+        search_dirs = [self.models_dir]
+        try:
+            from termux_llamacpp.hardware import get_unified_model_search_dirs
+            for alt in get_unified_model_search_dirs("llama"):
+                if alt not in search_dirs and alt.is_dir():
+                    search_dirs.append(alt)
+        except Exception:
+            pass
+
+        for s_dir in search_dirs:
+            if not s_dir.is_dir():
+                continue
+            for file_path in s_dir.glob("*.gguf"):
+                if file_path.name in seen_filenames:
+                    continue
+                seen_filenames.add(file_path.name)
+                stat = file_path.stat()
+                size_mb = round(stat.st_size / (1024 * 1024), 2)
+                results.append({
+                    "filename": file_path.name,
+                    "path": str(file_path.resolve()),
+                    "size_mb": size_mb,
+                    "size_bytes": stat.st_size,
+                    "modified": stat.st_mtime,
+                })
         return sorted(results, key=lambda x: str(x["filename"]))
 
     def remove(self, model_identifier: str) -> bool:

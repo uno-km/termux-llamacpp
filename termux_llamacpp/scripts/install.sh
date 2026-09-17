@@ -4,7 +4,7 @@
 # ==============================================================================
 set -euo pipefail
 
-VERSION="${TERMUX_LLAMACPP_VERSION:-1.3.2}"
+VERSION="${TERMUX_LLAMACPP_VERSION:-1.3.3}"
 REPO="uno-km/termux-llamacpp"
 PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
 XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"

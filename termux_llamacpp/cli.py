@@ -339,7 +339,7 @@ def cmd_list(args):
     manager = ModelManager()
     models = manager.list_local_models()
     if not models:
-        print("[termux-llama] No cached models found in ~/.termux-llama/models/")
+        print(f"[termux-llama] No cached GGUF models found in {manager.models_dir} or ecosystem paths.")
         return
 
     print(f"\nCached GGUF Models ({len(models)}):\n")
