@@ -41,6 +41,7 @@ __pycache__/
 *.egg-info/
 build/
 dist/
+releases/
 *.tgz
 *.whl
 *.tar.gz
