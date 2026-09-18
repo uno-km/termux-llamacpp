@@ -1,3 +1,12 @@
+## [1.3.5] - 2026-09-18
+
+### Changed & Hardened
+- **Zero-Hardcoding Dynamic Latest-First Provisioning Architecture**:
+  - Replaced hardcoded fallback versions with dynamic GitHub API releases query in `scripts/install.sh` and `termux_llamacpp/scripts/install.sh`.
+  - Harmonized dual install scripts with 100% parity, eliminating previous `1.3.3` vs `1.3.4` drift.
+  - Prioritized invariant `releases/latest/download/termux-llamacpp-${TARGET}.tar.gz` download endpoint.
+  - Synchronized versions across `package.json`, `pyproject.toml`, and `termux_llamacpp/__init__.py` to `1.3.5`.
+
 ## [1.3.3] - 2026-09-18
 
 ### Changed & Enhanced
