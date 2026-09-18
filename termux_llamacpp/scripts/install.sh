@@ -4,7 +4,12 @@
 # ==============================================================================
 set -euo pipefail
 
-VERSION="${TERMUX_LLAMACPP_VERSION:-1.3.4}"
+if [ -z "${TERMUX_LLAMACPP_VERSION:-}" ]; then
+    VERSION="$(curl -sL https://api.github.com/repos/uno-km/termux-llamacpp/releases/latest 2>/dev/null | grep '"tag_name":' | head -n 1 | cut -d '"' -f 4 | sed 's/^v//')"
+    VERSION="${VERSION:-latest}"
+else
+    VERSION="${TERMUX_LLAMACPP_VERSION}"
+fi
 REPO="uno-km/termux-llamacpp"
 PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
 XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
@@ -156,8 +161,12 @@ if [ "$FROM_SOURCE" != "1" ]; then
     DOWNLOAD_SUCCESS=0
     CANDIDATE_URLS=(
         "https://github.com/${REPO}/releases/latest/download/termux-llamacpp-${TARGET}.tar.gz"
-        "https://github.com/${REPO}/releases/download/v${VERSION}/termux-llamacpp-${TARGET}.tar.gz"
     )
+    if [ "${VERSION}" != "latest" ]; then
+        CANDIDATE_URLS+=(
+            "https://github.com/${REPO}/releases/download/v${VERSION}/termux-llamacpp-${TARGET}.tar.gz"
+        )
+    fi
 
     for CANDIDATE_URL in "${CANDIDATE_URLS[@]}"; do
         printf '  [termux-llamacpp] Checking candidate release: %s\n' "$CANDIDATE_URL"
