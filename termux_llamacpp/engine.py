@@ -344,6 +344,7 @@ class LlamaRuntime:
                 "-t", t_count,
                 "--simple-io",
                 "--no-display-prompt",
+                "--single-turn",
             ]
             if ctx_size is not None and ctx_size > 0:
                 cmd.extend(["-c", str(ctx_size)])
