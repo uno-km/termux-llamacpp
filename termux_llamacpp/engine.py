@@ -174,6 +174,11 @@ class LlamaRuntime:
         env = os.environ.copy()
         dev_mode = str(device or "auto").strip().lower()
 
+        # Gate 1 Safety Rule: For pure CPU NEON execution, never inject or pollute LD_LIBRARY_PATH
+        # to prevent Dual C++ Runtime collisions with Android Bionic system libraries.
+        if dev_mode == "cpu" or sys.platform == "win32":
+            return env
+
         # 0. Always prioritize authoritative native llama runtime library paths ($PREFIX/lib)
         prefix_lib = Path(os.environ.get("PREFIX", "/data/data/com.termux/files/usr")) / "lib"
         canonical_dirs = [
@@ -198,9 +203,6 @@ class LlamaRuntime:
 
         if ordered_parts:
             env["LD_LIBRARY_PATH"] = ":".join(ordered_parts)
-
-        if dev_mode == "cpu" or sys.platform == "win32":
-            return env
 
         try:
             from ameva_runtime import vulkan as avr

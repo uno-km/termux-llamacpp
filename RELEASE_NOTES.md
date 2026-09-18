@@ -1,6 +1,6 @@
-# Release Notes - termux-llamacpp v1.3.8
+# Release Notes - termux-llamacpp v1.3.9
 
-**Release Tag**: `v1.3.8`  
+**Release Tag**: `v1.3.9`  
 **Distribution Channels**: PyPI (`termux-llamacpp`), NPM (`termux-llamacpp`), GitHub Releases  
 **Target Platform**: Android Termux (ARM64 / aarch64 Bionic)  
 **License**: Apache-2.0  
@@ -9,7 +9,11 @@
 
 ## Highlights & Key Architectural Changes
 
-### 1. Official Multimodal VLM Engine Integration
+### 1. Gate 1 Safety Rule: Clean CPU Execution Environment
+- **Zero-Pollution CPU Execution**: Purged `LD_LIBRARY_PATH` injection when running under `device="cpu"` to adhere strictly to Gate 1 Safety Rules.
+- **Resolved Dual C++ Runtime Collisions**: Prevented Bionic dynamic linker conflicts (`CANNOT LINK EXECUTABLE` referencing `/system/lib64/libunwindstack.so` and `libGLESv3.so`), enabling pure ARM64 CPU NEON execution without linker errors across Android 14 and 15.
+
+### 2. Official Multimodal VLM Engine Integration
 - **Direct VLM Execution Pipeline**: Introduced `LlamaRuntime.generate_vlm()` and top-level `generate_vlm()` with structured `VLMResponse` dataclass.
 - **Strict Device Pass-through Governance**:
   - `cpu`: Forces pure ARM64 CPU NEON execution with `-ngl 0` and zero GPU probing.

@@ -1,3 +1,8 @@
+## [1.3.9] - 2026-09-18
+
+### Fixed
+- **Gate 1 Safety Rule Enforcement**: Eliminated `LD_LIBRARY_PATH` pollution for pure CPU NEON mode (`device="cpu"`), preventing Dual C++ Runtime collisions (`CANNOT LINK EXECUTABLE` symbol lookup failures) with Android Bionic system libraries.
+
 ## [1.3.8] - 2026-09-18
 
 ### Added
