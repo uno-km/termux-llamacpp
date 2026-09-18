@@ -277,6 +277,10 @@ class LlamaRuntime:
             daemon=daemon,
         )
 
+    def prepare_env(self, device: str = "auto") -> Dict[str, str]:
+        """Public accessor for official execution environment configuration with Vulkan/LD_LIBRARY_PATH."""
+        return self._prepare_env(device=device)
+
     def generate(
         self,
         model: Optional[Union[str, Path]] = None,
@@ -286,6 +290,7 @@ class LlamaRuntime:
         max_tokens: int = 256,
         temperature: float = 0.7,
         threads: Optional[int] = None,
+        ctx_size: Optional[int] = 2048,
         device: str = "auto",
         n_gpu_layers: Optional[int] = None,
     ) -> str:
@@ -300,6 +305,7 @@ class LlamaRuntime:
             max_tokens: Maximum tokens to generate.
             temperature: Sampling temperature.
             threads: Worker threads count.
+            ctx_size: Context window size in tokens (default: 2048, None/0 for model default context).
             device: 'auto' (Vulkan priority with CPU fallback), 'vulkan' / 'gpu' (strict GPU fail-fast), 'cpu' (pure NEON).
             n_gpu_layers: Specific number of layers to offload to GPU.
 
@@ -336,10 +342,13 @@ class LlamaRuntime:
                 "-n", str(max_tokens),
                 "--temp", str(temperature),
                 "-t", t_count,
-                "--single-turn",
                 "--simple-io",
                 "--no-display-prompt",
             ]
+            if ctx_size is not None and ctx_size > 0:
+                cmd.extend(["-c", str(ctx_size)])
+            elif ctx_size == 0:
+                cmd.extend(["-c", "0"])
             if mmproj:
                 cmd.extend(["--mmproj", str(mmproj)])
             if image:

@@ -1,3 +1,14 @@
+## [1.3.6] - 2026-09-18
+
+### Added
+- Added `-c, --ctx, --ctx-size` argument to `termux-llama run` CLI for explicit context window tuning.
+- Added `ctx_size: Optional[int] = 2048` parameter to `LlamaRuntime.generate()` with support for native model context pass-through (`ctx_size=0`).
+- Exposed `LlamaRuntime.prepare_env(device)` publicly for official execution environment export to sibling packages.
+
+### Changed & Fixed
+- Removed deprecated `--single-turn` flag from internal CLI execution in `engine.py`.
+- Synchronized package manifests across PyPI and npm to `1.3.6`.
+
 ## [1.3.5] - 2026-09-18
 
 ### Changed & Hardened

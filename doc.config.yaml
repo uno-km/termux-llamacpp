@@ -1,7 +1,7 @@
 name: Termux-LlamaCpp
 package_name_pypi: termux-llamacpp
 package_name_npm: termux-llamacpp
-version: v1.2.0
+version: v1.3.6
 release_name: Production Release
 license: Apache-2.0
 platform: Android ARM64 / Termux Bionic

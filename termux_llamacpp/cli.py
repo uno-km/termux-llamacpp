@@ -216,6 +216,7 @@ def cmd_run(args):
             max_tokens=args.max_tokens,
             temperature=args.temp,
             threads=args.threads,
+            ctx_size=getattr(args, "ctx", 2048),
             device=effective_device,
             n_gpu_layers=getattr(args, "ngl", None),
         )
@@ -438,6 +439,7 @@ def main():
     p_run.add_argument("-ngl", "--ngl", "--gpu-layers", dest="ngl", type=int, default=None, help="Number of layers to offload to GPU VRAM")
     p_run.add_argument("--runtime", default="auto", choices=["auto", "ameva", "native"], help="Execution runtime provider (auto, ameva, native)")
     p_run.add_argument("-n", "--max-tokens", type=int, default=256, help="Max tokens to generate")
+    p_run.add_argument("-c", "--ctx", "--ctx-size", dest="ctx", type=int, default=2048, help="Context length in tokens (default: 2048, 0 for model default)")
     p_run.add_argument("-t", "--threads", type=int, default=None, help="CPU threads")
     p_run.add_argument("--temp", type=float, default=0.7, help="Sampling temperature")
 
