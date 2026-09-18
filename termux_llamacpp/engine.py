@@ -2,13 +2,28 @@
 
 import logging
 import os
+import re
 import shutil
 import subprocess
 import sys
+import time
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Union, List, Dict, Any
 
 logger = logging.getLogger("termux_llamacpp.engine")
+
+@dataclass
+class VLMResponse:
+    """Structured inference response from multimodal VLM execution."""
+    text: str
+    backend: str
+    prompt_tps: Optional[float] = None
+    generation_tps: Optional[float] = None
+    latency_ms: Optional[float] = None
+    finish_reason: str = "stop"
+    raw_stdout: str = ""
+    raw_stderr: str = ""
 
 from termux_llamacpp.config import (
     RuntimeConfig,
@@ -389,3 +404,165 @@ class LlamaRuntime:
             if cpu_res.returncode != 0:
                 raise TermuxLlamaError(f"CPU NEON inference failed: {cpu_res.stderr}")
             return cpu_res.stdout.strip()
+
+    def generate_vlm(
+        self,
+        model: Union[str, Path],
+        mmproj: Union[str, Path],
+        image: Union[str, Path],
+        prompt: str = "Describe this image in detail.",
+        max_tokens: int = 150,
+        temperature: float = 0.2,
+        threads: Optional[int] = None,
+        ctx_size: Optional[int] = 2048,
+        device: str = "auto",
+        n_gpu_layers: Optional[int] = None,
+        repeat_penalty: Optional[float] = 1.2,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+    ) -> VLMResponse:
+        """
+        Execute official multimodal VLM inference with strict device pass-through governance.
+        
+        Args:
+            model: Path to language model (.gguf) or curated catalog identifier.
+            mmproj: Path to multimodal vision projector (.gguf).
+            image: Path to input image file.
+            prompt: Visual reasoning query prompt.
+            max_tokens: Maximum tokens to generate.
+            temperature: Sampling temperature.
+            threads: Worker threads count (default: auto).
+            ctx_size: Context window size (default: 2048).
+            device: 'auto' (Vulkan priority with CPU fallback), 'vulkan'/'gpu' (strict GPU), 'cpu' (pure NEON).
+            n_gpu_layers: Number of GPU offload layers.
+            repeat_penalty: Repetition penalty factor.
+            top_p: Nucleus sampling factor.
+            top_k: Top-k sampling limit.
+
+        Returns:
+            VLMResponse with generated text, backend, tps metrics, and latency.
+        """
+        resolved_model = str(self.models.get(str(model))) if not Path(model).exists() else str(model)
+        resolved_mmproj = str(mmproj)
+        resolved_image = str(image)
+
+        if not Path(resolved_model).exists():
+            raise FileNotFoundError(f"VLM model not found: {resolved_model}")
+        if not Path(resolved_mmproj).exists():
+            raise FileNotFoundError(f"VLM vision projector not found: {resolved_mmproj}")
+        if not Path(resolved_image).exists():
+            raise FileNotFoundError(f"VLM input image not found: {resolved_image}")
+
+        cli_bin = self.get_binary_path("llama-cli")
+        if not cli_bin:
+            raise RuntimeBuildError(
+                f"Binary 'llama-cli' not found in '{self.bin_dir}' or PATH.\n"
+                f"Please compile the runtime via: termux-llama install"
+            )
+
+        backend, target_ngl = resolve_device_backend(device, n_gpu_layers)
+        t_count = str(threads or self.hw.recommended_threads)
+
+        cmd = [
+            str(cli_bin),
+            "-m", resolved_model,
+            "--mmproj", resolved_mmproj,
+            "--image", resolved_image,
+            "-p", str(prompt),
+            "-n", str(max_tokens),
+            "--temp", str(temperature),
+            "-t", t_count,
+            "-c", str(ctx_size or 2048),
+            "--single-turn",
+            "--no-conversation",
+        ]
+
+        if repeat_penalty is not None:
+            cmd.extend(["--repeat-penalty", str(repeat_penalty)])
+        if top_p is not None:
+            cmd.extend(["--top-p", str(top_p)])
+        if top_k is not None:
+            cmd.extend(["--top-k", str(top_k)])
+
+        if backend == "vulkan":
+            ngl_val = str(target_ngl or 99)
+            cmd.extend([
+                "-ngl", ngl_val,
+                "-b", "64",
+                "-ub", "64",
+                "-fa", "off",
+                "--no-mmproj-offload",
+                "--no-warmup",
+                "-fit", "off",
+            ])
+        else:
+            cmd.extend(["-ngl", "0"])
+
+        env = self._prepare_env(device=backend)
+
+        t0 = time.perf_counter()
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            env=env,
+            stdin=subprocess.DEVNULL,
+        )
+        latency_ms = (time.perf_counter() - t0) * 1000.0
+
+        raw_out = proc.stdout or ""
+        raw_err = proc.stderr or ""
+
+        if proc.returncode != 0:
+            if backend == "vulkan":
+                raise TermuxLlamaError(
+                    f"[ERROR: AMEVA-LLAMA-E003] Vulkan GPU VLM inference failed (exit {proc.returncode}).\n"
+                    f"Automatic CPU fallback is disabled under Zero-Silent-Fallback policy.\n"
+                    f"Details:\n{raw_err.strip() or raw_out.strip()}"
+                )
+            else:
+                raise TermuxLlamaError(
+                    f"CPU NEON VLM inference failed (exit {proc.returncode}):\n{raw_err.strip() or raw_out.strip()}"
+                )
+
+        # Parse prompt t/s and generation t/s
+        prompt_tps = None
+        gen_tps = None
+        m_speed = re.search(r"Prompt:\s*([\d.]+)\s*t/s\s*\|\s*Generation:\s*([\d.]+)\s*t/s", raw_out)
+        if m_speed:
+            prompt_tps = float(m_speed.group(1))
+            gen_tps = float(m_speed.group(2))
+
+        # Extract generated response text cleanly
+        clean_text = raw_out
+        if prompt in clean_text:
+            clean_text = clean_text.split(prompt, 1)[-1]
+        # Remove spinner indicators and trailing bracketed speed metrics
+        clean_text = re.sub(r"[\|\/\-\\b\s]{4,}", " ", clean_text)
+        clean_text = re.sub(r"\[\s*Prompt:.*?\]", "", clean_text)
+        clean_text = re.sub(r"Exiting\.\.\.", "", clean_text)
+        clean_text = clean_text.strip()
+
+        return VLMResponse(
+            text=clean_text,
+            backend=backend,
+            prompt_tps=prompt_tps,
+            generation_tps=gen_tps,
+            latency_ms=round(latency_ms, 2),
+            finish_reason="stop",
+            raw_stdout=raw_out,
+            raw_stderr=raw_err,
+        )
+
+
+def generate_vlm(
+    model: Union[str, Path],
+    mmproj: Union[str, Path],
+    image: Union[str, Path],
+    prompt: str = "Describe this image in detail.",
+    **kwargs
+) -> VLMResponse:
+    """Module-level convenience accessor for official VLM execution."""
+    runtime = LlamaRuntime()
+    return runtime.generate_vlm(model=model, mmproj=mmproj, image=image, prompt=prompt, **kwargs)
+

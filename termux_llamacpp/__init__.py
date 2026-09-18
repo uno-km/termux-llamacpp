@@ -12,7 +12,7 @@ from termux_llamacpp.config import (
     LLAMA_CPP_PINNED_COMMIT,
     PROTOCOL_VERSION,
 )
-from termux_llamacpp.engine import LlamaRuntime
+from termux_llamacpp.engine import LlamaRuntime, generate_vlm, VLMResponse
 from termux_llamacpp.downloader import ModelManager, download_model, list_models, resolve_model_path
 from termux_llamacpp.crawler import HuggingFaceCrawler, discover_hf_models
 from termux_llamacpp.hardware import detect_hardware, print_hardware_summary, HardwareProfile, resolve_device, is_termux, is_android, bind_hardware
@@ -39,11 +39,13 @@ from termux_llamacpp.exceptions import (
 )
 
 
-__version__ = "1.3.7"
+__version__ = "1.3.8"
 __author__ = "uno-km"
 
 __all__ = [
     "LlamaRuntime",
+    "generate_vlm",
+    "VLMResponse",
     "ModelManager",
     "ServerManager",
     "ServerInstance",

@@ -1,3 +1,15 @@
+## [1.3.8] - 2026-09-18
+
+### Added
+- **Official Multimodal VLM Engine Integration**: Added `LlamaRuntime.generate_vlm()` and module-level `generate_vlm()` with `VLMResponse` dataclass.
+- **Strict Device Pass-through Governance**: 1:1 hardware pass-through routing (`cpu` forced pure NEON, `gpu`/`vulkan` strict Fail-Fast without `ameva-runtime`, `auto` fallback).
+- **Zero Interference Execution**: Stripped conflicting `--chat-template` arguments to preserve GGUF model-native multimodal markers.
+
+## [1.3.7] - 2026-09-18
+
+### Fixed
+- Fixed interactive REPL hang by enforcing single-turn non-interactive completion.
+
 ## [1.3.6] - 2026-09-18
 
 ### Added

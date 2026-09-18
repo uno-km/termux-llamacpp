@@ -1,6 +1,6 @@
-# Release Notes - termux-llamacpp v1.3.7
+# Release Notes - termux-llamacpp v1.3.8
 
-**Release Tag**: `v1.3.7`  
+**Release Tag**: `v1.3.8`  
 **Distribution Channels**: PyPI (`termux-llamacpp`), NPM (`termux-llamacpp`), GitHub Releases  
 **Target Platform**: Android Termux (ARM64 / aarch64 Bionic)  
 **License**: Apache-2.0  
@@ -9,10 +9,13 @@
 
 ## Highlights & Key Architectural Changes
 
-### 1. Robust Non-Interactive `--single-turn` Execution Guarantee
-- **Resolved REPL Deadlock in CLI Generation**: Explicitly added `--single-turn` to `LlamaRuntime.generate()` invocation command to guarantee that one-shot CLI inferences terminate immediately upon token generation rather than pausing in interactive REPL input loops.
-- **Flexible Context Scaling**: Added `ctx_size: Optional[int] = 2048` to `LlamaRuntime.generate()`, providing safe 2048 mobile defaults while allowing explicit override (`-c 4096`, `-c 8192`) or native model context pass-through (`ctx_size=0`).
-- **CLI Context Control**: Added `-c, --ctx` flag to `termux-llama run` subcommand, allowing users to tune context window size on single-turn inference without daemon configuration.
+### 1. Official Multimodal VLM Engine Integration
+- **Direct VLM Execution Pipeline**: Introduced `LlamaRuntime.generate_vlm()` and top-level `generate_vlm()` with structured `VLMResponse` dataclass.
+- **Strict Device Pass-through Governance**:
+  - `cpu`: Forces pure ARM64 CPU NEON execution with `-ngl 0` and zero GPU probing.
+  - `gpu` / `vulkan`: Strict validation against `ameva-runtime` HAL; halts immediately under Zero-Silent-Fallback policy if prerequisites are absent.
+  - `auto`: Dynamically selects Vulkan when `ameva-runtime` is present, or CPU NEON otherwise.
+- **Interference-Free Prompting**: Stripped conflicting `--chat-template` arguments to preserve GGUF model-native multimodal markers.
 
 ### 2. Sibling Package Interoperability & Canonical Environment Export
 - **Public Environment Provider**: Exposed `LlamaRuntime.prepare_env(device)` publicly, enabling sibling frameworks (`termux-vision`, `ameva-runtime`) to inherit validated Android Bionic library search paths and Vulkan ICD configurations seamlessly.
