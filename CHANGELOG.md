@@ -1,4 +1,4 @@
-## [1.3.10] - 2026-09-28
+## [1.3.11] - 2026-09-28
 
 ### Added & Hardened
 - **Dynamic 5-Stage Network Resume & Exponential Backoff (`downloader.py`)**:

@@ -1,6 +1,6 @@
-# Release Notes - termux-llamacpp v1.3.10
+# Release Notes - termux-llamacpp v1.3.11
 
-**Release Tag**: `v1.3.10`  
+**Release Tag**: `v1.3.11`  
 **Distribution Channels**: PyPI (`termux-llamacpp`), NPM (`termux-llamacpp`), GitHub Releases  
 **Target Platform**: Android Termux (ARM64 / aarch64 Bionic)  
 **License**: Apache-2.0  
