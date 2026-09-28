@@ -146,18 +146,41 @@ class LlamaRuntime:
                 )
 
     def get_binary_path(self, binary_name: str) -> Optional[Path]:
-        """Find the authoritative absolute path of a llama.cpp binary in canonical location ($PREFIX/bin).
-        Under Zero-Silent-Fallback policy, arbitrary PATH or heuristic search is prohibited.
+        """Find the authoritative absolute path of a llama.cpp binary in canonical locations ($PREFIX/bin, AMEVA, etc.).
+        Under Zero-Silent-Fallback policy, arbitrary PATH or heuristic search is strictly structured.
         """
+        import shutil
         ext = ".exe" if sys.platform == "win32" else ""
 
-        # Authoritative canonical release location ($PREFIX/bin)
+        # 1. Check in self.bin_dir
         target = self.bin_dir / f"{binary_name}{ext}"
         if not target.is_file():
             target = self.bin_dir / binary_name
-
         if target.is_file():
             return target.resolve()
+
+        # 2. Check in AMEVA runtime current directory
+        home = Path(os.environ.get("HOME", os.path.expanduser("~")))
+        for ameva_p in (
+            home / ".local" / "share" / "ameva" / "current" / "llamacpp" / f"{binary_name}{ext}",
+            home / ".local" / "share" / "ameva" / "current" / "llamacpp" / binary_name,
+        ):
+            if ameva_p.is_file():
+                return ameva_p.resolve()
+
+        # 3. Check in $PREFIX/bin
+        prefix = os.environ.get("PREFIX", "/data/data/com.termux/files/usr")
+        for pref_p in (
+            Path(prefix) / "bin" / f"{binary_name}{ext}",
+            Path(prefix) / "bin" / binary_name,
+        ):
+            if pref_p.is_file():
+                return pref_p.resolve()
+
+        # 4. Check system PATH
+        w = shutil.which(binary_name)
+        if w:
+            return Path(w).resolve()
 
         return None
 
@@ -169,45 +192,25 @@ class LlamaRuntime:
             device: 'auto' (Vulkan priority with CPU fallback), 'vulkan' (strict GPU fail-fast), 'cpu' (pure NEON).
 
         Returns:
-            Dict[str, str]: Prepared environment dictionary with verified LD_LIBRARY_PATH.
+            Dict[str, str]: Prepared environment dictionary with verified LD_LIBRARY_PATH and HAL shim.
         """
         env = os.environ.copy()
         dev_mode = str(device or "auto").strip().lower()
 
         # Gate 1 Safety Rule: For pure CPU NEON execution, never inject or pollute LD_LIBRARY_PATH
         # to prevent Dual C++ Runtime collisions with Android Bionic system libraries.
+        # Explicitly hide Vulkan devices so Vulkan-compiled llama-cli does not crash on buggy vendor Vulkan drivers.
         if dev_mode == "cpu" or sys.platform == "win32":
+            env["GGML_VK_VISIBLE_DEVICES"] = ""
             return env
 
-        # 0. Always prioritize authoritative native llama runtime library paths ($PREFIX/lib)
-        prefix_lib = Path(os.environ.get("PREFIX", "/data/data/com.termux/files/usr")) / "lib"
-        canonical_dirs = [
-            str(prefix_lib),
-        ]
-        system_dirs = [
-            "/data/data/com.termux/files/usr/lib",
-        ]
-        existing_lp = env.get("LD_LIBRARY_PATH", "")
-        existing_parts = [p.strip() for p in existing_lp.split(":") if p.strip()]
-
-        ordered_parts = []
-        for d in canonical_dirs:
-            if os.path.isdir(d) and d not in ordered_parts:
-                ordered_parts.append(d)
-        for d in existing_parts:
-            if d not in ordered_parts:
-                ordered_parts.append(d)
-        for d in system_dirs:
-            if os.path.isdir(d) and d not in ordered_parts:
-                ordered_parts.append(d)
-
-        if ordered_parts:
-            env["LD_LIBRARY_PATH"] = ":".join(ordered_parts)
-
         try:
-            from ameva_runtime import vulkan as avr
+            # 1. Official ameva-runtime Adapter Integration
+            from ameva_runtime.adapters import LlamaCppAdapter
+            env = LlamaCppAdapter.get_execution_environment(base_env=env)
 
-            # 1. Acquire Vulkan HAL context
+            # 2. Acquire Vulkan HAL context to verify GPU capability under Zero-Silent-Fallback
+            from ameva_runtime import vulkan as avr
             if hasattr(avr, "create_context"):
                 ctx = avr.create_context(dev_mode)
             elif hasattr(avr, "get_or_create_context"):
@@ -215,20 +218,12 @@ class LlamaRuntime:
             else:
                 ctx = avr.VulkanContext(dev_mode)
 
-            # 2. Verify GPU status
-            if ctx.backend_type == "vulkan" or getattr(ctx, "is_gpu", False):
-                # Dynamically resolve driver path from context or Android system
-                loader_path = getattr(ctx, "loader_path", "")
-                vk_dir = str(Path(loader_path).parent) if loader_path and os.path.exists(loader_path) else "/system/lib64"
-                if os.path.exists(vk_dir):
-                    existing_lp = env.get("LD_LIBRARY_PATH", "")
-                    if vk_dir not in existing_lp:
-                        env["LD_LIBRARY_PATH"] = f"{vk_dir}:{existing_lp}".rstrip(":")
-            elif dev_mode in ("vulkan", "gpu"):
-                raise TermuxLlamaError(
-                    f"Explicit Vulkan backend requested ('--device {device}'), but ameva-runtime "
-                    f"initialized with non-GPU backend ('{ctx.backend_type}': {ctx.device_name})."
-                )
+            if not (ctx.backend_type == "vulkan" or getattr(ctx, "is_gpu", False)):
+                if dev_mode in ("vulkan", "gpu"):
+                    raise TermuxLlamaError(
+                        f"Explicit Vulkan backend requested ('--device {device}'), but ameva-runtime "
+                        f"initialized with non-GPU backend ('{ctx.backend_type}': {ctx.device_name})."
+                    )
         except ImportError:
             if dev_mode in ("vulkan", "gpu"):
                 raise TermuxLlamaError(
@@ -248,11 +243,12 @@ class LlamaRuntime:
                     "  https://github.com/uno-km/termux-llamacpp\n"
                     "================================================================================\n"
                 )
-            # Auto-mode graceful fallback to system Vulkan driver if present
-            if os.path.exists("/system/lib64/libvulkan.so"):
-                existing_lp = env.get("LD_LIBRARY_PATH", "")
-                if "/system/lib64" not in existing_lp:
-                    env["LD_LIBRARY_PATH"] = f"/system/lib64:{existing_lp}".rstrip(":")
+            # Fallback if ameva-runtime is not installed (e.g. baseline Termux)
+            prefix_lib = Path(os.environ.get("PREFIX", "/data/data/com.termux/files/usr")) / "lib"
+            if prefix_lib.is_dir():
+                curr_ld = env.get("LD_LIBRARY_PATH", "")
+                if str(prefix_lib) not in curr_ld:
+                    env["LD_LIBRARY_PATH"] = f"{prefix_lib}:{curr_ld}".rstrip(":")
         except Exception as e:
             if dev_mode in ("vulkan", "gpu"):
                 if isinstance(e, TermuxLlamaError):
@@ -350,19 +346,47 @@ class LlamaRuntime:
         t_count = str(threads or self.hw.recommended_threads)
         ngl_target = 99 if n_gpu_layers is None else n_gpu_layers
 
+        # Check model name for template resolution
+        m_str = str(resolved_model_path).lower()
+        is_qwen = "qwen" in m_str
+        is_llama3 = "llama-3" in m_str or "llama3" in m_str
+
+        formatted_prompt = prompt
+        reverse_prompts = []
+
+        if is_qwen and "<|im_start|>" not in prompt:
+            formatted_prompt = f"<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n"
+            reverse_prompts.append("<|im_end|>")
+        elif is_llama3 and "<|start_header_id|>" not in prompt:
+            formatted_prompt = f"<|start_header_id|>user<|end_header_id|>\n\n{prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
+            reverse_prompts.append("<|eot_id|>")
+
+        def _clean_output(text: str) -> str:
+            res = text.strip()
+            if prompt in res:
+                idx = res.rfind(prompt) + len(prompt)
+                res = res[idx:].strip()
+            for stop_token in ("<|im_end|>", "<|eot_id|>", "<|end_of_text|>", "</s>"):
+                res = res.replace(stop_token, "").strip()
+            return res
+
         def _run_cmd(target_device: str, gpu_layers: int) -> subprocess.CompletedProcess:
             env = self._prepare_env(device=target_device)
             cmd = [
                 str(cli_bin),
                 "-m", str(resolved_model_path),
-                "-p", prompt,
+                "-p", formatted_prompt,
                 "-n", str(max_tokens),
                 "--temp", str(temperature),
                 "-t", t_count,
                 "--simple-io",
                 "--no-display-prompt",
                 "--single-turn",
+                "-fa", "0",
             ]
+            for rp in reverse_prompts:
+                cmd.extend(["-r", rp])
+
             if ctx_size is not None and ctx_size > 0:
                 cmd.extend(["-c", str(ctx_size)])
             elif ctx_size == 0:
@@ -398,14 +422,14 @@ class LlamaRuntime:
                     f"Remediation: To execute inference on pure CPU NEON, re-run with '--device cpu' (CLI) or device='cpu' (SDK).\n"
                     f"Details:\n{res.stderr.strip() or res.stdout.strip()}"
                 )
-            return res.stdout.strip()
+            return _clean_output(res.stdout.strip())
 
         # 2. CPU NEON Route
         else:
             cpu_res = _run_cmd("cpu", 0)
             if cpu_res.returncode != 0:
                 raise TermuxLlamaError(f"CPU NEON inference failed: {cpu_res.stderr}")
-            return cpu_res.stdout.strip()
+            return _clean_output(cpu_res.stdout.strip())
 
     def generate_vlm(
         self,
@@ -498,7 +522,7 @@ class LlamaRuntime:
                 "-fit", "off",
             ])
         else:
-            cmd.extend(["-ngl", "0"])
+            cmd.extend(["-ngl", "0", "-fa", "off"])
 
         env = self._prepare_env(device=backend)
 

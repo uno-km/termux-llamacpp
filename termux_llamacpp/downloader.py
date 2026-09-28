@@ -5,6 +5,7 @@ import hmac
 import json
 import logging
 import os
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -132,15 +133,30 @@ class ModelManager:
         """
         Download GGUF model with ETag + If-Range Resume protocol, disk pre-check, and SHA256 validation.
         """
-        alias = repo_id_or_alias.strip().lower()
+        raw_input = repo_id_or_alias.strip()
+        alias = raw_input.lower()
         expected_sha256 = sha256
         target_filename = filename
         quant_type = "Q4_K_M"
         license_id = "Apache-2.0"
-        model_revision = revision
+        model_revision = revision or "main"
         model_id = alias
 
-        if alias in CURATED_MODELS:
+        if raw_input.startswith("http://") or raw_input.startswith("https://"):
+            download_url = raw_input
+            if not target_filename:
+                target_filename = raw_input.split("?")[0].rstrip("/").split("/")[-1]
+            model_id = Path(target_filename).stem
+            hf_match = re.match(r"^https?://huggingface\.co/([^/]+/[^/]+)/resolve/([^/]+)/(.+)$", raw_input)
+            if hf_match:
+                repo_id = hf_match.group(1)
+                model_revision = revision or hf_match.group(2)
+                if not filename:
+                    target_filename = hf_match.group(3)
+                model_id = Path(target_filename).stem
+            else:
+                repo_id = "custom-url"
+        elif alias in CURATED_MODELS:
             info = CURATED_MODELS[alias]
             model_id = info.model_id
             repo_id = info.repo_id
@@ -157,11 +173,13 @@ class ModelManager:
                     f"License URL: {info.license_url}\n"
                     f"To proceed, pass accept_license=True in SDK or --accept-license in CLI."
                 )
+            download_url = f"https://huggingface.co/{repo_id}/resolve/{model_revision}/{target_filename}"
         else:
             repo_id = repo_id_or_alias
             model_revision = revision or "main"
             if not target_filename:
                 raise ValueError(f"Filename must be provided when downloading custom repo '{repo_id}'.")
+            download_url = f"https://huggingface.co/{repo_id}/resolve/{model_revision}/{target_filename}"
 
         destination = self.models_dir / target_filename
 
@@ -177,7 +195,6 @@ class ModelManager:
                 print(f"[termux-llamacpp] Model '{target_filename}' already exists in cache.")
                 return destination.resolve()
 
-        download_url = f"https://huggingface.co/{repo_id}/resolve/{model_revision}/{target_filename}"
         part_file = destination.with_suffix(".part")
         meta_file = destination.with_suffix(".part.meta.json")
 
@@ -190,100 +207,130 @@ class ModelManager:
         print(f"  Destination : {destination}")
         print("================================================================================")
 
-        saved_meta = {}
-        if meta_file.is_file() and part_file.is_file():
-            try:
-                saved_meta = json.loads(meta_file.read_text(encoding="utf-8"))
-            except Exception:
-                saved_meta = {}
-
-        headers = {"Accept-Encoding": "identity"}
-        downloaded_bytes = 0
-        saved_etag = saved_meta.get("etag")
-
-        if part_file.is_file() and saved_meta.get("url") == download_url:
-            downloaded_bytes = part_file.stat().st_size
-            headers["Range"] = f"bytes={downloaded_bytes}-"
-            if saved_etag:
-                headers["If-Range"] = saved_etag
-            print(f"[termux-llamacpp] Resuming download from byte {downloaded_bytes:,} (ETag: {saved_etag})...")
-
         try:
-            with requests.get(download_url, stream=True, headers=headers, timeout=30) as resp:
-                if resp.status_code == 404:
-                    raise TermuxLlamaError(f"Model not found at {download_url} (HTTP 404).")
+            max_retries = 5
+            retry_delay = 2.0
+            success = False
 
-                current_etag = resp.headers.get("etag", "")
-                content_encoding = resp.headers.get("content-encoding")
+            for attempt in range(1, max_retries + 1):
+                saved_meta = {}
+                if meta_file.is_file() and part_file.is_file():
+                    try:
+                        saved_meta = json.loads(meta_file.read_text(encoding="utf-8"))
+                    except Exception:
+                        saved_meta = {}
 
-                if content_encoding and content_encoding != "identity":
-                    print("[termux-llamacpp] Compressed transfer encoding detected. Discarding range resume.")
-                    part_file.unlink(missing_ok=True)
-                    downloaded_bytes = 0
+                headers = {"Accept-Encoding": "identity"}
+                downloaded_bytes = 0
+                saved_etag = saved_meta.get("etag")
 
-                if resp.status_code == 206:
-                    total_size = downloaded_bytes + int(resp.headers.get("content-length", 0))
-                    write_mode = "ab"
-                elif resp.status_code == 416:
-                    expected_size = saved_meta.get("expected_size", 0)
-                    if downloaded_bytes > 0:
-                        print("[termux-llamacpp] Range 416 returned. Validating part file integrity...")
-                        if expected_size and downloaded_bytes != expected_size:
-                            print("[termux-llamacpp] Size mismatch on 416. Resetting part file...")
+                if part_file.is_file() and saved_meta.get("url") == download_url:
+                    downloaded_bytes = part_file.stat().st_size
+                    headers["Range"] = f"bytes={downloaded_bytes}-"
+                    if saved_etag:
+                        headers["If-Range"] = saved_etag
+                    if attempt > 1:
+                        print(f"[termux-llamacpp] (Retry {attempt}/{max_retries}) Resuming download from byte {downloaded_bytes:,} (ETag: {saved_etag})...")
+                    else:
+                        print(f"[termux-llamacpp] Resuming download from byte {downloaded_bytes:,} (ETag: {saved_etag})...")
+
+                try:
+                    with requests.get(download_url, stream=True, headers=headers, timeout=30) as resp:
+                        if resp.status_code == 404:
+                            raise TermuxLlamaError(f"Model not found at {download_url} (HTTP 404).")
+
+                        current_etag = resp.headers.get("etag", "")
+                        content_encoding = resp.headers.get("content-encoding")
+
+                        if content_encoding and content_encoding != "identity":
+                            print("[termux-llamacpp] Compressed transfer encoding detected. Discarding range resume.")
                             part_file.unlink(missing_ok=True)
-                            meta_file.unlink(missing_ok=True)
                             downloaded_bytes = 0
-                            total_size = 0
-                            write_mode = "wb"
-                        else:
-                            final_sha = compute_sha256(part_file)
-                            if expected_sha256 and not hmac.compare_digest(final_sha.lower(), expected_sha256.lower()):
+
+                        if resp.status_code == 206:
+                            total_size = downloaded_bytes + int(resp.headers.get("content-length", 0))
+                            write_mode = "ab"
+                        elif resp.status_code == 416:
+                            expected_size = saved_meta.get("expected_size", 0)
+                            if downloaded_bytes > 0:
+                                print("[termux-llamacpp] Range 416 returned. Validating part file integrity...")
+                                if expected_size and downloaded_bytes != expected_size:
+                                    print("[termux-llamacpp] Size mismatch on 416. Resetting part file...")
+                                    part_file.unlink(missing_ok=True)
+                                    meta_file.unlink(missing_ok=True)
+                                    downloaded_bytes = 0
+                                    total_size = 0
+                                    write_mode = "wb"
+                                else:
+                                    final_sha = compute_sha256(part_file)
+                                    if expected_sha256 and not hmac.compare_digest(final_sha.lower(), expected_sha256.lower()):
+                                        part_file.unlink(missing_ok=True)
+                                        meta_file.unlink(missing_ok=True)
+                                        raise TermuxLlamaError("Part file checksum mismatch on 416. Re-download required.")
+                                    total_size = downloaded_bytes
+                                    write_mode = "wb"
+                            else:
                                 part_file.unlink(missing_ok=True)
                                 meta_file.unlink(missing_ok=True)
-                                raise TermuxLlamaError("Part file checksum mismatch on 416. Re-download required.")
-                            total_size = downloaded_bytes
+                                downloaded_bytes = 0
+                                total_size = 0
+                                write_mode = "wb"
+                        else:
+                            if downloaded_bytes > 0:
+                                print("[termux-llamacpp] Server responded with 200 OK. Resetting part file to 0.")
+                            part_file.unlink(missing_ok=True)
+                            downloaded_bytes = 0
+                            total_size = int(resp.headers.get("content-length", 0))
                             write_mode = "wb"
-                    else:
-                        part_file.unlink(missing_ok=True)
-                        meta_file.unlink(missing_ok=True)
-                        downloaded_bytes = 0
-                        total_size = 0
-                        write_mode = "wb"
-                else:
-                    if downloaded_bytes > 0:
-                        print("[termux-llamacpp] Server responded with 200 OK. Resetting part file to 0.")
-                    part_file.unlink(missing_ok=True)
-                    downloaded_bytes = 0
-                    total_size = int(resp.headers.get("content-length", 0))
-                    write_mode = "wb"
 
-                if total_size > downloaded_bytes:
-                    check_disk_space(self.models_dir, total_size - downloaded_bytes)
+                        if total_size > downloaded_bytes:
+                            check_disk_space(self.models_dir, total_size - downloaded_bytes)
 
-                new_meta = {
-                    "url": download_url,
-                    "repo_id": repo_id,
-                    "revision": model_revision,
-                    "etag": current_etag or saved_etag,
-                    "expected_size": total_size,
-                    "downloaded": downloaded_bytes,
-                }
-                meta_file.write_text(json.dumps(new_meta, indent=2), encoding="utf-8")
+                        new_meta = {
+                            "url": download_url,
+                            "repo_id": repo_id,
+                            "revision": model_revision,
+                            "etag": current_etag or saved_etag,
+                            "expected_size": total_size,
+                            "downloaded": downloaded_bytes,
+                        }
+                        meta_file.write_text(json.dumps(new_meta, indent=2), encoding="utf-8")
 
-                if resp.status_code in (200, 206):
-                    with open(part_file, write_mode) as f, tqdm(
-                        desc=target_filename,
-                        initial=downloaded_bytes,
-                        total=total_size,
-                        unit="iB",
-                        unit_scale=True,
-                        unit_divisor=1024,
-                        ncols=80,
-                    ) as bar:
-                        for chunk in resp.iter_content(chunk_size=1024 * 1024):
-                            if chunk:
-                                f.write(chunk)
-                                bar.update(len(chunk))
+                        if resp.status_code in (200, 206):
+                            with open(part_file, write_mode) as f, tqdm(
+                                desc=target_filename,
+                                initial=downloaded_bytes,
+                                total=total_size,
+                                unit="iB",
+                                unit_scale=True,
+                                unit_divisor=1024,
+                                ncols=80,
+                            ) as bar:
+                                for chunk in resp.iter_content(chunk_size=1024 * 1024):
+                                    if chunk:
+                                        f.write(chunk)
+                                        bar.update(len(chunk))
+
+                    success = True
+                    break
+
+                except (requests.exceptions.RequestException, Exception) as stream_err:
+                    if isinstance(stream_err, TermuxLlamaError) and "HTTP 404" in str(stream_err):
+                        raise stream_err
+                    if attempt >= max_retries:
+                        raise TermuxLlamaError(
+                            f"Failed to download model '{target_filename}' after {max_retries} attempts: {stream_err}"
+                        ) from stream_err
+                    print(
+                        f"\n[termux-llamacpp] Download stream interrupted ({stream_err}). "
+                        f"Retrying ({attempt}/{max_retries}) in {retry_delay:.0f}s with Range resume..."
+                    )
+                    import time
+                    time.sleep(retry_delay)
+                    retry_delay = min(retry_delay * 1.5, 10.0)
+
+            if not success:
+                raise TermuxLlamaError(f"Failed to download model '{target_filename}'")
 
             final_path = atomic_write_and_verify(
                 temp_file=part_file,

@@ -1,6 +1,6 @@
-# Release Notes - termux-llamacpp v1.3.9
+# Release Notes - termux-llamacpp v1.3.10
 
-**Release Tag**: `v1.3.9`  
+**Release Tag**: `v1.3.10`  
 **Distribution Channels**: PyPI (`termux-llamacpp`), NPM (`termux-llamacpp`), GitHub Releases  
 **Target Platform**: Android Termux (ARM64 / aarch64 Bionic)  
 **License**: Apache-2.0  
@@ -9,32 +9,26 @@
 
 ## Highlights & Key Architectural Changes
 
-### 1. Gate 1 Safety Rule: Clean CPU Execution Environment
-- **Zero-Pollution CPU Execution**: Purged `LD_LIBRARY_PATH` injection when running under `device="cpu"` to adhere strictly to Gate 1 Safety Rules.
-- **Resolved Dual C++ Runtime Collisions**: Prevented Bionic dynamic linker conflicts (`CANNOT LINK EXECUTABLE` referencing `/system/lib64/libunwindstack.so` and `libGLESv3.so`), enabling pure ARM64 CPU NEON execution without linker errors across Android 14 and 15.
+### 1. Dynamic 5-Stage Network Resume & Exponential Backoff (`downloader.py`)
+- **Resilient Model Downloading**: Implemented dynamic retry mechanism (`max_retries=5`, exponential backoff) with HTTP Range 206 / 416 self-healing for interrupted GGUF downloads.
+- **Compression Encoding Safety**: Added transfer-encoding inspection (`identity` vs `gzip/deflate`) to reject corrupted partial resumes and ensure cryptographic bit-level integrity.
 
-### 2. Official Multimodal VLM Engine Integration
-- **Direct VLM Execution Pipeline**: Introduced `LlamaRuntime.generate_vlm()` and top-level `generate_vlm()` with structured `VLMResponse` dataclass.
-- **Strict Device Pass-through Governance**:
-  - `cpu`: Forces pure ARM64 CPU NEON execution with `-ngl 0` and zero GPU probing.
-  - `gpu` / `vulkan`: Strict validation against `ameva-runtime` HAL; halts immediately under Zero-Silent-Fallback policy if prerequisites are absent.
-  - `auto`: Dynamically selects Vulkan when `ameva-runtime` is present, or CPU NEON otherwise.
-- **Interference-Free Prompting**: Stripped conflicting `--chat-template` arguments to preserve GGUF model-native multimodal markers.
+### 2. Qualcomm Adreno Flash Attention Defense & CPU Isolation (`engine.py`)
+- **Adreno Compiler Assertion Defense**: Automatically injects `-fa 0` (Flash Attention disabled) during mobile GPU inference to prevent closed-source driver compiler assertion crashes.
+- **Buggy Vulkan Driver Isolation**: Sets `GGML_VK_VISIBLE_DEVICES = ""` under pure CPU mode (`device="cpu"`), preventing buggy vendor Vulkan driver crashes during CPU execution.
 
-### 2. Sibling Package Interoperability & Canonical Environment Export
-- **Public Environment Provider**: Exposed `LlamaRuntime.prepare_env(device)` publicly, enabling sibling frameworks (`termux-vision`, `ameva-runtime`) to inherit validated Android Bionic library search paths and Vulkan ICD configurations seamlessly.
-- **Legacy Flag Modernization**: Purged deprecated `--single-turn` CLI flag from `generate()` invocation pipeline to ensure 100% forward compatibility with modern upstream llama.cpp releases.
+### 3. Model-Aware Chat Template Auto-Resolution
+- **Zero-Friction Prompting**: Automatically formats chat templates for Qwen (`<|im_start|>`) and Llama-3 (`<|start_header_id|>`) models with deterministic stop token cleanup.
+
+### 4. Official ameva-runtime Adapter Integration
+- **Deep Bionic HAL Binding**: Integrated `LlamaCppAdapter.get_execution_environment()` for seamless Bionic HAL shim and dynamic library orchestration.
 
 ---
 
 ## Detailed Changelog
 
-### Added
-- `-c, --ctx, --ctx-size` argument to `termux-llama run` CLI subcommand.
-- `ctx_size: Optional[int] = 2048` parameter to `LlamaRuntime.generate()`.
-- Public `prepare_env(device)` method on `LlamaRuntime`.
-
-### Changed
-- Removed obsolete `--single-turn` flag from internal CLI execution in `engine.py`.
-- Package manifests synchronized across PyPI and npm to `1.3.6`.
-- `CHANGELOG.md` updated for `v1.3.6`.
+### Fixed & Hardened
+- `termux_llamacpp/downloader.py`: Added 5-stage exponential backoff retry and robust HTTP Range 206/416 handling.
+- `termux_llamacpp/engine.py`: Injected `-fa 0` guard, `GGML_VK_VISIBLE_DEVICES` isolation, and automatic Qwen/Llama3 chat template formatting.
+- `termux_llamacpp/cli.py`: Integrated ameva-runtime adapter environment.
+- Manifests synchronized across `pyproject.toml`, `package.json`, `termux_llamacpp/__init__.py`, and `doc.config.yaml` to `1.3.10`.

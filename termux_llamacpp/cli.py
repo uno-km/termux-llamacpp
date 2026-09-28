@@ -47,6 +47,7 @@ def cmd_download(args):
             filename=args.filename,
             revision=args.revision,
             sha256=args.sha256,
+            accept_license=getattr(args, "accept_license", False),
             force=args.force,
         )
         print(f"[termux-llama] Successfully downloaded to: {path}")
@@ -412,6 +413,7 @@ def main():
     p_download.add_argument("filename", nargs="?", default=None, help="GGUF filename (if not using alias)")
     p_download.add_argument("--revision", default="main", help="Hugging Face repo revision")
     p_download.add_argument("--sha256", default=None, help="Expected SHA-256 hash")
+    p_download.add_argument("--accept-license", action="store_true", help="Accept model community license (Gemma, LLaMA, etc.)")
     p_download.add_argument("--force", action="store_true", help="Force re-download")
 
     # serve

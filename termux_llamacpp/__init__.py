@@ -39,7 +39,7 @@ from termux_llamacpp.exceptions import (
 )
 
 
-__version__ = "1.3.9"
+__version__ = "1.3.10"
 __author__ = "uno-km"
 
 __all__ = [

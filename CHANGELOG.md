@@ -1,3 +1,17 @@
+## [1.3.10] - 2026-09-28
+
+### Added & Hardened
+- **Dynamic 5-Stage Network Resume & Exponential Backoff (`downloader.py`)**:
+  - Implemented dynamic retry mechanism (`max_retries=5`, exponential backoff) with HTTP Range 206 / 416 self-healing for interrupted model downloads.
+  - Added compression encoding detection (`identity` vs `gzip/deflate`) to reject corrupt range resumes.
+- **Adreno Vulkan Flash Attention Defense & CPU Isolation (`engine.py`)**:
+  - Injected `-fa 0` (Flash Attention disabled) by default during mobile GPU execution, mitigating Qualcomm Adreno compiler assertion crashes.
+  - Set `GGML_VK_VISIBLE_DEVICES = ""` under pure CPU mode (`device="cpu"`), preventing buggy vendor Vulkan driver crashes during CPU execution.
+- **Model-Aware Chat Template Auto-Resolution**:
+  - Added automatic chat template expansion for Qwen (`<|im_start|>`) and Llama-3 (`<|start_header_id|>`) models with deterministic stop token cleanup.
+- **Official ameva-runtime Adapter Integration**:
+  - Integrated `LlamaCppAdapter.get_execution_environment()` for seamless Bionic HAL shim and dynamic library orchestration.
+
 ## [1.3.9] - 2026-09-18
 
 ### Fixed

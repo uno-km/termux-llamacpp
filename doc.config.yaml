@@ -1,7 +1,7 @@
 name: Termux-LlamaCpp
 package_name_pypi: termux-llamacpp
 package_name_npm: termux-llamacpp
-version: v1.3.7
+version: "v1.3.10"
 release_name: Production Release
 license: Apache-2.0
 platform: Android ARM64 / Termux Bionic
@@ -157,10 +157,20 @@ advanced_parameters_body: "<h3>1. Device Backend & Acceleration Modes</h3>\n<tab
   \ big cores (Cortex-A78 / X-series)\ntermux-llama run -m models/Llama-3.2-1B.gguf\
   \ --threads 4</code></pre>"
 changelog:
+- version: "v1.3.10"
+  date: "2026-09-28"
+  title: "Dynamic Network Resume & Qualcomm Adreno Flash Attention Defense"
+  type: "Production Release (Latest)"
+  changes:
+  - "Dynamic 5-Stage Network Resume: Exponential backoff with HTTP Range 206/416 self-healing for interrupted GGUF downloads."
+  - "Adreno Flash Attention Defense: Injected -fa 0 by default to prevent Qualcomm driver assertion crashes during mobile GPU inference."
+  - "Pure CPU Device Isolation: Set GGML_VK_VISIBLE_DEVICES='' under device='cpu' to prevent buggy vendor Vulkan driver crashes."
+  - "Chat Template Auto-Resolution: Automatic chat template expansion for Qwen and Llama-3 models with stop token cleanup."
+  - "Official ameva-runtime Adapter Integration: Deep binding with LlamaCppAdapter for Bionic HAL orchestration."
 - version: v1.2.0
   date: '2026-09-01'
   title: Unified AMEVA Vulkan HAL & Galaxy A35 Validation
-  type: Production Release (Latest)
+  type: Stable Release
   changes:
   - 'Unified AMEVA Vulkan HAL Integration: Deep binding with ameva-vulkan-runtime
     v1.1.0 utilizing Android Bionic Vulkan ICD (/system/lib64/libvulkan.so).'
