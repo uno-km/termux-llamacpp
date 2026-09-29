@@ -243,12 +243,9 @@ class LlamaRuntime:
                     "  https://github.com/uno-km/termux-llamacpp\n"
                     "================================================================================\n"
                 )
-            # Fallback if ameva-runtime is not installed (e.g. baseline Termux)
-            prefix_lib = Path(os.environ.get("PREFIX", "/data/data/com.termux/files/usr")) / "lib"
-            if prefix_lib.is_dir():
-                curr_ld = env.get("LD_LIBRARY_PATH", "")
-                if str(prefix_lib) not in curr_ld:
-                    env["LD_LIBRARY_PATH"] = f"{prefix_lib}:{curr_ld}".rstrip(":")
+            # Note: Termux binaries already embed DT_RUNPATH. $PREFIX/lib is strictly NOT injected
+            # to prevent Android 15 Bionic linker symbol collisions (e.g. libunwindstack Xzs_Construct).
+            pass
         except Exception as e:
             if dev_mode in ("vulkan", "gpu"):
                 if isinstance(e, TermuxLlamaError):
