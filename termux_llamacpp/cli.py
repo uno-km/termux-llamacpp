@@ -28,11 +28,16 @@ from termux_llamacpp.exceptions import (
 
 
 def cmd_install(args):
-    """Execute pure CPU native runtime toolchain compilation and full package setup."""
-    print(f"[termux-llama] Installing pure CPU runtime with preset '{args.preset}' (Pinned Commit: {LLAMA_CPP_PINNED_COMMIT})...")
+    """Execute native runtime toolchain setup and full prebuilt binary/library overwrite."""
+    print(f"[termux-llama] Installing native runtime with preset '{args.preset}' (Pinned Commit: {LLAMA_CPP_PINNED_COMMIT})...")
     try:
-        runtime = LlamaRuntime.install(preset=args.preset, force_rebuild=args.force)
-        print(f"[termux-llama] Pure CPU runtime installation completed.")
+        runtime = LlamaRuntime.install(
+            preset=args.preset,
+            force_rebuild=getattr(args, "from_source", False),
+            force_reinstall=True,
+            from_source=getattr(args, "from_source", False),
+        )
+        print(f"[termux-llama] Native runtime installation completed successfully.")
     except Exception as e:
         print(f"[Error] {e}", file=sys.stderr)
         sys.exit(1)
@@ -402,10 +407,11 @@ def main():
     parser.add_argument("-d", "--daemon", action="store_true", help="Run in background daemon mode")
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
 
-    # install (Pure CPU)
-    p_install = subparsers.add_parser("install", help="Build/install pinned-commit pure CPU llama.cpp runtime")
+    # install (Native Runtime & Prebuilt Binaries)
+    p_install = subparsers.add_parser("install", help="Install/reinstall pinned-commit ARM64 llama.cpp native runtime")
     p_install.add_argument("--preset", default="android-arm64-baseline", choices=list(BUILD_PRESETS.keys()), help="Target CPU hardware preset")
-    p_install.add_argument("--force", action="store_true", help="Force rebuild binaries")
+    p_install.add_argument("--force", "-f", action="store_true", help="Force reinstall and overwrite existing binaries")
+    p_install.add_argument("--from-source", action="store_true", help="Force local native CPU compilation from source")
 
     # download
     p_download = subparsers.add_parser("download", help="Download GGUF model with resume & SHA-256")

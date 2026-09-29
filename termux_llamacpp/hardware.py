@@ -289,44 +289,67 @@ def _resolve_ameva_runtime() -> Optional[Any]:
         return None
 
 
+def detect_vulkan_int_dot() -> Optional[int]:
+    """Detect hardware integer dot product support (VK_KHR_shader_integer_dot_product).
+
+    Returns:
+        1 if hardware integer dot product is supported (e.g. Exynos 1380, Snapdragon 8 Elite).
+        0 if hardware integer dot product is absent (e.g. Exynos 1280, Snapdragon 865).
+        None if undetectable.
+    """
+    cache_file = Path.home() / ".cache" / "termux-llamacpp" / "vulkan_features.json"
+    if cache_file.exists():
+        try:
+            import json
+            data = json.loads(cache_file.read_text(encoding="utf-8"))
+            if "int_dot" in data:
+                return data["int_dot"]
+        except Exception:
+            pass
+
+    # Known SoC identification via /proc/cpuinfo
+    try:
+        if os.path.exists("/proc/cpuinfo"):
+            with open("/proc/cpuinfo", "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read().lower()
+                if "s5e8825" in content or "exynos 1280" in content:
+                    return 0
+                if "s5e8835" in content or "exynos 1380" in content:
+                    return 1
+    except Exception:
+        pass
+
+    return None
+
+
 def resolve_device_backend(requested_device: str, requested_ngl: Optional[int] = None) -> tuple[str, int]:
     """Resolve the user's device= argument to an actual backend and ngl count.
 
-    Adheres strictly to the AMEVA Decoupled Gateway Protocol:
+    Adheres strictly to the User & AMEVA Decoupled Gateway Protocol:
     1. 'cpu': Always routes to pure CPU NEON without external dependency (ngl=0).
-    2. 'auto': If ameva-runtime is absent, safely defaults to CPU NEON with explicit INFO log.
-               If ameva-runtime is present, queries SmartRouter for optimal device routing.
-               User requested_ngl is strictly enforced if provided.
-    3. 'vulkan' / 'gpu': Requires ameva-runtime. Emits Fail-Fast error [AMEVA-LLAMA-E001] if absent.
+              STRICT RULE: If user explicitly requested CPU, NEVER route to GPU!
+    2. 'gpu' / 'vulkan': Explicitly forces GPU offloading. Requires ameva-runtime/Vulkan driver.
+              Fail-Fast error if GPU unavailable. Never silently fall back to CPU.
+    3. 'opencl': Explicitly forces OpenCL execution.
+    4. 'auto': Evaluates hardware intelligence:
+              - Priority 1: Check Vulkan GPU availability.
+              - If ameva-runtime is available, queries SmartRouter.
+              - If int_dot == 0 on Mali (e.g. A53), auto-routes to pure CPU ('cpu', 0)
+                to prevent Turkish token attractor degeneration and numerical drift.
+              - If GPU is unavailable, auto-routes to pure CPU ('cpu', 0).
     """
     import sys
     from termux_llamacpp.exceptions import TermuxLlamaError
 
     req = str(requested_device or "auto").lower().strip()
     ameva_mod = _resolve_ameva_runtime()
-    # If user explicitly specified requested_ngl, enforce it unconditionally; otherwise default upstream full offload (999)
     ngl_target = requested_ngl if requested_ngl is not None else 999
 
+    # [규칙 1] 사용자가 명시적으로 cpu를 요청한 경우: 100% 순수 CPU NEON 강제 (GPU 진입 절대 차단)
     if req == "cpu":
         return "cpu", 0
 
-    if req == "auto":
-        if ameva_mod is None:
-            sys.stdout.write("[INFO] ameva-runtime is not installed. Defaulting to ARM64 NEON CPU backend.\n")
-            sys.stdout.flush()
-            return "cpu", 0
-
-        # ameva_runtime is available: evaluate via SmartRouter / Doctor
-        try:
-            from ameva_runtime.router import SmartRouter
-            plan = SmartRouter().route_for_llm(requested_backend=None, requested_ngl=requested_ngl)
-            logger.info("Auto-detected optimal backend via ameva-runtime: %s", plan.backend)
-            effective_ngl = requested_ngl if requested_ngl is not None else plan.ngl
-            return plan.backend, effective_ngl
-        except Exception as e:
-            # 침묵 폴백 금지: 명확한 에러 코드 분출
-            raise RuntimeError(f"[ERROR: AMEVA-LLAMA-E002] Hardware evaluation failed: {e}") from e
-
+    # [규칙 2] 사용자가 명시적으로 gpu/vulkan을 요청한 경우: 100% GPU 강제 (침묵 폴백 금지, 미지원 시 Fail-Fast)
     if req in ("vulkan", "gpu"):
         if ameva_mod is None:
             raise TermuxLlamaError(
@@ -372,7 +395,6 @@ def resolve_device_backend(requested_device: str, requested_ngl: Optional[int] =
             if is_vk:
                 return "vulkan", ngl_target
         except Exception as ctx_err:
-            # Transparently expose exact error from ameva-runtime without swallowing or masking
             raise TermuxLlamaError(
                 f"[ERROR: AMEVA-LLAMA-E002] Vulkan GPU acceleration failed in ameva-runtime:\n{type(ctx_err).__name__}: {ctx_err}\n"
                 f"Execution halted strictly under Zero-Silent-Fallback policy."
@@ -384,6 +406,7 @@ def resolve_device_backend(requested_device: str, requested_ngl: Optional[int] =
             "Execution halted strictly without silent fallback to prevent unexpected CPU execution."
         )
 
+    # [규칙 3] 사용자가 명시적으로 opencl을 요청한 경우: 100% OpenCL 강제
     if req == "opencl":
         try:
             from ameva_runtime.adapters.llamacpp import LlamaCppAdapter
@@ -394,6 +417,33 @@ def resolve_device_backend(requested_device: str, requested_ngl: Optional[int] =
         except Exception:
             pass
         return "opencl", ngl_target
+
+    # [규칙 4] 사용자가 옵션을 주지 않았거나 'auto'인 경우:
+    # 1순위: GPU 우선 검사 -> int_dot 감지 -> int_dot 지원 시 GPU, 미지원 시 CPU 안전 실행
+    if req == "auto":
+        if ameva_mod is not None:
+            try:
+                from ameva_runtime.router import SmartRouter
+                plan = SmartRouter().route_for_llm(requested_backend=None, requested_ngl=requested_ngl)
+                mapped_backend = "cpu" if plan.backend in ("cpu", "cpu_neon") else plan.backend
+                effective_ngl = requested_ngl if requested_ngl is not None else plan.ngl
+                logger.info("Auto-detected optimal backend via ameva-runtime: %s (ngl=%s)", mapped_backend, effective_ngl)
+                return mapped_backend, effective_ngl
+            except Exception as e:
+                logger.debug("[termux-llamacpp] SmartRouter evaluation fallback: %s", e)
+
+        int_dot = detect_vulkan_int_dot()
+        has_vulkan = os.path.exists("/system/lib64/libvulkan.so") or os.path.exists("/vendor/lib64/libvulkan.so")
+        if has_vulkan:
+            if int_dot == 0:
+                sys.stdout.write("[INFO] GPU lacks hardware integer dot product (int dot: 0). Auto-routing to ARM64 NEON CPU.\n")
+                sys.stdout.flush()
+                return "cpu", 0
+            return "vulkan", ngl_target
+
+        sys.stdout.write("[INFO] No compatible Vulkan GPU detected. Defaulting to ARM64 NEON CPU.\n")
+        sys.stdout.flush()
+        return "cpu", 0
 
     raise ValueError(f"Unsupported device '{requested_device}'. Must be one of ['auto', 'gpu', 'vulkan', 'opencl', 'cpu'].")
 
@@ -459,5 +509,39 @@ def get_optimal_threads() -> int:
     return detect_hardware().recommended_threads
 
 
+def is_adreno_vulkan() -> bool:
+    """Check if the active Vulkan hardware device is Qualcomm Adreno.
+
+    Qualcomm Adreno 600 series GPUs require -fa 0 to prevent driver shader compilation timeouts.
+    Conversely, ARM Mali GPUs (e.g. Mali-G68 on Exynos 1280) require Flash Attention enabled;
+    forcing -fa 0 disables fused attention, leading to descriptor set pool exhaustion on
+    silicons lacking hardware integer dot products.
+    """
+    try:
+        from ameva_runtime import vulkan as avr
+        if hasattr(avr, "get_or_create_context"):
+            ctx = avr.get_or_create_context("vulkan")
+        elif hasattr(avr, "create_context"):
+            ctx = avr.create_context("vulkan")
+        else:
+            ctx = avr.VulkanContext("vulkan")
+        dev_name = str(getattr(ctx, "device_name", "")).lower()
+        vendor_id = getattr(ctx, "vendor_id", 0)
+        return vendor_id == 0x5143 or "adreno" in dev_name
+    except Exception:
+        pass
+
+    try:
+        if os.path.exists("/proc/cpuinfo"):
+            with open("/proc/cpuinfo", "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read().lower()
+                if "qualcomm" in content or "qcom" in content or "sm8" in content or "sm7" in content or "sdm" in content:
+                    return True
+    except Exception:
+        pass
+    return False
+
+
 def bind_hardware(engine: Any = None, requested_device: str = "auto", **kwargs) -> Optional[Any]:
     return bind_llamacpp_hardware(engine, requested_device, **kwargs)
+

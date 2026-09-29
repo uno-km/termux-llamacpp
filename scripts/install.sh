@@ -224,10 +224,15 @@ printf '  [termux-llamacpp] Synchronizing Python & Node.js ecosystem packages...
 if command -v python3 >/dev/null 2>&1 || command -v python >/dev/null 2>&1; then
     PY_CMD="python3"
     command -v python3 >/dev/null 2>&1 || PY_CMD="python"
-    printf '  [Python] Detected Python environment. Provisioning termux-llamacpp via pip...\n'
-    $PY_CMD -m pip install termux-llamacpp --no-cache-dir >/dev/null 2>&1 || {
-        $PY_CMD -m pip install termux-llamacpp >/dev/null 2>&1 || printf '  [Python] Notice: pip install skipped (managed environment or offline).\n'
-    }
+    INSTALLED_VER="$($PY_CMD -c 'import termux_llamacpp; print(termux_llamacpp.__version__)' 2>/dev/null || true)"
+    if [ -n "$INSTALLED_VER" ]; then
+        printf '  [Python] Verified existing termux-llamacpp v%s. Preserving local package.\n' "$INSTALLED_VER"
+    else
+        printf '  [Python] Detected Python environment. Provisioning termux-llamacpp via pip...\n'
+        $PY_CMD -m pip install termux-llamacpp --no-cache-dir >/dev/null 2>&1 || {
+            $PY_CMD -m pip install termux-llamacpp >/dev/null 2>&1 || printf '  [Python] Notice: pip install skipped (managed environment or offline).\n'
+        }
+    fi
 fi
 
 # 2. Node.js npm Package Auto-Install

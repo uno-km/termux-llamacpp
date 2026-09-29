@@ -33,7 +33,7 @@ from termux_llamacpp.config import (
 )
 from termux_llamacpp.downloader import ModelManager
 from termux_llamacpp.crawler import HuggingFaceCrawler
-from termux_llamacpp.hardware import detect_hardware, HardwareProfile, resolve_device_backend
+from termux_llamacpp.hardware import detect_hardware, HardwareProfile, resolve_device_backend, is_adreno_vulkan
 from termux_llamacpp.exceptions import (
     RuntimeBuildError,
     TermuxLlamaError,
@@ -73,20 +73,15 @@ class LlamaRuntime:
         cls,
         preset: str = "android-arm64-baseline",
         force_rebuild: bool = False,
+        force_reinstall: bool = True,
+        from_source: bool = False,
         bin_dir: Optional[Union[str, Path]] = None,
         models_dir: Optional[Union[str, Path]] = None,
     ) -> "LlamaRuntime":
         """
-        Verify native toolchain and compile/install pinned-commit ARM64 llama.cpp binaries.
-
-        Args:
-            preset: Hardware build preset ('android-arm64-baseline', 'android-arm64-dotprod', 'android-arm64-native').
-            force_rebuild: Recompile binaries even if cached binaries exist.
-            bin_dir: Target binary destination directory.
-            models_dir: Target models directory.
-
-        Returns:
-            LlamaRuntime: Initialized runtime ready for model execution.
+        Install or reinstall pinned-commit ARM64 llama.cpp binaries and runtime toolchain.
+        When invoked via install command, force_reinstall=True guarantees prebuilt binaries
+        are downloaded and swapped cleanly without premature skip-if-exists checks.
         """
         ensure_system_dependencies()
         config = RuntimeConfig(
@@ -95,19 +90,20 @@ class LlamaRuntime:
             models_dir=Path(models_dir) if models_dir else DEFAULT_MODELS_DIR,
         )
         runtime = cls(config)
-        runtime._ensure_binaries(force_rebuild=force_rebuild)
+        runtime._ensure_binaries(force_rebuild=force_rebuild or from_source, force_reinstall=force_reinstall)
         return runtime
 
-    def _ensure_binaries(self, force_rebuild: bool = False):
+    def _ensure_binaries(self, force_rebuild: bool = False, force_reinstall: bool = False):
         """Check for llama-server and llama-cli binaries with pinned commit verification."""
         server_bin = self.get_binary_path("llama-server")
         cli_bin = self.get_binary_path("llama-cli")
 
-        if server_bin and cli_bin and not force_rebuild:
+        if server_bin and cli_bin and not force_rebuild and not force_reinstall:
             return
 
+        mode_desc = "Building from source" if force_rebuild else "Installing prebuilt native binaries"
         print("================================================================================")
-        print(f"  [termux-llamacpp] Compiling Native llama.cpp (Commit: {self.config.pinned_commit})")
+        print(f"  [termux-llamacpp] {mode_desc} (Commit: {self.config.pinned_commit})")
         print(f"  Preset: {self.config.preset}")
         print("================================================================================")
 
@@ -115,8 +111,6 @@ class LlamaRuntime:
         script_path = Path(__file__).parent / "scripts" / "install.sh"
         if not script_path.is_file():
             script_path = Path(__file__).parent.parent / "scripts" / "install.sh"
-
-
 
         if script_path.is_file() and (self.hw.is_termux or self.hw.is_android or self.hw.is_arm64):
             env = os.environ.copy()
@@ -394,10 +388,14 @@ class LlamaRuntime:
                 "--simple-io",
                 "--no-display-prompt",
                 "--single-turn",
-                "-fa", "0",
             ]
             for rp in reverse_prompts:
                 cmd.extend(["-r", rp])
+
+            # Adreno FA0 defense: Only apply -fa 0 to Qualcomm Adreno GPUs to prevent shader timeouts.
+            # ARM Mali GPUs (e.g. Mali-G68) require Flash Attention to avoid Vulkan descriptor pool exhaustion.
+            if target_device != "cpu" and is_adreno_vulkan():
+                cmd.extend(["-fa", "0"])
 
             if ctx_size is not None and ctx_size > 0:
                 cmd.extend(["-c", str(ctx_size)])
