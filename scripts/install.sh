@@ -118,8 +118,7 @@ if [ "$FROM_SOURCE" = "1" ]; then
 EOF
     done
 
-    # Create standard dual symlinks in $PREFIX/bin
-    ln -sf "$PREFIX/bin/llama-cli" "$PREFIX/bin/termux-llama"
+    # Create standard native aliases in $PREFIX/bin (isolated from Python CLI)
     ln -sf "$PREFIX/bin/llama-cli" "$PREFIX/bin/termux-llama-cli"
     ln -sf "$PREFIX/bin/llama-server" "$PREFIX/bin/termux-llama-server"
 
@@ -201,8 +200,7 @@ if [ "$FROM_SOURCE" != "1" ]; then
         find "$STAGING" -type f -name "*.so*" -exec cp -f {} "$PREFIX/lib/" \;
         chmod 0755 "$PREFIX/lib/"*.so* 2>/dev/null || true
 
-        # Create standard dual symlinks in $PREFIX/bin
-        ln -sf "$PREFIX/bin/llama-cli" "$PREFIX/bin/termux-llama"
+        # Create standard native aliases in $PREFIX/bin (isolated from Python CLI)
         ln -sf "$PREFIX/bin/llama-cli" "$PREFIX/bin/termux-llama-cli"
         ln -sf "$PREFIX/bin/llama-server" "$PREFIX/bin/termux-llama-server"
 
