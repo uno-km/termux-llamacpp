@@ -1,3 +1,10 @@
+## [1.3.12] - 2026-09-29
+
+### Fixed & Hardened
+- **Dynamic Linker Bionic Isolation**: Purged regressive `$PREFIX/lib` injection from `LlamaCppAdapter` fallback environment, ensuring clean Bionic namespace isolation on Android 15/16 and preventing `libunwindstack.so` symbol collisions.
+- **ChatML Auto-Templating & Token Attractor Mitigation**: Fixed repetition degeneration loops in Qwen and Llama-3 series by standardizing `<|im_start|>` prompt encapsulation and automatic `-r "<|im_end|>"` reverse stop token injection.
+- **Cross-SoC Mobile Inference Stability**: Retained verified `-fa 0` defense on Qualcomm Adreno 600 while maintaining high-performance Flash Attention on Adreno 830 (Snapdragon 8 Elite) and ARM Mali GPUs.
+
 ## [1.3.11] - 2026-09-28
 
 ### Added & Hardened

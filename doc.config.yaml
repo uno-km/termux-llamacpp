@@ -1,7 +1,7 @@
 name: Termux-LlamaCpp
 package_name_pypi: termux-llamacpp
 package_name_npm: termux-llamacpp
-version: "v1.3.11"
+version: "v1.3.12"
 release_name: Production Release
 license: Apache-2.0
 platform: Android ARM64 / Termux Bionic
@@ -118,30 +118,7 @@ api_body: "<h3>Core Engine & Runtime API</h3>\n<table class=\"data-table\">\n  <
   \ proxy daemon.</td>\n    </tr>\n    <tr>\n      <td><code>ModelManager.download</code></td>\n\
   \      <td><code>model_id: str, destination: Path</code></td>\n      <td>Downloads\
   \ curated GGUF models with SHA-256 verification.</td>\n    </tr>\n  </tbody>\n</table>"
-benchmarks_body: "<h3>1. Real-Device Samsung Galaxy A35 (Exynos 1380 / Mali-G68 GPU)</h3>\n\
-  <p>Measured on Samsung Galaxy A35 5G running Android 14 Termux:</p>\n<table class=\"\
-  data-table\">\n  <thead>\n    <tr><th>Interface Mode</th><th>Model</th><th>Prompt\
-  \ Speed</th><th>Generation Speed</th><th>Status</th></tr>\n  </thead>\n  <tbody>\n\
-  \    <tr>\n      <td><strong>CLI Mode</strong> (<code>termux-llama run</code>)</td>\n\
-  \      <td>Qwen 2.5 0.5B Instruct</td>\n      <td><strong>9.4 tokens/sec</strong></td>\n\
-  \      <td><strong>5.0 tokens/sec</strong></td>\n      <td><span class=\"status-badge\
-  \ active\">PASS</span></td>\n    </tr>\n    <tr>\n      <td><strong>Python SDK</strong>\
-  \ (<code>LlamaRuntime.generate</code>)</td>\n      <td>Qwen 2.5 0.5B Instruct</td>\n\
-  \      <td><strong>13.9 tokens/sec</strong></td>\n      <td><strong>8.5 tokens/sec</strong></td>\n\
-  \      <td><span class=\"status-badge active\">PASS</span></td>\n    </tr>\n   \
-  \ <tr>\n      <td><strong>Node.js ESM</strong> (<code>termux-llama</code> Bridge)</td>\n\
-  \      <td>Qwen 2.5 0.5B Instruct</td>\n      <td><strong>12.5 tokens/sec</strong></td>\n\
-  \      <td><strong>6.4 tokens/sec</strong></td>\n      <td><span class=\"status-badge\
-  \ active\">PASS</span></td>\n    </tr>\n  </tbody>\n</table>\n\n<h3>2. Samsung Galaxy\
-  \ S20+ (Snapdragon 865 / Adreno 650)</h3>\n<table class=\"data-table\">\n  <thead>\n\
-  \    <tr><th>Model</th><th>Quantization</th><th>Cold Warmup</th><th>Prompt Speed</th><th>Generation\
-  \ Speed</th></tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td><strong>Llama 3.2\
-  \ 1B Instruct</strong></td>\n      <td><code>Q4_K_M</code> (800 MB)</td>\n     \
-  \ <td>1.8s</td>\n      <td><strong>18.2 tokens/sec</strong></td>\n      <td><strong>16.5\
-  \ tokens/sec</strong></td>\n    </tr>\n    <tr>\n      <td><strong>Llama 3.2 3B\
-  \ Instruct</strong></td>\n      <td><code>Q4_K_M</code> (1.92 GB)</td>\n      <td>2.3s</td>\n\
-  \      <td><strong>16.2 tokens/sec</strong></td>\n      <td><strong>10.2 tokens/sec</strong></td>\n\
-  \    </tr>\n  </tbody>\n</table>"
+benchmarks_body: "<h3>1. Flagship Real-Device Samsung Galaxy S25 (Snapdragon 8 Elite / Adreno 830)</h3>\n<p>Empirical on-device inference measured on Samsung Galaxy S25 under Android 15 Termux (Qwen2.5-0.5B-Instruct GGUF Q4_K_M):</p>\n<table class=\"data-table\">\n  <thead>\n    <tr><th>Hardware Mode</th><th>CLI Configuration</th><th>Prompt Speed</th><th>Generation Speed</th><th>VRAM / Memory</th><th>Status</th></tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td><strong>Vulkan GPU Full Offload</strong></td>\n      <td><code>--device vulkan -ngl 32 -fa 0</code></td>\n      <td><strong>30.9 tokens/sec</strong></td>\n      <td><strong>27.1 tokens/sec</strong></td>\n      <td>1,721 MiB</td>\n      <td><span class=\"status-badge active\">PASS (Optimal)</span></td>\n    </tr>\n    <tr>\n      <td><strong>Pure CPU NEON</strong></td>\n      <td><code>--device cpu -t 4</code></td>\n      <td><strong>19.8 tokens/sec</strong></td>\n      <td><strong>21.2 tokens/sec</strong></td>\n      <td>620 MiB</td>\n      <td><span class=\"status-badge active\">PASS</span></td>\n    </tr>\n  </tbody>\n</table>\n\n<h3>2. Samsung Galaxy S21 (Exynos 2100 / ARM Cortex-X1 & A78)</h3>\n<table class=\"data-table\">\n  <thead>\n    <tr><th>Hardware Mode</th><th>Execution Path</th><th>Prompt Speed</th><th>Generation Speed</th><th>Status</th></tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td><strong>Pure CPU NEON Big-Core</strong></td>\n      <td><code>--device cpu -t 4</code></td>\n      <td><strong>72.0 tokens/sec</strong></td>\n      <td><strong>28.5 tokens/sec</strong></td>\n      <td><span class=\"status-badge active\">PASS (Fleet Record)</span></td>\n    </tr>\n  </tbody>\n</table>\n\n<h3>3. Samsung Galaxy A35 (Exynos 1380 / Mali-G68 GPU)</h3>\n<table class=\"data-table\">\n  <thead>\n    <tr><th>Interface Mode</th><th>Model</th><th>Prompt Speed</th><th>Generation Speed</th><th>Status</th></tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td><strong>CLI Mode</strong> (<code>termux-llama run</code>)</td>\n      <td>Qwen 2.5 0.5B Instruct</td>\n      <td><strong>13.0 tokens/sec</strong></td>\n      <td><strong>3.9 tokens/sec</strong></td>\n      <td><span class=\"status-badge active\">PASS (Medium MatMul)</span></td>\n    </tr>\n    <tr>\n      <td><strong>Python SDK</strong> (<code>LlamaRuntime.generate</code>)</td>\n      <td>Qwen 2.5 0.5B Instruct</td>\n      <td><strong>13.9 tokens/sec</strong></td>\n      <td><strong>8.5 tokens/sec</strong></td>\n      <td><span class=\"status-badge active\">PASS</span></td>\n    </tr>\n  </tbody>\n</table>\n\n<h3>4. Samsung Galaxy S20+ (Snapdragon 865 / Adreno 650)</h3>\n<table class=\"data-table\">\n  <thead>\n    <tr><th>Model</th><th>Quantization</th><th>Cold Warmup</th><th>Prompt Speed</th><th>Generation Speed</th></tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td><strong>Llama 3.2 1B Instruct</strong></td>\n      <td><code>Q4_K_M</code> (800 MB)</td>\n      <td>1.8s</td>\n      <td><strong>18.2 tokens/sec</strong></td>\n      <td><strong>16.5 tokens/sec</strong></td>\n    </tr>\n    <tr>\n      <td><strong>Llama 3.2 3B Instruct</strong></td>\n      <td><code>Q4_K_M</code> (1.92 GB)</td>\n      <td>2.3s</td>\n      <td><strong>16.2 tokens/sec</strong></td>\n      <td><strong>10.2 tokens/sec</strong></td>\n    </tr>\n  </tbody>\n</table>"
 advanced_parameters_body: "<h3>1. Device Backend & Acceleration Modes</h3>\n<table\
   \ class=\"data-table\">\n  <thead>\n    <tr><th>CLI Flag</th><th>SDK Parameter</th><th>Default</th><th>Behavior</th></tr>\n\
   \  </thead>\n  <tbody>\n    <tr>\n      <td><code>--device vulkan</code></td>\n\
@@ -157,6 +134,14 @@ advanced_parameters_body: "<h3>1. Device Backend & Acceleration Modes</h3>\n<tab
   \ big cores (Cortex-A78 / X-series)\ntermux-llama run -m models/Llama-3.2-1B.gguf\
   \ --threads 4</code></pre>"
 changelog:
+- version: "v1.3.12"
+  date: "2026-09-29"
+  title: "Dynamic Linker Bionic Isolation & ChatML Repetition Mitigation"
+  type: "Production Release (Latest)"
+  changes:
+  - "Dynamic Linker Bionic Isolation: Purged regressive $PREFIX/lib injection from fallback runtime environment, guaranteeing Android 15/16 Bionic namespace isolation and zero libunwindstack symbol collisions."
+  - "ChatML Auto-Templating: Standardized <|im_start|> prompt encapsulation and automatic -r '<|im_end|>' reverse stop token injection, eliminating repetition loops on Qwen and Llama-3."
+  - "Cross-SoC Mobile Inference Stability: Retained verified -fa 0 defense on Adreno 600 while maintaining Flash Attention on Adreno 830 and ARM Mali GPUs."
 - version: "v1.3.10"
   date: "2026-09-28"
   title: "Dynamic Network Resume & Qualcomm Adreno Flash Attention Defense"

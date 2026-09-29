@@ -204,6 +204,17 @@ class LlamaRuntime:
             env["GGML_VK_VISIBLE_DEVICES"] = ""
             return env
 
+        if dev_mode == "opencl":
+            try:
+                from ameva_runtime.adapters import LlamaCppAdapter
+                env = LlamaCppAdapter.get_execution_environment(base_env=env, requested_backend="opencl")
+            except ImportError:
+                sys_cl_dir = "/system/system_ext/lib64"
+                ld = env.get("LD_LIBRARY_PATH", "")
+                if sys_cl_dir not in ld:
+                    env["LD_LIBRARY_PATH"] = f"{ld}:{sys_cl_dir}".strip(":")
+            return env
+
         try:
             # 1. Official ameva-runtime Adapter Integration
             from ameva_runtime.adapters import LlamaCppAdapter
@@ -328,12 +339,16 @@ class LlamaRuntime:
             prompt = model
             model = None
 
-        resolved_model_path = self.models.get(model)
+        backend, target_ngl = resolve_device_backend(device, n_gpu_layers)
+        resolved_model_path = self.models.resolve_model_path(model)
 
-        cli_bin = self.get_binary_path("llama-cli")
+        cli_bin_name = "llama-cli-opencl" if backend == "opencl" else "llama-cli"
+        cli_bin = self.get_binary_path(cli_bin_name)
+        if not cli_bin and backend == "opencl":
+            cli_bin = self.get_binary_path("llama-cli")
         if not cli_bin:
             raise RuntimeBuildError(
-                f"Binary 'llama-cli' not found in '{self.bin_dir}' or PATH.\n"
+                f"Binary '{cli_bin_name}' not found in '{self.bin_dir}' or PATH.\n"
                 f"Please install or compile the runtime first by running:\n"
                 f"  termux-llama install\n"
                 f"Or in Python:\n"
@@ -406,10 +421,21 @@ class LlamaRuntime:
                 stdin=subprocess.DEVNULL,
             )
 
-        backend, target_ngl = resolve_device_backend(device, n_gpu_layers)
+        # 1. OpenCL GPU Route (Strict Zero-Silent-Fallback)
+        if backend == "opencl":
+            res = _run_cmd("opencl", target_ngl)
+            err_lower = (res.stderr or "").lower()
+            if "cl_platform_not_found" in err_lower or "failed to initialize opencl" in err_lower or res.returncode != 0:
+                raise TermuxLlamaError(
+                    f"[ERROR: AMEVA-LLAMA-E004] OpenCL GPU execution failed or OpenCL device unavailable.\n"
+                    f"Automatic CPU fallback is strictly disabled under Zero-Silent-Fallback policy.\n"
+                    f"Remediation: To execute inference on pure CPU NEON, re-run with '--device cpu' (CLI) or device='cpu' (SDK).\n"
+                    f"Details:\n{res.stderr.strip() or res.stdout.strip()}"
+                )
+            return _clean_output(res.stdout.strip())
 
-        # 1. Vulkan GPU Route (Strict Zero-Silent-Fallback)
-        if backend == "vulkan":
+        # 2. Vulkan GPU Route (Strict Zero-Silent-Fallback)
+        elif backend == "vulkan":
             res = _run_cmd("vulkan", target_ngl)
             err_lower = (res.stderr or "").lower()
             if "no usable gpu found" in err_lower or "no devices found" in err_lower or res.returncode != 0:
@@ -421,7 +447,7 @@ class LlamaRuntime:
                 )
             return _clean_output(res.stdout.strip())
 
-        # 2. CPU NEON Route
+        # 3. CPU NEON Route
         else:
             cpu_res = _run_cmd("cpu", 0)
             if cpu_res.returncode != 0:
@@ -476,14 +502,17 @@ class LlamaRuntime:
         if not Path(resolved_image).exists():
             raise FileNotFoundError(f"VLM input image not found: {resolved_image}")
 
-        cli_bin = self.get_binary_path("llama-cli")
+        backend, target_ngl = resolve_device_backend(device, n_gpu_layers)
+        cli_bin_name = "llama-cli-opencl" if backend == "opencl" else "llama-cli"
+        cli_bin = self.get_binary_path(cli_bin_name)
+        if not cli_bin and backend == "opencl":
+            cli_bin = self.get_binary_path("llama-cli")
         if not cli_bin:
             raise RuntimeBuildError(
-                f"Binary 'llama-cli' not found in '{self.bin_dir}' or PATH.\n"
+                f"Binary '{cli_bin_name}' not found in '{self.bin_dir}' or PATH.\n"
                 f"Please compile the runtime via: termux-llama install"
             )
 
-        backend, target_ngl = resolve_device_backend(device, n_gpu_layers)
         t_count = str(threads or self.hw.recommended_threads)
 
         cmd = [

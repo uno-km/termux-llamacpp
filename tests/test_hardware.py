@@ -90,6 +90,19 @@ class TestHardwareDetection(unittest.TestCase):
         self.assertIsInstance(dirs, list)
         self.assertGreater(len(dirs), 0)
 
+    def test_resolve_device_backend_opencl(self):
+        from termux_llamacpp.hardware import resolve_device_backend
+        backend, ngl = resolve_device_backend("opencl", requested_ngl=32)
+        self.assertEqual(backend, "opencl")
+        self.assertEqual(ngl, 32)
+
+    def test_resolve_device_backend_cpu_neon_rejected(self):
+        from termux_llamacpp.hardware import resolve_device_backend
+        with self.assertRaises(ValueError) as ctx:
+            resolve_device_backend("cpu_neon")
+        self.assertIn("Unsupported device 'cpu_neon'", str(ctx.exception))
+        self.assertIn("['auto', 'gpu', 'vulkan', 'opencl', 'cpu']", str(ctx.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

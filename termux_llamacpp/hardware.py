@@ -384,7 +384,18 @@ def resolve_device_backend(requested_device: str, requested_ngl: Optional[int] =
             "Execution halted strictly without silent fallback to prevent unexpected CPU execution."
         )
 
-    raise ValueError(f"Unsupported device '{requested_device}'. Must be one of ['auto', 'gpu', 'vulkan', 'cpu'].")
+    if req == "opencl":
+        try:
+            from ameva_runtime.adapters.llamacpp import LlamaCppAdapter
+            binding = LlamaCppAdapter.bind(requested_backend="opencl", requested_ngl=ngl_target)
+            if binding and binding.backend == "opencl":
+                effective_ngl = binding.config.get("ngl", ngl_target) if hasattr(binding, "config") else ngl_target
+                return "opencl", effective_ngl
+        except Exception:
+            pass
+        return "opencl", ngl_target
+
+    raise ValueError(f"Unsupported device '{requested_device}'. Must be one of ['auto', 'gpu', 'vulkan', 'opencl', 'cpu'].")
 
 
 def bind_llamacpp_hardware(engine: Any = None, requested_device: str = "auto", requested_ngl: Optional[int] = None) -> Optional[Any]:
