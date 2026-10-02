@@ -28,16 +28,27 @@ fail() {
     exit 1
 }
 
+FORCE=0
+DEDICATE=0
+
 for arg in "$@"; do
     case "$arg" in
         --from-source|--build-from-source)
             FROM_SOURCE=1
             ;;
+        --force|-f)
+            FORCE=1
+            ;;
+        --dedicate)
+            DEDICATE=1
+            ;;
         --help|-h)
-            echo "Usage: install.sh [--from-source] [--help]"
+            echo "Usage: install.sh [--force] [--dedicate] [--from-source] [--help]"
             echo ""
             echo "Options:"
-            echo "  (Default)       Download and verify prebuilt Android ARM64 CPU release binaries (Zero-Compilation, <3s)"
+            echo "  (Default)       Skip if verified native binary exists; otherwise download release"
+            echo "  --force, -f     Force clean re-download and re-installation"
+            echo "  --dedicate      Smart triage: preserve AMEVA runtime symlink, auto-upgrade legacy"
             echo "  --from-source   Force local native CPU compilation via Clang/CMake/Ninja"
             exit 0
             ;;
@@ -129,6 +140,22 @@ fi
 # Branch 2: Default Prebuilt Release Binary Installation (Zero-Compilation)
 # ==============================================================================
 if [ "$FROM_SOURCE" != "1" ]; then
+    # Dedicated triage mode: preserve AMEVA runtime symlink
+    if [ "$DEDICATE" = "1" ] && [ -L "$PREFIX/bin/llama-cli" ]; then
+        REAL_TARGET="$(readlink -f "$PREFIX/bin/llama-cli" 2>/dev/null || realpath "$PREFIX/bin/llama-cli" 2>/dev/null || echo "")"
+        if echo "$REAL_TARGET" | grep -q "\.local/share/ameva"; then
+            printf '  [termux-llamacpp] [DEDICATE] AMEVA Runtime managed engine detected (%s). Preserving co-existence (<0.002s).\n' "$REAL_TARGET"
+            exit 0
+        fi
+    fi
+
+    # "있어? 넘어가" - Skip if verified ELF binary already exists (<0.002s)
+    if [ "$FORCE" != "1" ] && [ -x "$PREFIX/bin/llama-cli" ]; then
+        if head -c 4 "$PREFIX/bin/llama-cli" 2>/dev/null | grep -q 'ELF'; then
+            printf '  [termux-llamacpp] [OK] Verified native ARM64 engine already present: %s/bin/llama-cli. Skipping download (<0.002s).\n' "$PREFIX"
+            exit 0
+        fi
+    fi
     case "$ARCH" in
         aarch64|arm64)
             TARGET="android-arm64"
