@@ -1,5 +1,7 @@
 """termux-llamacpp: Universal GGUF Runtime, Model Manager & OpenAI Server for Android Termux & ARM64."""
 
+__version__ = "1.4.0"
+
 from termux_llamacpp.config import (
     RuntimeConfig,
     ServerConfig,

@@ -40,12 +40,30 @@ class TestCLIExecution(unittest.TestCase):
             self.assertEqual(ctx.exception.code, 1)
             self.assertIn("MODEL NOT SPECIFIED", err.getvalue())
 
-    def test_cli_run_with_invalid_model_fails_fast(self):
-        with patch("sys.argv", ["termux-llama", "run", "invalid-model-name-xyz", "hello"]), patch("sys.stderr", new_callable=io.StringIO) as err:
+    def test_cli_run_help_shows_rpc_flags(self):
+        with patch("sys.argv", ["termux-llama", "run", "--help"]), patch("sys.stdout", new_callable=io.StringIO) as out:
             with self.assertRaises(SystemExit) as ctx:
                 main()
-            self.assertEqual(ctx.exception.code, 1)
-            self.assertIn("INVALID MODEL IDENTIFIER", err.getvalue())
+            self.assertEqual(ctx.exception.code, 0)
+            output = out.getvalue()
+            self.assertIn("--rpc", output)
+            self.assertIn("--tensor-split", output)
+
+    def test_cli_run_rpc_dispatch(self):
+        with patch("sys.argv", [
+            "termux-llama", "run", "qwen2.5-1.5b-instruct", "test prompt",
+            "--rpc", "192.168.0.220:50052", "-ts", "50,50", "-ngl", "16"
+        ]), patch("termux_llamacpp.cli.LlamaRuntime") as mock_runtime_cls:
+            mock_runtime = mock_runtime_cls.return_value
+            mock_runtime.generate.return_value = "mock response"
+            with patch("sys.stdout", new_callable=io.StringIO) as out:
+                main()
+                self.assertIn("mock response", out.getvalue())
+                mock_runtime.generate.assert_called_once()
+                kwargs = mock_runtime.generate.call_args.kwargs
+                self.assertEqual(kwargs.get("rpc"), "192.168.0.220:50052")
+                self.assertEqual(kwargs.get("tensor_split"), "50,50")
+                self.assertEqual(kwargs.get("n_gpu_layers"), 16)
 
 
 if __name__ == "__main__":

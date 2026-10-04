@@ -225,6 +225,8 @@ def cmd_run(args):
             ctx_size=getattr(args, "ctx", 2048),
             device=effective_device,
             n_gpu_layers=getattr(args, "ngl", None),
+            rpc=getattr(args, "rpc", None),
+            tensor_split=getattr(args, "tensor_split", None),
         )
         print(output)
     except TermuxLlamaError as e:
@@ -435,6 +437,8 @@ def main():
     p_serve.add_argument("--cpu", action="store_const", const="cpu", dest="device", help="Force ARM64 CPU NEON execution")
     p_serve.add_argument("-ngl", "--ngl", "--gpu-layers", dest="ngl", type=int, default=None, help="Number of layers to offload to GPU VRAM")
     p_serve.add_argument("--runtime", default="auto", choices=["auto", "ameva", "native"], help="Execution runtime provider (auto, ameva, native)")
+    p_serve.add_argument("--rpc", default=None, help="Comma-separated list of remote RPC server endpoints (host:port)")
+    p_serve.add_argument("-ts", "--tensor-split", default=None, help="Fraction of model offloaded to each device/RPC worker (e.g. 50,50)")
     p_serve.add_argument("-d", "--daemon", action="store_true", help="Run server in the background as a daemon")
 
     # run (direct one-shot inference)
@@ -452,6 +456,8 @@ def main():
     p_run.add_argument("-c", "--ctx", "--ctx-size", dest="ctx", type=int, default=2048, help="Context length in tokens (default: 2048, 0 for model default)")
     p_run.add_argument("-t", "--threads", type=int, default=None, help="CPU threads")
     p_run.add_argument("--temp", type=float, default=0.7, help="Sampling temperature")
+    p_run.add_argument("--rpc", default=None, help="Comma-separated list of remote RPC server endpoints (host:port)")
+    p_run.add_argument("-ts", "--tensor-split", default=None, help="Fraction of model offloaded to each device/RPC worker (e.g. 50,50)")
 
 
     # stop

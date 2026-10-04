@@ -146,15 +146,23 @@ class LlamaRuntime:
         import shutil
         ext = ".exe" if sys.platform == "win32" else ""
 
-        # 1. Check in self.bin_dir
+        # 1. Check in AMEVA distributed RPC runtime directory
+        home = Path(os.environ.get("HOME", os.path.expanduser("~")))
+        for rpc_p in (
+            home / ".ameva" / "rpc_llama" / "bin" / f"{binary_name}{ext}",
+            home / ".ameva" / "rpc_llama" / "bin" / binary_name,
+        ):
+            if rpc_p.is_file():
+                return rpc_p.resolve()
+
+        # 2. Check in self.bin_dir
         target = self.bin_dir / f"{binary_name}{ext}"
         if not target.is_file():
             target = self.bin_dir / binary_name
         if target.is_file():
             return target.resolve()
 
-        # 2. Check in AMEVA runtime current directory
-        home = Path(os.environ.get("HOME", os.path.expanduser("~")))
+        # 3. Check in AMEVA runtime current directory
         for ameva_p in (
             home / ".local" / "share" / "ameva" / "current" / "llamacpp" / f"{binary_name}{ext}",
             home / ".local" / "share" / "ameva" / "current" / "llamacpp" / binary_name,
@@ -190,6 +198,14 @@ class LlamaRuntime:
         """
         env = os.environ.copy()
         dev_mode = str(device or "auto").strip().lower()
+
+        # AMEVA Distributed RPC library path auto-discovery
+        home = Path(os.environ.get("HOME", os.path.expanduser("~")))
+        rpc_lib_dir = home / ".ameva" / "rpc_llama" / "bin"
+        if rpc_lib_dir.is_dir():
+            ld = env.get("LD_LIBRARY_PATH", "")
+            if str(rpc_lib_dir) not in ld:
+                env["LD_LIBRARY_PATH"] = f"{rpc_lib_dir}:{ld}".strip(":")
 
         # Gate 1 Safety Rule: For pure CPU NEON execution, never inject or pollute LD_LIBRARY_PATH
         # to prevent Dual C++ Runtime collisions with Android Bionic system libraries.
@@ -257,6 +273,12 @@ class LlamaRuntime:
                     raise
                 raise TermuxLlamaError(f"AMEVA Vulkan Runtime initialization failed: {e}") from e
 
+        # Ensure AMEVA RPC isolated library directory is prepended to LD_LIBRARY_PATH
+        if rpc_lib_dir.is_dir():
+            ld = env.get("LD_LIBRARY_PATH", "")
+            if not ld.startswith(str(rpc_lib_dir)):
+                env["LD_LIBRARY_PATH"] = f"{rpc_lib_dir}:{ld}".strip(":")
+
         return env
 
     def serve(
@@ -308,6 +330,8 @@ class LlamaRuntime:
         ctx_size: Optional[int] = 2048,
         device: str = "auto",
         n_gpu_layers: Optional[int] = None,
+        rpc: Optional[str] = None,
+        tensor_split: Optional[str] = None,
     ) -> str:
         """
         Execute one-shot CLI text or multimodal generation with strict device routing (auto, vulkan, cpu, gpu).
@@ -323,6 +347,8 @@ class LlamaRuntime:
             ctx_size: Context window size in tokens (default: 2048, None/0 for model default context).
             device: 'auto' (Vulkan priority with CPU fallback), 'vulkan' / 'gpu' (strict GPU fail-fast), 'cpu' (pure NEON).
             n_gpu_layers: Specific number of layers to offload to GPU.
+            rpc: Comma-separated list of remote RPC server endpoints (host:port).
+            tensor_split: Comma-separated fraction of model offloaded to each device.
 
         Raises:
             TermuxLlamaError: On inference failure or when strict Vulkan mode fails without fallback.
@@ -332,6 +358,28 @@ class LlamaRuntime:
             # Model argument was used as prompt
             prompt = model
             model = None
+
+        # Cluster resolution and pre-flight validation
+        cluster_tunnels = []
+        if rpc:
+            from termux_llamacpp.cluster import (
+                ensure_wakelock,
+                check_cluster_license,
+                setup_cluster_guard_tunnels,
+                verify_rpc_cluster_nodes,
+                resolve_auto_tensor_split,
+            )
+            # Strict Exclusive Gating: Fail-Fast if ameva-cluster is not present
+            check_cluster_license()
+            ensure_wakelock()
+            servers, auto_ts = resolve_auto_tensor_split(rpc, tensor_split)
+            verify_rpc_cluster_nodes(servers)
+            if auto_ts:
+                tensor_split = auto_ts
+            # Establish authenticated loopback MasterTunnels for remote workers
+            tunnel_servers, cluster_tunnels = setup_cluster_guard_tunnels(servers)
+            if tunnel_servers:
+                rpc = ",".join(tunnel_servers)
 
         backend, target_ngl = resolve_device_backend(device, n_gpu_layers)
         resolved_model_path = self.models.resolve_model_path(model)
@@ -406,7 +454,13 @@ class LlamaRuntime:
             if image:
                 cmd.extend(["--image", str(image)])
 
-            if gpu_layers > 0 and target_device != "cpu":
+            # Distributed RPC parameters
+            if rpc:
+                cmd.extend(["--rpc", str(rpc)])
+            if tensor_split:
+                cmd.extend(["--tensor-split", str(tensor_split)])
+
+            if gpu_layers > 0 and (target_device != "cpu" or rpc):
                 cmd.extend(["-ngl", str(gpu_layers)])
             else:
                 cmd.extend(["-ngl", "0"])
@@ -419,38 +473,45 @@ class LlamaRuntime:
                 stdin=subprocess.DEVNULL,
             )
 
-        # 1. OpenCL GPU Route (Strict Zero-Silent-Fallback)
-        if backend == "opencl":
-            res = _run_cmd("opencl", target_ngl)
-            err_lower = (res.stderr or "").lower()
-            if "cl_platform_not_found" in err_lower or "failed to initialize opencl" in err_lower or res.returncode != 0:
-                raise TermuxLlamaError(
-                    f"[ERROR: AMEVA-LLAMA-E004] OpenCL GPU execution failed or OpenCL device unavailable.\n"
-                    f"Automatic CPU fallback is strictly disabled under Zero-Silent-Fallback policy.\n"
-                    f"Remediation: To execute inference on pure CPU NEON, re-run with '--device cpu' (CLI) or device='cpu' (SDK).\n"
-                    f"Details:\n{res.stderr.strip() or res.stdout.strip()}"
-                )
-            return _clean_output(res.stdout.strip())
+        try:
+            # 1. OpenCL GPU Route (Strict Zero-Silent-Fallback)
+            if backend == "opencl":
+                res = _run_cmd("opencl", target_ngl)
+                err_lower = (res.stderr or "").lower()
+                if "cl_platform_not_found" in err_lower or "failed to initialize opencl" in err_lower or res.returncode != 0:
+                    raise TermuxLlamaError(
+                        f"[ERROR: AMEVA-LLAMA-E004] OpenCL GPU execution failed or OpenCL device unavailable.\n"
+                        f"Automatic CPU fallback is strictly disabled under Zero-Silent-Fallback policy.\n"
+                        f"Remediation: To execute inference on pure CPU NEON, re-run with '--device cpu' (CLI) or device='cpu' (SDK).\n"
+                        f"Details:\n{res.stderr.strip() or res.stdout.strip()}"
+                    )
+                return _clean_output(res.stdout.strip())
 
-        # 2. Vulkan GPU Route (Strict Zero-Silent-Fallback)
-        elif backend == "vulkan":
-            res = _run_cmd("vulkan", target_ngl)
-            err_lower = (res.stderr or "").lower()
-            if "no usable gpu found" in err_lower or "no devices found" in err_lower or res.returncode != 0:
-                raise TermuxLlamaError(
-                    f"[ERROR: AMEVA-LLAMA-E003] Vulkan GPU execution failed or GPU device unavailable.\n"
-                    f"Automatic CPU fallback is strictly disabled under Zero-Silent-Fallback policy.\n"
-                    f"Remediation: To execute inference on pure CPU NEON, re-run with '--device cpu' (CLI) or device='cpu' (SDK).\n"
-                    f"Details:\n{res.stderr.strip() or res.stdout.strip()}"
-                )
-            return _clean_output(res.stdout.strip())
+            # 2. Vulkan GPU Route (Strict Zero-Silent-Fallback)
+            elif backend == "vulkan":
+                res = _run_cmd("vulkan", target_ngl)
+                err_lower = (res.stderr or "").lower()
+                if "no usable gpu found" in err_lower or "no devices found" in err_lower or res.returncode != 0:
+                    raise TermuxLlamaError(
+                        f"[ERROR: AMEVA-LLAMA-E003] Vulkan GPU execution failed or GPU device unavailable.\n"
+                        f"Automatic CPU fallback is strictly disabled under Zero-Silent-Fallback policy.\n"
+                        f"Remediation: To execute inference on pure CPU NEON, re-run with '--device cpu' (CLI) or device='cpu' (SDK).\n"
+                        f"Details:\n{res.stderr.strip() or res.stdout.strip()}"
+                    )
+                return _clean_output(res.stdout.strip())
 
-        # 3. CPU NEON Route
-        else:
-            cpu_res = _run_cmd("cpu", 0)
-            if cpu_res.returncode != 0:
-                raise TermuxLlamaError(f"CPU NEON inference failed: {cpu_res.stderr}")
-            return _clean_output(cpu_res.stdout.strip())
+            # 3. CPU NEON Route
+            else:
+                cpu_res = _run_cmd("cpu", 0)
+                if cpu_res.returncode != 0:
+                    raise TermuxLlamaError(f"CPU NEON inference failed: {cpu_res.stderr}")
+                return _clean_output(cpu_res.stdout.strip())
+        finally:
+            for t in cluster_tunnels:
+                try:
+                    t.stop()
+                except Exception:
+                    pass
 
     def generate_vlm(
         self,

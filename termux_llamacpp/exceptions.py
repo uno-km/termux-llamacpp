@@ -64,6 +64,39 @@ class ServerStartupError(TermuxLlamaError):
     DEFAULT_CODE = "E304_SERVER_STARTUP_FAILED"
 
 
+class ClusterConnectionError(TermuxLlamaError):
+    """Raised when one or more distributed RPC worker nodes cannot be reached."""
+    DEFAULT_CODE = "E305_CLUSTER_CONNECTION_FAILED"
+
+
+class ClusterConfigurationError(TermuxLlamaError):
+    """Raised when cluster specification or topology options are invalid."""
+    DEFAULT_CODE = "E306_CLUSTER_CONFIG_INVALID"
+
+
+class ClusterLicenseRequiredError(TermuxLlamaError):
+    """Raised when distributed clustering is invoked without required AMEVA Cluster license."""
+    DEFAULT_CODE = "E403_CLUSTER_LICENSE_REQUIRED"
+
+    def __init__(self, message: str = ""):
+        if not message:
+            message = (
+                "\n================================================================================\n"
+                "[AMEVA-CLUSTER] CLUSTER LICENSE REQUIRED (E403)\n"
+                "================================================================================\n"
+                "Multi-device distributed clustering is an exclusive capability of 'ameva-cluster'.\n"
+                "Standalone distributed execution without the official AMEVA-Cluster package is prohibited.\n\n"
+                "Resolution:\n"
+                "  1. Install official AMEVA-Cluster runtime:\n"
+                "     pip install ameva-cluster  (or npm install @ameva/cluster)\n"
+                "  2. Launch worker/master through 'ameva-cluster' control plane:\n"
+                "     ameva-cluster worker\n"
+                "     ameva-cluster master -m model.gguf\n"
+                "================================================================================"
+            )
+        super().__init__(message)
+
+
 class ModelNotFoundError(TermuxLlamaError):
     def __init__(self, model_identifier: str = "", search_path: str = "", message: str = ""):
         self.model_identifier = model_identifier

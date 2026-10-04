@@ -68,7 +68,51 @@ console.log(`Generation Speed: ${result.metrics.evalTokensPerSec} t/s`);
 
 ---
 
-## Official Documentation & Benchmarks
+## Distributed Clustering & Memory Pooling (AMEVA-Cluster)
+
+Termux-LlamaCpp natively integrates with **AMEVA-Cluster** (`pip install ameva-cluster`) for distributed RAM pooling across heterogeneous mobile fleets.
+
+### 1. Install Cluster Runtime
+```bash
+pip install ameva-cluster
+# or Node.js:
+npm install @ameva/cluster
+```
+
+### 2. Launch Worker Node on Remote Phone
+```bash
+# On worker device (e.g. Galaxy A53):
+ameva-cluster worker --port 50052
+```
+
+### 3. Distributed Inference via Master Node
+```bash
+# Master CLI with automatic memory guardband balancing:
+termux-llama run -m Qwen2.5-7B-Instruct-Q4_K_M.gguf \
+  --rpc 192.0.2.10:50052,192.0.2.11:50052 \
+  -ts auto \
+  -p "Explain quantum computing in simple terms."
+```
+
+```python
+from termux_llamacpp import LlamaRuntime, RuntimeConfig
+
+# Python SDK Distributed Memory Pooling
+config = RuntimeConfig(
+    model_path="models/Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+    cluster_rpc_servers="192.0.2.10:50052,192.0.2.11:50052",
+    tensor_split="auto"
+)
+runtime = LlamaRuntime(config)
+res = runtime.generate("Distributed clustering active across multiple mobile devices.")
+print(res.text)
+```
+
+- `--rpc / cluster_rpc_servers`: Comma-separated RPC worker addresses.
+- `-ts auto`: Dynamic tensor-split automatically balanced by hardware VRAM/RAM capacity.
+- **Protocol Guard**: Cryptographically authenticated via `ClusterGuardProxy` with HMAC-SHA256 handshake.
+
+---
 - [Official Architecture & API Reference](https://uno-km.vercel.app/lib/llamacpp/)
 - [Ecosystem Metrics & Registry Stats](https://uno-km.vercel.app/foundation/metrics)
 - [AMEVA Open-Source Foundation Portal](https://uno-km.vercel.app/foundation/index.html)
